@@ -11,6 +11,8 @@ const LABS = { "HW-TCA": "HW TCA", "SW-TCA": "SW TCA", "FMEA": "FMEA" };
 const ROOT_FOLDER = "Rapoarte laboratoare";
 const TZ = "Europe/Bucharest";
 const MAX_HTML = 3 * 1024 * 1024;
+/* the collection spreadsheet; used when the script is not opened from the sheet (Extensions → Apps Script) */
+const SHEET_ID = "1eMkpwfwd6qLFUVOAyjTyhx1PH0IPEYksB_Z8L51ah3k";
 const HEADER = ["Primit", "Nume", "Grupa", "Varianta", "Rezumat", "Raport (Drive)", "Limba"];
 
 function doPost(e) {
@@ -69,8 +71,11 @@ function labFolder_(lab) {
   const it = root.getFoldersByName(LABS[lab]);
   return it.hasNext() ? it.next() : root.createFolder(LABS[lab]);
 }
+function book_() {
+  return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID);
+}
 function sheetFor_(lab) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   let sh = ss.getSheetByName(LABS[lab]);
   if (!sh) {
     sh = ss.insertSheet(LABS[lab]);
@@ -85,7 +90,8 @@ function sheetFor_(lab) {
 /* Run once from the editor (Run → setup) to create the tabs and the Drive folder and to grant the permissions. */
 function setup() {
   Object.keys(LABS).forEach((lab) => { sheetFor_(lab); labFolder_(lab); });
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   const first = ss.getSheets()[0];
-  if (first.getName() !== "HW TCA" && first.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(first);
+  if (!(first.getName() in { "HW TCA": 1, "SW TCA": 1, "FMEA": 1 }) && first.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(first);
+  Logger.log("Gata: tab-urile HW TCA, SW TCA, FMEA și folderul „" + ROOT_FOLDER + "” există.");
 }
