@@ -81,6 +81,7 @@ header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12p
 .btn { height: 34px; padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { border-color: var(--bad); color: var(--bad); background: var(--bad-bg); }
 .btn.small { height: 28px; padding: 0 10px; font-size: 0.85rem; }
 .btn.ghost { background: transparent; }
 .lang { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -199,6 +200,7 @@ textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); border-
       <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="w-small"></div>
       <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="w-small mono" placeholder="V1"></div>
       <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
+      <button class="btn" id="resetAll" type="button" data-i18n="reset"></button>
       <div class="lang" role="group" aria-label="Language">
         <button type="button" id="langRo" aria-pressed="true">RO</button>
         <button type="button" id="langEn" aria-pressed="false">EN</button>
@@ -212,6 +214,8 @@ textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); border-
 <main><div class="wrap" id="view"></div></main>
 <div class="toast" id="toast" hidden></div>
 
+<script src="../report-config.js"></script>
+<script src="../report-send.js"></script>
 <script>
 "use strict";
 
@@ -219,7 +223,7 @@ textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); border-
 const I18N = {
   ro: {
     subtitle: "Analiza acoperirii testelor software · firmware-ul nodului CAN al unui radar frontal",
-    name: "Nume și prenume", group: "Grupa", variant: "Varianta", load: "Încarcă varianta",
+    name: "Nume și prenume", group: "Grupa", variant: "Varianta", load: "Încarcă varianta", reset: "Începe de la zero", resetConfirm: "Sigur? Apasă din nou",
     tabStart: "Start", tabF1: "F1 validare cadru", tabF2: "F2 plauzibilitate", tabF3: "F3 stare CAN", tabInt: "Integrare", tabReport: "Raport",
     badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu V3).",
     variantLoaded: "Varianta {v} a fost încărcată.",
@@ -269,7 +273,7 @@ const I18N = {
   },
   en: {
     subtitle: "Software test coverage analysis · firmware of a front-radar CAN node",
-    name: "Full name", group: "Group", variant: "Variant", load: "Load variant",
+    name: "Full name", group: "Group", variant: "Variant", load: "Load variant", reset: "Start over", resetConfirm: "Sure? Click again",
     tabStart: "Start", tabF1: "F1 frame check", tabF2: "F2 plausibility", tabF3: "F3 CAN state", tabInt: "Integration", tabReport: "Report",
     badVariant: "This variant code does not exist. Use the code you received in the lab (for example V3).",
     variantLoaded: "Variant {v} loaded.",
@@ -952,8 +956,13 @@ function renderReport(view) {
   const r = buildReport();
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row">' +
     '<button class="btn primary" id="dl" type="button">' + t("download") + '</button><button class="btn" id="cp" type="button">' + t("copy") + "</button></div></div>" +
-    '<p class="muted">' + t("reportHint") + '</p><div class="report-frame">' + r.body + "</div>" +
+    '<p class="muted">' + t("reportHint") + '</p><div id="sendBox"></div><div class="report-frame">' + r.body + "</div>" +
     '<textarea id="reportText" readonly hidden></textarea>';
+  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "SW-TCA", lang: LANG, getPayload: () => {
+    const x = buildReport(); const v = V();
+    const sum = EX_KEYS.map((k) => { const an = analyse(k, v, S.tests[k]); return EX[k].fn + " " + pct(an.stmt) + " / " + pct(an.dec) + " / " + pct(an.mcdc); }).join("; ");
+    return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, summary: "stmt / branch / MC/DC: " + sum + " · bug: " + ((S.bug && S.bug.line) || "-") };
+  } });
   view.querySelector("#dl").addEventListener("click", () => {
     const b = new Blob([buildReport().html], { type: "text/html" });
     const a = document.createElement("a");
@@ -995,6 +1004,18 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
   S.tab = S.tab === "start" ? "f1" : S.tab;
   save(); render(); toast(t("variantLoaded").replace("{v}", code));
 });
+/* start over: two clicks within 5 s clear this app's saved work */
+(function () {
+  const b = document.getElementById("resetAll"); let armed = 0, timer = null;
+  b.addEventListener("click", () => {
+    if (Date.now() - armed < 5000) {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ lang: LANG })); } catch (e) { /* storage unavailable */ }
+      location.reload(); return;
+    }
+    armed = Date.now(); b.textContent = t("resetConfirm"); b.classList.add("danger");
+    clearTimeout(timer); timer = setTimeout(() => { armed = 0; b.textContent = t("reset"); b.classList.remove("danger"); }, 5000);
+  });
+})();
 document.getElementById("langRo").addEventListener("click", () => { LANG = "ro"; S.lang = "ro"; save(); render(); });
 document.getElementById("langEn").addEventListener("click", () => { LANG = "en"; S.lang = "en"; save(); render(); });
 render();

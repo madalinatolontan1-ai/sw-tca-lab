@@ -33,6 +33,10 @@ The exercises run in the browser. Enter your name, group and the variant code yo
 - HW TCA (production test coverage): **https://madalinatolontan1-ai.github.io/sw-tca-lab/hw/** (source: `docs/hw/index.html`)
 - FMEA (DFMEA, 7 AIAG-VDA steps): **https://madalinatolontan1-ai.github.io/sw-tca-lab/fmea/** (source: `docs/fmea/index.html`)
 
+## Report collection
+
+The apps can send each report to a Google Apps Script collector (Drive folder + Google Sheet). Setup: `tools/report-collector/README.md`; the endpoint goes in `docs/report-config.js`.
+
 ## Files
 
 - `src/can_node.h`, `src/can_node.c` – code under test

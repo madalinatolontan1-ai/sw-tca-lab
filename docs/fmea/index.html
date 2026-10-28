@@ -66,6 +66,7 @@ textarea.in { width: 100%; min-height: 70px; padding: 7px 9px; resize: vertical;
 .btn { height: 34px; padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { border-color: var(--bad); color: var(--bad); background: var(--bad-bg); }
 .btn.sm { height: 28px; padding: 0 10px; font-size: 0.84rem; }
 .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 .btn.ghost:hover { color: var(--bad); border-color: transparent; }
@@ -228,6 +229,7 @@ details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
       <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="in w-small"></div>
       <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="in w-small mono" placeholder="F1"></div>
       <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
+      <button class="btn" id="resetAll" type="button" data-i18n="reset"></button>
       <div class="lang" role="group" aria-label="Language">
         <button type="button" id="langRo" aria-pressed="true">RO</button>
         <button type="button" id="langEn" aria-pressed="false">EN</button>
@@ -239,6 +241,8 @@ details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
 <main><div class="wrap" id="view"></div></main>
 <div class="toast" id="toast" hidden></div>
 
+<script src="../report-config.js"></script>
+<script src="../report-send.js"></script>
 <script>
 "use strict";
 /* ================================================================ case study data */
@@ -497,7 +501,7 @@ const CTRL = {
 const I18N = {
   ro: {
     subtitle: "DFMEA după metoda AIAG-VDA în 7 pași · nodul CAN al radarului frontal",
-    name: "Nume și prenume", group: "Grupa", variant: "Varianta", load: "Încarcă varianta",
+    name: "Nume și prenume", group: "Grupa", variant: "Varianta", load: "Încarcă varianta", reset: "Începe de la zero", resetConfirm: "Sigur? Apasă din nou",
     tabStart: "Pasul 1 · Planificare", tabReport: "Pasul 7 · Raport",
     badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu F2).", variantLoaded: "Varianta {v} a fost încărcată.",
     introTitle: "Analiza modurilor de defectare și a efectelor (DFMEA)",
@@ -548,7 +552,7 @@ const I18N = {
   },
   en: {
     subtitle: "DFMEA with the 7-step AIAG-VDA method · CAN node of the front radar",
-    name: "Full name", group: "Group", variant: "Variant", load: "Load variant",
+    name: "Full name", group: "Group", variant: "Variant", load: "Load variant", reset: "Start over", resetConfirm: "Sure? Click again",
     tabStart: "Step 1 · Planning", tabReport: "Step 7 · Report",
     badVariant: "This variant code does not exist. Use the code you received in the lab (for example F2).", variantLoaded: "Variant {v} loaded.",
     introTitle: "Failure mode and effects analysis (DFMEA)",
@@ -1029,7 +1033,14 @@ function renderReport(view) {
   const r = buildReport();
   view.innerHTML = '<div class="row between"><h2>' + esc(t("reportTitle")) + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + esc(t("download")) + '</button><button class="btn" id="cp" type="button">' + esc(t("copy")) + "</button></div></div>" +
     '<p class="muted">' + esc(t("reportHint")) + '</p><div class="panel stack"><label class="label" for="conclusion">' + esc(t("conclusion")) + '</label><textarea class="in" id="conclusion">' + esc(S.conclusion) + "</textarea></div>" +
-    '<div class="report-frame" id="rframe">' + r.body + '</div><textarea class="in" id="reportText" readonly hidden></textarea>';
+    '<div id="sendBox"></div><div class="report-frame" id="rframe">' + r.body + '</div><textarea class="in" id="reportText" readonly hidden></textarea>';
+  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "FMEA", lang: LANG, getPayload: () => {
+    const x = buildReport();
+    const sum = ["hw", "sw"].map((k) => { const A = S[k]; const c = { H: 0, M: 0, L: 0 }; let n = 0;
+      failsAt(A, 2).forEach((m) => causesOf(A, m.id).forEach((cs) => { n++; const f = evalRisk(A, m.id, cs.id).fin; if (f) c[f]++; }));
+      return k.toUpperCase() + ": " + failsAt(A, 2).length + " FM, " + n + " FM-FC, final H " + c.H + " M " + c.M + " L " + c.L + ", checks " + checks(k).length; }).join(" · ");
+    return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, summary: sum };
+  } });
   view.querySelector("#conclusion").addEventListener("input", (e) => { S.conclusion = e.target.value; save(); });
   view.querySelector("#conclusion").addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body; });
   view.querySelector("#dl").addEventListener("click", () => {
@@ -1058,6 +1069,18 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
   S.variant = code; document.getElementById("stVariant").value = code;
   save(); render(); toast(t("variantLoaded").replace("{v}", code));
 });
+/* start over: two clicks within 5 s clear this app's saved work */
+(function () {
+  const b = document.getElementById("resetAll"); let armed = 0, timer = null;
+  b.addEventListener("click", () => {
+    if (Date.now() - armed < 5000) {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ lang: LANG })); } catch (e) { /* storage unavailable */ }
+      location.reload(); return;
+    }
+    armed = Date.now(); b.textContent = t("resetConfirm"); b.classList.add("danger");
+    clearTimeout(timer); timer = setTimeout(() => { armed = 0; b.textContent = t("reset"); b.classList.remove("danger"); }, 5000);
+  });
+})();
 document.getElementById("langRo").addEventListener("click", () => { LANG = "ro"; S.lang = "ro"; save(); render(); });
 document.getElementById("langEn").addEventListener("click", () => { LANG = "en"; S.lang = "en"; save(); render(); });
 render();
