@@ -12,7 +12,7 @@ gcovr**, which report statement, branch and condition (MC/DC) coverage.
 1. Click **Code → Codespaces → Create codespace on main**.
 2. Wait until the setup finishes (GCC 14 and gcovr are installed automatically).
 3. In the terminal, run one of the commands below.
-4. Open `coverage/index.html` (right click → *Open with Live Server*, or download it).
+4. Run `make serve` and click **Open in Browser** in the pop-up (or open the **Ports** tab and click the globe icon next to port 8080). Stop the server with `Ctrl+C` before running the next report.
 
 ## Commands
 
@@ -37,5 +37,5 @@ gcovr**, which report statement, branch and condition (MC/DC) coverage.
 
 Demo pentru laboratorul de *Analiza acoperirii testelor software*. Deschide un
 Codespace (**Code → Codespaces → Create codespace on main**), rulează în terminal
-una dintre comenzile din tabel și deschide `coverage/index.html`. Fiecare student
+una dintre comenzile din tabel, apoi `make serve` și apasă **Open in Browser**. Fiecare student
 lucrează în propriul Codespace; modificările tale nu afectează repository-ul.

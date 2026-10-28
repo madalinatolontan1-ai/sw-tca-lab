@@ -8,6 +8,7 @@
 #   make report SET=int_one             function / call coverage
 #
 # The HTML report is written to coverage/index.html.
+# Open it in the browser with:  make serve
 
 CC      := gcc-14
 GCOV    := gcov-14
@@ -22,7 +23,7 @@ else
 SRCDIR := src
 endif
 
-.PHONY: report clean
+.PHONY: report serve clean
 
 report: clean
 	mkdir -p build coverage
@@ -34,7 +35,10 @@ report: clean
 	         --txt-metric branch --txt - \
 	         --html-details coverage/index.html --html-title "SW TCA demo: $(SET)"
 	@echo
-	@echo "HTML report: coverage/index.html"
+	@echo "HTML report: coverage/index.html  (open it with: make serve)"
+
+serve:
+	python3 -m http.server 8080 --directory coverage
 
 clean:
 	rm -rf build coverage
