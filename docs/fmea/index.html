@@ -433,6 +433,59 @@ const oBand = (o) => (o >= 8 ? "8-10" : o >= 6 ? "6-7" : o >= 4 ? "4-5" : o >= 2
 const dIdx = (d) => (d >= 7 ? 0 : d >= 5 ? 1 : d >= 2 ? 2 : 3);
 function apOf(s, o, d) { if (!s || !o || !d) return null; return AP[sBand(s)][oBand(o)][dIdx(d)]; }
 
+/* function suggestions per structure level (effect level, signal / function, design elements) */
+const SUG_FN = {
+  L1: {
+    common: [L("Detectează obiectele din fața vehiculului (distanță, viteză relativă, poziție laterală)", "Detects the objects in front of the vehicle (distance, relative velocity, lateral position)"),
+      L("Transmite lista de obiecte către ECU-ul ADAS prin CAN, la fiecare ciclu de ~72 ms", "Sends the object list to the ADAS ECU over CAN every ~72 ms cycle"),
+      L("Raportează valorile obiectelor în domeniile specificate (0,2–250 m; −400…+200 km/h)", "Reports object values within the specified ranges (0.2–250 m; −400…+200 km/h)"),
+      L("Semnalează propriile defecte către ECU-ul ADAS (diagnoză)", "Reports its own faults to the ADAS ECU (diagnostics)"),
+      L("Nu perturbă comunicația celorlalte noduri de pe bus-ul CAN", "Does not disturb the communication of the other CAN nodes")],
+    hw: [L("Respectă limitele EMC de emisii și imunitate", "Meets the EMC emission and immunity limits"), L("Indică prezența alimentării (LED)", "Indicates that the supply is present (LED)")],
+    sw: [L("Folosește doar date valide și plauzibile pentru funcțiile ADAS", "Uses only valid and plausible data for the ADAS functions")]
+  },
+  L2: {
+    TXD: [L("Transmite biții de la controllerul CAN la transceiver, cu niveluri logice compatibile 5 V", "Carries the bits from the CAN controller to the transceiver with 5 V compatible logic levels"),
+      L("Menține nivelul recesiv când MCU nu transmite", "Keeps the recessive level when the MCU is not transmitting"), L("Respectă temporizarea pentru 500 kbit/s", "Meets the timing for 500 kbit/s")],
+    RXD: [L("Transmite MCU starea bus-ului (dominant / recesiv) cu niveluri logice compatibile", "Reports the bus state (dominant / recessive) to the MCU with compatible logic levels"),
+      L("Permite controllerului CAN să-și citească înapoi biții (bit monitoring)", "Lets the CAN controller read back its own bits (bit monitoring)"), L("Respectă întârzierea maximă TXD → RXD la 500 kbit/s", "Meets the maximum TXD → RXD delay at 500 kbit/s")],
+    VDD: [L("Alimentează transceiverul cu 4,5–5,5 V", "Supplies the transceiver with 4.5–5.5 V"), L("Asigură curentul necesar în starea dominantă (≤ 75 mA)", "Provides the current needed in the dominant state (≤ 75 mA)"),
+      L("Filtrează zgomotul de pe alimentare (decuplare)", "Filters the supply noise (decoupling)"), L("Alimentează indicatorul LED", "Supplies the LED indicator")],
+    CAN: [L("Generează tensiunea diferențială dominantă de 1,5–3,0 V pe 60 Ω", "Produces the 1.5–3.0 V dominant differential voltage on 60 Ω"), L("Menține nivelul recesiv în domeniul 2,0–3,0 V", "Keeps the recessive level within 2.0–3.0 V"),
+      L("Asigură fronturi compatibile cu 500 kbit/s", "Provides edges compatible with 500 kbit/s"), L("Limitează emisiile și asigură imunitatea (filtre RC, simetrie)", "Limits emissions and ensures immunity (RC filters, symmetry)")],
+    RS: [L("Selectează modul de funcționare (high-speed / slope-control)", "Selects the operating mode (high-speed / slope-control)"), L("Împiedică intrarea în standby în funcționare normală", "Prevents standby in normal operation"),
+      L("Stabilește panta fronturilor pentru compromisul EMC / rată de bit", "Sets the edge slope for the EMC / bit rate trade-off")],
+    TERM: [L("Asigură 120 Ω între CANH și CANL la capătul bus-ului", "Provides 120 Ω between CANH and CANL at the end of the bus"), L("Permite activarea și dezactivarea terminației (JP1)", "Allows the termination to be enabled and disabled (JP1)"),
+      L("Limitează reflexiile la 500 kbit/s", "Limits reflections at 500 kbit/s"), L("Suportă puterea disipată în starea dominantă", "Withstands the power dissipated in the dominant state")],
+    F1: [L("Respinge cadrele cu DLC mai mare decât 8", "Rejects frames with DLC greater than 8"), L("Respinge identificatorii în afara domeniului (standard / extins)", "Rejects identifiers out of range (standard / extended)"), L("Acceptă toate cadrele valide", "Accepts every valid frame")],
+    F2: [L("Respinge valorile din afara domeniului [MIN, MAX]", "Rejects values outside [MIN, MAX]"), L("Acceptă prima detecție a unui obiect aflată în domeniu", "Accepts the first in-range detection of an object"),
+      L("Respinge salturile mai mari decât pasul maxim între cicluri", "Rejects steps larger than the maximum step between cycles")],
+    F3: [L("Raportează BUS_OFF când TEC > 255", "Reports BUS_OFF when TEC > 255"), L("Raportează ERROR_PASSIVE când TEC sau REC > 127", "Reports ERROR_PASSIVE when TEC or REC > 127"), L("Raportează ERROR_ACTIVE în celelalte cazuri", "Reports ERROR_ACTIVE in all other cases")],
+    INT: [L("Aruncă cadrele în starea bus-off și returnează RX_BUS_OFF", "Discards frames in bus-off and returns RX_BUS_OFF"), L("Acceptă doar cadrele valide și plauzibile", "Accepts only valid and plausible frames"), L("Returnează RX_REJECTED pentru celelalte cadre", "Returns RX_REJECTED for all other frames")]
+  },
+  L3: {
+    hw: {
+      C1: [L("Asigură alegerea unei componente compatibile cu cerințele semnalului (niveluri, rată de bit)", "Ensures a component compatible with the signal requirements (levels, bit rate) is selected"), L("Asigură alegerea componentelor calificate auto (AEC-Q)", "Ensures automotive-qualified components (AEC-Q) are selected")],
+      C2: [L("Asigură dimensionarea corectă a rezistențelor și condensatoarelor (valoare, toleranță, putere)", "Ensures resistors and capacitors are correctly dimensioned (value, tolerance, power)"), L("Asigură dimensionarea pentru worst case (temperatură, îmbătrânire)", "Ensures dimensioning for the worst case (temperature, ageing)")],
+      C3: [L("Asigură definirea corectă a nivelurilor logice și a temporizării", "Ensures the logic levels and timing are correctly defined"), L("Asigură definirea corectă a interfeței cu MCU", "Ensures the interface with the MCU is correctly defined")],
+      C4: [L("Asigură conectarea corectă a semnalului (pini, net-uri)", "Ensures the signal is correctly connected (pins, nets)"), L("Asigură prezența componentelor de protecție și filtrare necesare", "Ensures the required protection and filtering components are present")],
+      C5: [L("Asigură rutarea corectă a semnalului (lungime, pereche diferențială)", "Ensures the signal is correctly routed (length, differential pair)"), L("Asigură plasarea decuplării aproape de pinul de alimentare", "Ensures the decoupling is placed close to the supply pin"), L("Asigură distanțele și ecranarea necesare pentru EMC", "Ensures the clearances and shielding needed for EMC")]
+    },
+    sw: {
+      C1: [L("Asigură definirea completă și corectă a cerințelor funcției", "Ensures the function requirements are complete and correct"), L("Asigură trasabilitatea cerințelor față de cerințele de sistem", "Ensures traceability to the system requirements")],
+      C2: [L("Asigură valori corecte ale limitelor (#define), conform specificației", "Ensures the limit values (#define) match the specification"), L("Asigură unitățile de măsură corecte ale constantelor", "Ensures the constants use the correct units")],
+      C3: [L("Asigură operatorii de comparație corecți la limite", "Ensures the correct comparison operators at the boundaries"), L("Asigură combinarea corectă a condițiilor (&&, ||)", "Ensures conditions are combined correctly (&&, ||)")],
+      C4: [L("Asigură tipuri de date suficiente pentru domeniul valorilor (fără overflow)", "Ensures data types cover the value range (no overflow)"), L("Asigură conversii corecte între tipuri (signed / unsigned)", "Ensures correct type conversions (signed / unsigned)")],
+      C5: [L("Asigură valori returnate corecte și documentate", "Ensures correct, documented return values"), L("Asigură apelarea corectă a funcțiilor (parametri, ordine)", "Ensures functions are called correctly (parameters, order)")]
+    }
+  }
+};
+function fnSuggestions(kind, el) {
+  const v = V();
+  if (el === "L1") return SUG_FN.L1.common.concat(SUG_FN.L1[kind]);
+  if (el === "L2") return SUG_FN.L2[kind === "hw" ? v.hw : v.sw];
+  return (SUG_FN.L3[kind][el] || []);
+}
 /* failure suggestions for the effect level (radar) and the mode level (signal / function) */
 const SUG_EFFECT = {
   common: [
@@ -527,7 +580,7 @@ const I18N = {
       "Pasul 7: verifici lista de verificări și descarci raportul."],
     st23: "Structură și funcții", st4: "Rețeaua de defectare", st56: "Risc și optimizare",
     structTree: "Arborele de structură", lvl1: "Nivel efect", lvl2: "Nivel mod (element analizat)", lvl3: "Nivel cauză",
-    fnOf: "Funcțiile elementului", fnHint: "Scrie o funcție: verb + obiect + condiție măsurabilă.", fnPh: "ex.: Asigură ... în limitele ...", add: "Adaugă", noFn: "Încă nu ai adăugat funcții pentru acest element.",
+    fnOf: "Funcțiile elementului", fnHint: "Scrie o funcție: verb + obiect + condiție măsurabilă.", fnPh: "alege din listă sau scrie (ex.: Asigură ... în limitele ...)", add: "Adaugă", noFn: "Încă nu ai adăugat funcții pentru acest element.",
     context: "Date de intrare", path: "Traseul semnalului", hwReqs: "Cerințe și date din datasheet", swReqs: "Cerințe software", code: "Codul",
     netHelp: "Scrie defectările sub fiecare funcție (cu roșu). Leagă: trage de la punctul unei defectări până pe o defectare din coloana vecină. Alternativ: dă clic pe un mod din mijloc, apoi pe „leagă” la efecte sau cauze. Ștergi o legătură cu × de pe linie.",
     colEff: "Efecte", colMode: "Moduri de defectare", colCause: "Cauze", failPh: "defectare nouă…", failPhSug: "alege din listă sau scrie…", noFns: "Adaugă întâi funcții la pasul 2–3.",
@@ -578,7 +631,7 @@ const I18N = {
       "Step 7: review the checks and download the report."],
     st23: "Structure and functions", st4: "Failure net", st56: "Risk and optimization",
     structTree: "Structure tree", lvl1: "Effect level", lvl2: "Mode level (element analysed)", lvl3: "Cause level",
-    fnOf: "Functions of the element", fnHint: "Write a function: verb + object + measurable condition.", fnPh: "e.g.: Ensures ... within ...", add: "Add", noFn: "No functions added for this element yet.",
+    fnOf: "Functions of the element", fnHint: "Write a function: verb + object + measurable condition.", fnPh: "choose from the list or type (e.g.: Ensures ... within ...)", add: "Add", noFn: "No functions added for this element yet.",
     context: "Inputs", path: "Signal path", hwReqs: "Requirements and datasheet data", swReqs: "Software requirements", code: "Code",
     netHelp: "Write the failures under each function (in red). To link, drag from the dot of a failure onto a failure in the neighbouring column. Alternatively click a mode in the middle, then “link” on effects or causes. Remove a link with the × on the line.",
     colEff: "Effects", colMode: "Failure modes", colCause: "Causes", failPh: "new failure…", failPhSug: "choose from the list or type…", noFns: "Add functions in step 2–3 first.",
@@ -812,7 +865,8 @@ function renderStructure(body, kind) {
   const list = fns.length ? '<div class="fnlist">' + fns.map((f) => '<div class="fnitem"><span class="txt">' + esc(f.text) + '</span><button class="x" type="button" data-delfn="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button></div>').join("") + "</div>" : '<p class="empty">' + esc(t("noFn")) + "</p>";
   body.innerHTML = '<div class="grid-struct"><div class="panel stack"><span class="label">' + esc(t("structTree")) + "</span>" + tree + '<p class="muted small">N1 ' + esc(t("lvl1")) + " · N2 " + esc(t("lvl2")) + " · N3 " + esc(t("lvl3")) + "</p></div>" +
     '<div class="panel stack"><span class="label">' + esc(lvlName(sel.lvl)) + "</span><h3>" + esc(tr(sel.name)) + "</h3><h4>" + esc(t("fnOf")) + "</h4>" + list +
-    '<form class="addrow" id="addFn"><input class="in" id="fnText" placeholder="' + esc(t("fnPh")) + '" aria-label="' + esc(t("fnOf")) + '"><button class="btn primary" type="submit">' + esc(t("add")) + '</button></form><p class="muted small">' + esc(t("fnHint")) + "</p></div>" +
+    '<datalist id="dl-fn">' + fnSuggestions(kind, sel.id).map((x) => '<option value="' + esc(tr(x)) + '"></option>').join("") + "</datalist>" +
+    '<form class="addrow" id="addFn"><input class="in" id="fnText" list="dl-fn" placeholder="' + esc(t("fnPh")) + '" aria-label="' + esc(t("fnOf")) + '"><button class="btn primary" type="submit">' + esc(t("add")) + '</button></form><p class="muted small">' + esc(t("fnHint")) + "</p></div>" +
     contextPanel(kind) + "</div>";
   body.querySelectorAll("[data-el]").forEach((b) => b.addEventListener("click", () => { A.selEl = b.dataset.el; save(); render(); }));
   body.querySelectorAll("[data-delfn]").forEach((b) => b.addEventListener("click", () => { removeFn(A, b.dataset.delfn); save(); render(); }));
