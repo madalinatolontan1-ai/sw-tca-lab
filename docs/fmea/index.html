@@ -427,6 +427,55 @@ const oBand = (o) => (o >= 8 ? "8-10" : o >= 6 ? "6-7" : o >= 4 ? "4-5" : o >= 2
 const dIdx = (d) => (d >= 7 ? 0 : d >= 5 ? 1 : d >= 2 ? 2 : 3);
 function apOf(s, o, d) { if (!s || !o || !d) return null; return AP[sBand(s)][oBand(o)][dIdx(d)]; }
 
+/* failure suggestions for the effect level (radar) and the mode level (signal / function) */
+const SUG_EFFECT = {
+  common: [
+    L("Radarul nu transmite lista de obiecte către ECU-ul ADAS (pierderea funcțiilor ACC / AEB)", "The radar does not send the object list to the ADAS ECU (loss of ACC / AEB)"),
+    L("Lista de obiecte ajunge intermitent sau cu întârziere la ECU-ul ADAS", "The object list reaches the ADAS ECU intermittently or late"),
+    L("Un obiect real nu e raportat (detecție ratată, frânare lipsă)", "A real object is not reported (missed detection, no braking)"),
+    L("Un obiect inexistent e raportat (frânare falsă)", "A non-existent object is reported (false braking)"),
+    L("Valori greșite raportate pentru obiecte (distanță, viteză, poziție)", "Wrong object values reported (distance, velocity, position)"),
+    L("Radarul semnalează eroare, funcția ADAS e dezactivată și șoferul e avertizat", "The radar reports a fault, the ADAS function is disabled and the driver is warned")
+  ],
+  hw: [
+    L("Comunicația CAN a celorlalte noduri de pe bus e perturbată sau blocată", "CAN communication of the other nodes on the bus is disturbed or blocked"),
+    L("Emisii electromagnetice peste limitele reglementate (EMC)", "Electromagnetic emissions above the regulated limits (EMC)"),
+    L("Imunitate redusă la perturbații electromagnetice (EMC)", "Reduced immunity to electromagnetic disturbances (EMC)"),
+    L("Consum de curent peste specificația senzorului", "Supply current above the sensor specification"),
+    L("Indicatorul de alimentare nu funcționează (funcția radarului nu e afectată)", "The power indicator does not work (radar function not affected)")
+  ],
+  sw: [
+    L("Nodul continuă să transmită deși controllerul CAN e în bus-off", "The node keeps transmitting although the CAN controller is bus-off"),
+    L("Cadre valide sunt aruncate, iar datele radarului se pierd", "Valid frames are discarded and radar data is lost"),
+    L("Date neplauzibile ajung la funcția ADAS", "Implausible data reaches the ADAS function")
+  ]
+};
+const SUG_MODE = {
+  TXD: [L("TXD blocat în dominant", "TXD stuck dominant"), L("TXD blocat în recesiv", "TXD stuck recessive"), L("Niveluri logice TXD în afara specificației", "TXD logic levels out of specification"),
+    L("Biți TXD corupți sau întârziați (temporizare greșită)", "TXD bits corrupted or delayed (wrong timing)"), L("TXD intermitent", "Intermittent TXD")],
+  RXD: [L("RXD blocat pe nivel high", "RXD stuck high"), L("RXD blocat pe nivel low", "RXD stuck low"), L("Niveluri logice RXD incompatibile cu intrarea MCU", "RXD logic levels incompatible with the MCU input"),
+    L("Întârzierea TXD → RXD prea mare", "TXD → RXD delay too long"), L("RXD intermitent sau cu zgomot", "Intermittent or noisy RXD")],
+  VDD: [L("VDD sub 4,5 V", "VDD below 4.5 V"), L("VDD peste 5,5 V", "VDD above 5.5 V"), L("Zgomot sau ripple pe VDD", "Noise or ripple on VDD"),
+    L("Căderi scurte de tensiune (brown-out)", "Short voltage drops (brown-out)"), L("Consum peste specificație", "Supply current above specification"), L("LED-ul indicator nu se aprinde", "The indicator LED does not light")],
+  CAN: [L("Tensiunea diferențială dominantă sub 1,5 V", "Dominant differential voltage below 1.5 V"), L("Nivelul recesiv în afara domeniului 2,0–3,0 V", "Recessive level outside 2.0–3.0 V"),
+    L("Fronturi prea lente pentru 500 kbit/s", "Edges too slow for 500 kbit/s"), L("Asimetrie între CANH și CANL", "Asymmetry between CANH and CANL"),
+    L("CANH și CANL scurtcircuitate", "CANH and CANL shorted"), L("Linie CAN întreruptă", "CAN line interrupted")],
+  RS: [L("Transceiverul intră în standby", "The transceiver enters standby"), L("Mod high-speed în loc de slope-control (emisii mai mari)", "High-speed mode instead of slope-control (higher emissions)"),
+    L("Panta fronturilor prea lentă pentru 500 kbit/s", "Edge slope too slow for 500 kbit/s"), L("Mod de funcționare instabil (RS flotant)", "Unstable operating mode (floating RS)")],
+  TERM: [L("Terminația lipsește la capătul bus-ului", "Termination missing at the end of the bus"), L("Terminația e activă deși nodul nu e la capătul bus-ului", "Termination active although the node is not at the end of the bus"),
+    L("Valoare greșită a terminației", "Wrong termination value"), L("Rezistența de terminație se supraîncălzește", "The termination resistor overheats"), L("Reflexii pe bus", "Reflections on the bus")],
+  F1: [L("Acceptă un cadru cu DLC mai mare decât 8", "Accepts a frame with DLC greater than 8"), L("Respinge un cadru valid", "Rejects a valid frame"),
+    L("Aplică limita de ID standard unui cadru extins", "Applies the standard ID limit to an extended frame"), L("Acceptă un identificator în afara domeniului", "Accepts an identifier out of range"),
+    L("Decizie greșită la limită (DLC = 8, ID = 0x7FF)", "Wrong decision at the boundary (DLC = 8, ID = 0x7FF)")],
+  F2: [L("Acceptă o valoare în afara domeniului", "Accepts a value out of range"), L("Respinge o valoare validă", "Rejects a valid value"),
+    L("Acceptă un salt mai mare decât pasul maxim", "Accepts a step larger than the maximum step"), L("Respinge prima detecție a unui obiect", "Rejects the first detection of an object"),
+    L("Decizie greșită la valorile limită", "Wrong decision at the boundary values"), L("Depășire (overflow) la calculul diferenței", "Overflow when computing the difference")],
+  F3: [L("Raportează ERROR_ACTIVE în loc de ERROR_PASSIVE", "Reports ERROR_ACTIVE instead of ERROR_PASSIVE"), L("Raportează BUS_OFF prea devreme", "Reports BUS_OFF too early"),
+    L("Nu raportează BUS_OFF", "Does not report BUS_OFF"), L("Ignoră contorul REC", "Ignores the REC counter"), L("Stare greșită la limită (TEC sau REC = 127, TEC = 255)", "Wrong state at the boundary (TEC or REC = 127, TEC = 255)")],
+  INT: [L("Acceptă un cadru invalid", "Accepts an invalid frame"), L("Respinge un cadru valid și plauzibil", "Rejects a valid and plausible frame"),
+    L("Procesează cadre în starea bus-off", "Processes frames in the bus-off state"), L("Returnează RX_FAULT în funcționare normală", "Returns RX_FAULT in normal operation"),
+    L("Omite una dintre verificări (validitate sau plauzibilitate)", "Skips one of the checks (validity or plausibility)")]
+};
 const CTRL = {
   hw: {
     pc: [L("Recomandările din datasheet-ul furnizorului", "Supplier datasheet recommendations"), L("Calcul worst case", "Worst-case calculation"), L("Simulare de circuit", "Circuit simulation"),
@@ -475,7 +524,7 @@ const I18N = {
     fnOf: "Funcțiile elementului", fnHint: "Scrie o funcție: verb + obiect + condiție măsurabilă.", fnPh: "ex.: Asigură ... în limitele ...", add: "Adaugă", noFn: "Încă nu ai adăugat funcții pentru acest element.",
     context: "Date de intrare", path: "Traseul semnalului", hwReqs: "Cerințe și date din datasheet", swReqs: "Cerințe software", code: "Codul",
     netHelp: "Scrie defectările sub fiecare funcție (cu roșu). Leagă: trage de la punctul unei defectări până pe o defectare din coloana vecină. Alternativ: dă clic pe un mod din mijloc, apoi pe „leagă” la efecte sau cauze. Ștergi o legătură cu × de pe linie.",
-    colEff: "Efecte", colMode: "Moduri de defectare", colCause: "Cauze", failPh: "defectare nouă…", noFns: "Adaugă întâi funcții la pasul 2–3.",
+    colEff: "Efecte", colMode: "Moduri de defectare", colCause: "Cauze", failPh: "defectare nouă…", failPhSug: "alege din listă sau scrie…", noFns: "Adaugă întâi funcții la pasul 2–3.",
     sev: "S", smax: "S max", link: "leagă", unlink: "dezleagă", del: "Șterge",
     riskHelp: "Fiecare legătură mod–cauză are o evaluare. S vine din efectele legate de mod (maximul). O se evaluează pe cauză, cu prevenția existentă; D pe detecția existentă.",
     noModes: "Nu ai încă moduri de defectare legate de cauze. Fă legăturile la pasul 4.", modeNoCause: "Modul nu e legat de nicio cauză.", effects: "Efecte",
@@ -526,7 +575,7 @@ const I18N = {
     fnOf: "Functions of the element", fnHint: "Write a function: verb + object + measurable condition.", fnPh: "e.g.: Ensures ... within ...", add: "Add", noFn: "No functions added for this element yet.",
     context: "Inputs", path: "Signal path", hwReqs: "Requirements and datasheet data", swReqs: "Software requirements", code: "Code",
     netHelp: "Write the failures under each function (in red). To link, drag from the dot of a failure onto a failure in the neighbouring column. Alternatively click a mode in the middle, then “link” on effects or causes. Remove a link with the × on the line.",
-    colEff: "Effects", colMode: "Failure modes", colCause: "Causes", failPh: "new failure…", noFns: "Add functions in step 2–3 first.",
+    colEff: "Effects", colMode: "Failure modes", colCause: "Causes", failPh: "new failure…", failPhSug: "choose from the list or type…", noFns: "Add functions in step 2–3 first.",
     sev: "S", smax: "S max", link: "link", unlink: "unlink", del: "Delete",
     riskHelp: "Every mode–cause link gets a rating. S comes from the effects linked to the mode (the maximum). O is rated on the cause with the existing prevention; D on the existing detection.",
     noModes: "There are no failure modes linked to causes yet. Make the links in step 4.", modeNoCause: "The mode is not linked to any cause.", effects: "Effects",
@@ -786,14 +835,16 @@ function renderNet(body, kind) {
       inner += '<div class="grp">' + (lvl === 3 ? '<span class="el">' + esc(tr(e.name)) + "</span>" : "");
       fns.forEach((fn) => {
         inner += '<span class="fn">' + esc(fn.text) + "</span>" + A.fails.filter((f) => f.fn === fn.id).map((f) => card(f, lvl)).join("") +
-          '<form class="addf" data-addf="' + fn.id + '"><input class="in" placeholder="' + esc(t("failPh")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
+          '<form class="addf" data-addf="' + fn.id + '"><input class="in"' + (lvl < 3 ? ' list="dl-net-' + lvl + '"' : "") + ' placeholder="' + esc(lvl < 3 ? t("failPhSug") : t("failPh")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
       });
       inner += "</div>";
     });
     if (!any) inner = '<p class="empty">' + esc(t("noFns")) + "</p>";
     return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span></div>" + inner + "</div>";
   };
-  body.innerHTML = '<div class="stack"><p class="muted">' + esc(t("netHelp")) + '</p><div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
+  const v = V(); const opts = (arr) => arr.map((x) => '<option value="' + esc(tr(x)) + '"></option>').join("");
+  const dls = '<datalist id="dl-net-1">' + opts(SUG_EFFECT.common.concat(SUG_EFFECT[kind])) + '</datalist><datalist id="dl-net-2">' + opts(SUG_MODE[kind === "hw" ? v.hw : v.sw]) + "</datalist>";
+  body.innerHTML = dls + '<div class="stack"><p class="muted">' + esc(t("netHelp")) + '</p><div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
     column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + refTables() + "</div>";
 
   const net = body.querySelector("#net");
