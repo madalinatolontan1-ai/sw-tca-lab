@@ -33,11 +33,11 @@
         var tstamp = when || new Date().toLocaleString(opts.lang === "en" ? "en-GB" : "ro-RO");
         setLast(opts.lab, tstamp); st.style.color = "var(--ok)"; st.textContent = T.ok + ". " + T.okAt.replace("{t}", tstamp); btn.disabled = false;
       };
-      var fail = function () { st.style.color = "var(--bad)"; st.textContent = T.fail; btn.disabled = false; };
+      var fail = function (why) { st.style.color = "var(--bad)"; st.textContent = T.fail + (why ? " [" + why + "]" : ""); btn.disabled = false; };
       /* text/plain body keeps it a simple CORS request (no preflight), which Apps Script accepts */
       fetch(ep, { method: "POST", body: body, redirect: "follow" })
         .then(function (r) { return r.json(); })
-        .then(function (j) { if (j && j.ok) done(j.received); else fail(); })
+        .then(function (j) { if (j && j.ok) done(j.received); else fail(j && j.error); })
         .catch(function () {
           /* the response could not be read: retry without reading it */
           fetch(ep, { method: "POST", mode: "no-cors", body: body }).then(function () { st.style.color = "var(--warn)"; st.textContent = T.unconf; btn.disabled = false; }, fail);
