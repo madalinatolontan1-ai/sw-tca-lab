@@ -31,13 +31,14 @@ The exercises run in the browser. Enter your name, group and the variant code yo
 
 - SW TCA (code coverage): **https://madalinatolontan1-ai.github.io/sw-tca-lab/sw/** (source: `docs/sw/index.html`)
 - HW TCA (production test coverage): **https://madalinatolontan1-ai.github.io/sw-tca-lab/hw/** (source: `docs/hw/index.html`)
+- FMEA (DFMEA, 7 AIAG-VDA steps): **https://madalinatolontan1-ai.github.io/sw-tca-lab/fmea/** (source: `docs/fmea/index.html`)
 
 ## Files
 
 - `src/can_node.h`, `src/can_node.c` – code under test
 - `test/test_demo.c` – demo test sets
 - `Makefile` – build with coverage, run the tests, generate the report
-- `docs/sw/index.html`, `docs/hw/index.html` – the lab apps (GitHub Pages); `docs/index.html` links both
+- `docs/sw/index.html`, `docs/hw/index.html`, `docs/fmea/index.html` – the lab apps (GitHub Pages); `docs/index.html` links both
 
 ---
 
@@ -48,4 +49,4 @@ Codespace (**Code → Codespaces → Create codespace on main**), rulează în t
 una dintre comenzile din tabel, apoi `make serve` și apasă **Open in Browser**. Fiecare student
 lucrează în propriul Codespace; modificările tale nu afectează repository-ul.
 
-Aplicațiile de laborator: SW TCA la `/sw/`, HW TCA la `/hw/` (linkurile de mai sus).
+Aplicațiile de laborator: SW TCA la `/sw/`, HW TCA la `/hw/`, FMEA la `/fmea/` (linkurile de mai sus).

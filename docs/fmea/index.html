@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FMEA Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: FMEA workbench in the APIS spirit. Header with student/variant; one tab per analysis (HW signal, SW function);
+   inside each, three steps: structure + functions, failure net (effects | modes | causes, linked by dragging), risk + optimization. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #17202D; --muted: #5B6578; --line: #D9DEE7;
+  --accent: #2443C4; --accent-ink: #FFFFFF; --accent-soft: #E6EBFB; --code-bg: #F9FAFC;
+  --ok: #1D7F54; --ok-bg: #DFF2E8; --bad: #B83434; --bad-bg: #FBE6E6; --warn: #9A6514; --warn-bg: #FAEFD8;
+  --fn: #1D7F54; --fail: #B83434; --link: #6C7891; --link-hi: #2443C4;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 6px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E131B; --surface: #151C27; --ink: #E5E9F1; --muted: #98A2B4; --line: #2A3343;
+    --accent: #8197FF; --accent-ink: #0E131B; --accent-soft: #1D2747; --code-bg: #111823;
+    --ok: #4BC287; --ok-bg: #12301F; --bad: #F07474; --bad-bg: #3A1B1D; --warn: #E2B15C; --warn-bg: #35290F;
+    --fn: #4BC287; --fail: #F07474; --link: #7D889C; --link-hi: #8197FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E131B; --surface: #151C27; --ink: #E5E9F1; --muted: #98A2B4; --line: #2A3343;
+  --accent: #8197FF; --accent-ink: #0E131B; --accent-soft: #1D2747; --code-bg: #111823;
+  --ok: #4BC287; --ok-bg: #12301F; --bad: #F07474; --bad-bg: #3A1B1D; --warn: #E2B15C; --warn-bg: #35290F;
+  --fn: #4BC287; --fail: #F07474; --link: #7D889C; --link-hi: #8197FF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+.wrap { max-width: 1440px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.01em; }
+h2 { font-size: 1.3rem; font-weight: 600; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+h4 { font-size: 0.95rem; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+.small { font-size: 0.86rem; }
+.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 14px; }
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.brand .sub { font-size: 0.85rem; color: var(--muted); }
+.student { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-left: auto; }
+.field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+input.in, select.in, textarea.in { border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); min-width: 0; }
+input.in, select.in { height: 34px; padding: 0 9px; }
+textarea.in { width: 100%; min-height: 70px; padding: 7px 9px; resize: vertical; }
+.w-name { width: 190px; } .w-small { width: 92px; }
+.btn { height: 34px; padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.sm { height: 28px; padding: 0 10px; font-size: 0.84rem; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--bad); border-color: transparent; }
+.x { border: 0; background: transparent; color: var(--muted); cursor: pointer; width: 24px; height: 24px; border-radius: 4px; line-height: 1; font-size: 1rem; flex: none; }
+.x:hover { color: var(--bad); background: var(--bad-bg); }
+.lang, .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.lang button { border: 0; background: transparent; padding: 0 10px; height: 32px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.lang button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 9px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+nav.tabs { border-bottom: 1px solid var(--line); background: var(--surface); }
+nav.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs button { border: 0; background: transparent; padding: 12px 14px 10px; cursor: pointer; border-bottom: 3px solid transparent; font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; color: var(--muted); white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:disabled { opacity: 0.45; cursor: not-allowed; }
+main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; gap: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.between { justify-content: space-between; }
+.intro { max-width: 78ch; display: flex; flex-direction: column; gap: 12px; }
+.notice { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; }
+.grid-start { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.grid-struct { display: grid; grid-template-columns: minmax(220px, 3fr) minmax(0, 5fr) minmax(0, 4fr); gap: 18px; align-items: start; }
+@media (max-width: 1100px) { .grid-struct { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .grid-struct > .ctx { grid-column: 1 / -1; } }
+@media (max-width: 760px) { .grid-start, .grid-struct { grid-template-columns: minmax(0, 1fr); } }
+table.mini { border-collapse: collapse; font-size: 0.84rem; width: 100%; }
+table.mini th, table.mini td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+table.mini th { background: var(--bg); font-weight: 600; }
+table.mini td.c { text-align: center; font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+
+/* step navigation */
+.steps { display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.steps button { flex: 1 1 200px; border: 0; border-right: 1px solid var(--line); background: transparent; padding: 10px 14px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+.steps button:last-child { border-right: 0; }
+.steps button .n { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.steps button .tt { font-family: var(--font-display); font-weight: 600; }
+.steps button[aria-current="step"] { background: var(--accent-soft); box-shadow: inset 0 -3px 0 var(--accent); }
+
+/* structure tree */
+.tree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tree li { display: block; }
+.tree button { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 7px 10px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.tree button[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tree .lvl { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); flex: none; }
+.tree .cnt { margin-left: auto; font-family: var(--font-mono); font-size: 0.75rem; color: var(--fn); flex: none; }
+.tree .l2 { padding-left: 16px; } .tree .l3 { padding-left: 32px; }
+.fnlist { display: flex; flex-direction: column; gap: 6px; }
+.fnitem { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 8px 7px 10px; }
+.fnitem .txt { color: var(--fn); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.addrow { display: flex; gap: 8px; }
+.addrow input { flex: 1; }
+.req { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: 0.86rem; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.req:last-child { border-bottom: 0; }
+.req .id { font-family: var(--font-mono); font-weight: 600; color: var(--accent); white-space: nowrap; }
+pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; overflow-x: auto; font: 0.8rem/1.5 var(--font-mono); }
+
+/* failure net */
+.netwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.net { position: relative; display: grid; grid-template-columns: repeat(3, minmax(250px, 1fr)); gap: 0 72px; padding: 16px 20px 24px; min-width: 940px; }
+.net svg.links { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.net svg.links path { fill: none; stroke: var(--link); stroke-width: 1.6; }
+.net svg.links path.hi { stroke: var(--link-hi); stroke-width: 2.4; }
+.net svg.links path.dim { opacity: 0.25; }
+.net svg.links path.tmp { stroke: var(--link-hi); stroke-dasharray: 5 4; }
+.net svg.links g.del { pointer-events: auto; cursor: pointer; }
+.net svg.links g.del circle { fill: var(--surface); stroke: var(--link); stroke-width: 1.2; }
+.net svg.links g.del text { fill: var(--muted); font: 600 11px var(--font-body); }
+.net svg.links g.del:hover circle { stroke: var(--bad); fill: var(--bad-bg); }
+.net svg.links g.del:hover text { fill: var(--bad); }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; z-index: 1; }
+.colhead { border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+.grp { display: flex; flex-direction: column; gap: 6px; }
+.grp .el { font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; }
+.grp .fn { color: var(--fn); font-size: 0.84rem; font-weight: 500; overflow-wrap: anywhere; }
+.fcard { position: relative; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+.fcard.mode { border-style: solid; }
+.fcard.mode.sel { background: #FFF6BF; border-color: #B79A10; color: #17202D; }
+:root[data-theme="dark"] .fcard.mode.sel { background: #3B3412; border-color: #C9AB2A; color: var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fcard.mode.sel { background: #3B3412; border-color: #C9AB2A; color: var(--ink); } }
+.fcard.mode { cursor: pointer; }
+.fcard.linked { border-color: var(--link-hi); border-style: solid; }
+.fcard .ft { color: var(--fail); font-size: 0.88rem; overflow-wrap: anywhere; padding-right: 22px; }
+.fcard .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--muted); }
+.fcard .meta select { height: 26px; font-size: 0.8rem; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.fcard > .x { position: absolute; right: 2px; top: 2px; }
+.hd { position: absolute; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--surface); border: 2px solid var(--link); cursor: crosshair; touch-action: none; z-index: 2; }
+.hd:hover, .hd.active { border-color: var(--link-hi); background: var(--accent-soft); }
+.hd.r { right: -8px; } .hd.l { left: -8px; }
+.lk { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; font-size: 0.75rem; padding: 1px 7px; cursor: pointer; color: var(--muted); }
+.lk.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.addf { display: flex; gap: 6px; }
+.addf input { flex: 1; height: 30px; font-size: 0.85rem; }
+.empty { border: 1px dashed var(--line); border-radius: var(--radius); padding: 10px; color: var(--muted); font-size: 0.86rem; }
+
+/* risk */
+.mode-block { display: flex; flex-direction: column; gap: 12px; }
+.mode-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
+.mode-head .ft { color: var(--fail); font-weight: 600; }
+.risk { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); }
+.risk .cause { color: var(--fail); font-weight: 500; }
+.states { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1100px) { .states { grid-template-columns: minmax(0, 1fr); } }
+.state { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); min-width: 0; }
+.state.off { opacity: 0.6; }
+.state h4 { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.ctl { display: flex; flex-wrap: wrap; gap: 6px; }
+.ctl .c { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 1px 4px 1px 9px; font-size: 0.8rem; max-width: 100%; }
+.ctl .c span { overflow-wrap: anywhere; }
+.ctl .c b { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.rate { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rate select { height: 30px; }
+.act { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
+.act .full { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.act .full > * { flex: 1 1 110px; }
+.act .full > .x { flex: none; align-self: center; }
+.act input, .act select { height: 30px; font-size: 0.84rem; }
+.ap { display: inline-block; min-width: 1.8em; text-align: center; border-radius: 4px; font-weight: 700; font-family: var(--font-mono); padding: 1px 6px; }
+.ap.H { background: var(--bad-bg); color: var(--bad); }
+.ap.M { background: var(--warn-bg); color: var(--warn); }
+.ap.L { background: var(--ok-bg); color: var(--ok); }
+.ap.na { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+details.ref { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+details.ref > summary { cursor: pointer; padding: 10px 14px; font-family: var(--font-display); font-weight: 600; }
+details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
+.refs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; align-items: start; }
+.checks { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem; }
+.checks li b { font-family: var(--font-mono); font-size: 0.72rem; padding: 0 6px; border-radius: 4px; flex: none; }
+.checks li.err b { background: var(--bad-bg); color: var(--bad); }
+.checks li.warn b { background: var(--warn-bg); color: var(--warn); }
+.report-frame { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 18px; overflow-x: auto; }
+.report-frame h1 { font-size: 1.35rem; } .report-frame h2 { font-size: 1.15rem; margin: 22px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.report-frame h3 { margin: 14px 0 6px; }
+.report-frame table.r { border-collapse: collapse; font-size: 0.8rem; }
+.report-frame table.r th, .report-frame table.r td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; }
+.report-frame table.r th { background: var(--bg); }
+.report-frame .fn { color: var(--fn); } .report-frame .fl { color: var(--fail); }
+.report-frame .H { background: var(--bad-bg); color: var(--bad); font-weight: 700; } .report-frame .M { background: var(--warn-bg); color: var(--warn); font-weight: 700; } .report-frame .L { background: var(--ok-bg); color: var(--ok); }
+.report-frame .chain { display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) 24px minmax(0, 1fr); gap: 6px; align-items: center; margin: 8px 0 14px; font-size: 0.82rem; }
+.report-frame .chain .box { border: 1px dashed var(--line); border-radius: 4px; padding: 4px 6px; margin: 3px 0; }
+.report-frame .chain .box.m { border: 1px solid #B79A10; background: #FFF6BF; color: #17202D; }
+.report-frame .chain .arr { text-align: center; color: var(--muted); }
+.report-frame .mx td { width: 46px; height: 26px; text-align: center; font-family: var(--font-mono); }
+.toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: var(--radius); font-size: 0.9rem; z-index: 20; max-width: calc(100vw - 32px); }
+@media (max-width: 640px) { .student { margin-left: 0; } .w-name { width: 150px; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>FMEA Lab</h1>
+      <span class="sub" data-i18n="subtitle"></span>
+    </div>
+    <form class="student" id="studentForm" autocomplete="off">
+      <div class="field"><label class="label" for="stName" data-i18n="name"></label><input id="stName" class="in w-name"></div>
+      <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="in w-small"></div>
+      <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="in w-small mono" placeholder="F1"></div>
+      <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" id="langRo" aria-pressed="true">RO</button>
+        <button type="button" id="langEn" aria-pressed="false">EN</button>
+      </div>
+    </form>
+  </div>
+</header>
+<nav class="tabs" aria-label="Sections"><div class="wrap" role="tablist" id="tabs"></div></nav>
+<main><div class="wrap" id="view"></div></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+/* ================================================================ case study data */
+const L = (ro, en) => ({ ro: ro, en: en });
+
+const HW_SIGNALS = {
+  TXD: {
+    name: L("Semnalul TXD (MCU → transceiver)", "TXD signal (MCU → transceiver)"),
+    path: L("Controllerul CAN al MCU → J1 pin 2 → U1 (MCP2551) pin 1 TXD.", "MCU CAN controller → J1 pin 2 → U1 (MCP2551) pin 1 TXD."),
+    reqs: [
+      ["HWR-TXD-01", L("TXD transmite transceiverului biții de trimis pe bus: nivel low = dominant, nivel high = recesiv.", "TXD carries the bits to be sent on the bus to the transceiver: low = dominant, high = recessive.")],
+      ["HWR-TXD-02", L("Nivelurile logice ale TXD sunt compatibile cu ieșirea MCU (logică de 5 V), conform datasheet-ului MCP2551.", "The TXD logic levels are compatible with the MCU output (5 V logic), as given in the MCP2551 datasheet.")],
+      ["HWR-TXD-03", L("Un TXD blocat în dominant nu trebuie să blocheze tot bus-ul (MCP2551 detectează dominantul permanent pe TXD și dezactivează driverele).", "A TXD stuck dominant shall not block the whole bus (the MCP2551 detects a permanent dominant TXD and disables its drivers).")],
+      ["HWR-TXD-04", L("Semnalul suportă rata de bit a aplicației, 500 kbit/s.", "The signal supports the application bit rate, 500 kbit/s.")]
+    ]
+  },
+  RXD: {
+    name: L("Semnalul RXD (transceiver → MCU)", "RXD signal (transceiver → MCU)"),
+    path: L("U1 (MCP2551) pin 4 RXD → J1 pin 3 → controllerul CAN al MCU.", "U1 (MCP2551) pin 4 RXD → J1 pin 3 → MCU CAN controller."),
+    reqs: [
+      ["HWR-RXD-01", L("RXD transmite MCU starea bus-ului: nivel low = dominant, nivel high = recesiv.", "RXD reports the bus state to the MCU: low = dominant, high = recessive.")],
+      ["HWR-RXD-02", L("Nivelurile logice ale RXD sunt compatibile cu intrarea MCU (logică de 5 V).", "The RXD logic levels are compatible with the MCU input (5 V logic).")],
+      ["HWR-RXD-03", L("Controllerul CAN își citește înapoi propriii biți prin RXD (bit monitoring); un RXD greșit produce erori de bit.", "The CAN controller reads back its own bits through RXD (bit monitoring); a wrong RXD causes bit errors.")],
+      ["HWR-RXD-04", L("Întârzierea TXD → bus → RXD rămâne în limitele datasheet-ului la 500 kbit/s.", "The TXD → bus → RXD delay stays within the datasheet limits at 500 kbit/s.")]
+    ]
+  },
+  VDD: {
+    name: L("Alimentarea VDD (5 V)", "VDD supply (5 V)"),
+    path: L("5 V de la senzor → J1 pin 1 → U1 pin 3 VDD; C3 100 nF între VDD și GND; LED1 + R5 1 kΩ între VDD și GND.", "5 V from the sensor → J1 pin 1 → U1 pin 3 VDD; C3 100 nF between VDD and GND; LED1 + R5 1 kΩ between VDD and GND."),
+    reqs: [
+      ["HWR-VDD-01", L("VDD alimentează U1 în domeniul 4,5–5,5 V.", "VDD supplies U1 within 4.5–5.5 V.")],
+      ["HWR-VDD-02", L("Consumul U1: recesiv ≤ 10 mA, dominant ≤ 75 mA; LED1 adaugă câțiva mA.", "U1 supply current: recessive ≤ 10 mA, dominant ≤ 75 mA; LED1 adds a few mA.")],
+      ["HWR-VDD-03", L("C3 (100 nF) decuplează VDD lângă pinul de alimentare al U1 (zgomot, EMC).", "C3 (100 nF) decouples VDD close to the U1 supply pin (noise, EMC).")],
+      ["HWR-VDD-04", L("Sub pragul de brown-out, U1 își pune driverele în înaltă impedanță (protecție POR / brown-out).", "Below the brown-out threshold U1 puts its drivers in high impedance (POR / brown-out protection).")],
+      ["HWR-VDD-05", L("LED1 indică prezența alimentării.", "LED1 indicates that the supply is present.")]
+    ]
+  },
+  CAN: {
+    name: L("Semnalul diferențial CANH / CANL", "CANH / CANL differential signal"),
+    path: L("U1 pin 7 CANH și pin 6 CANL → J2 pin 1 și 2; rețele RC R1/C1 (CANH) și R2/C2 (CANL), 100 Ω / 560 pF spre GND.", "U1 pin 7 CANH and pin 6 CANL → J2 pins 1 and 2; RC networks R1/C1 (CANH) and R2/C2 (CANL), 100 Ω / 560 pF to GND."),
+    reqs: [
+      ["HWR-CAN-01", L("Recesiv: CANH și CANL în jur de VDD/2 (2,0–3,0 V); dominant: tensiune diferențială 1,5–3,0 V pe sarcina de 60 Ω (ISO 11898-2).", "Recessive: CANH and CANL around VDD/2 (2.0–3.0 V); dominant: differential voltage 1.5–3.0 V on the 60 Ω load (ISO 11898-2).")],
+      ["HWR-CAN-02", L("Fronturile semnalului permit comunicația la 500 kbit/s.", "The signal edges allow communication at 500 kbit/s.")],
+      ["HWR-CAN-03", L("Rețelele RC reduc emisiile și cresc imunitatea (EMC) fără să afecteze comunicația.", "The RC networks reduce emissions and increase immunity (EMC) without affecting communication.")],
+      ["HWR-CAN-04", L("CANH și CANL rămân simetrice (EMC).", "CANH and CANL stay symmetrical (EMC).")],
+      ["HWR-CAN-05", L("Un scurtcircuit pe bus nu distruge transceiverul (protecție la scurtcircuit și termică în MCP2551).", "A short on the bus does not destroy the transceiver (short-circuit and thermal protection in the MCP2551).")]
+    ]
+  },
+  RS: {
+    name: L("Semnalul RS (selecția modului)", "RS signal (mode selection)"),
+    path: L("U1 pin 8 RS → R3 4,7 kΩ → GND.", "U1 pin 8 RS → R3 4.7 kΩ → GND."),
+    reqs: [
+      ["HWR-RS-01", L("RS selectează modul MCP2551: high-speed (RS la GND), slope-control (rezistor spre GND), standby (RS la nivel high).", "RS selects the MCP2551 mode: high-speed (RS to GND), slope-control (resistor to GND), standby (RS high).")],
+      ["HWR-RS-02", L("În funcționare normală nodul nu trebuie să intre în standby.", "In normal operation the node shall not enter standby.")],
+      ["HWR-RS-03", L("Panta fronturilor e aleasă ca un compromis între emisii (EMC) și rata de 500 kbit/s.", "The edge slope is chosen as a trade-off between emissions (EMC) and the 500 kbit/s bit rate.")]
+    ]
+  },
+  TERM: {
+    name: L("Terminația bus-ului (impedanța CANH–CANL)", "Bus termination (CANH–CANL impedance)"),
+    path: L("R4 120 Ω între CANH și JP1; JP1 conectează R4 la CANL; J2 pin 1–2 spre bus.", "R4 120 Ω between CANH and JP1; JP1 connects R4 to CANL; J2 pins 1–2 to the bus."),
+    reqs: [
+      ["HWR-TERM-01", L("Bus-ul are câte 120 Ω la fiecare capăt (60 Ω în total între CANH și CANL).", "The bus has 120 Ω at each end (60 Ω in total between CANH and CANL).")],
+      ["HWR-TERM-02", L("Terminația acestui nod se activează cu JP1 doar dacă nodul e la capătul bus-ului.", "This node's termination is enabled with JP1 only if the node is at the end of the bus.")],
+      ["HWR-TERM-03", L("R4 suportă puterea disipată în starea dominantă.", "R4 withstands the power dissipated in the dominant state.")],
+      ["HWR-TERM-04", L("Reflexiile pe bus rămân suficient de mici pentru 500 kbit/s.", "Reflections on the bus stay small enough for 500 kbit/s.")]
+    ]
+  }
+};
+
+const SW_SIG = {
+  dist: { def: ["/* Front radar, object longitudinal distance, unit 0.1 m */", "#define SENSOR_MIN         2        /*   0.2 m */", "#define SENSOR_MAX         2500     /* 250.0 m */", "#define SENSOR_MAX_STEP    80       /*   8.0 m per 72 ms cycle */"],
+          r1: "An object longitudinal distance lower than 2 (0.2 m) shall be rejected as implausible.", r2: "An object longitudinal distance greater than 2500 (250.0 m) shall be rejected as implausible.",
+          r4: "For every following measurement cycle, a distance within the range shall be accepted only if |value - previous| <= 80 (8.0 m).", lbl: L("distanța longitudinală", "longitudinal distance") },
+  vrel: { def: ["/* Front radar, object relative velocity, unit 0.1 m/s */", "#define SENSOR_MIN         (-1111)  /* -111.1 m/s (-400 km/h) */", "#define SENSOR_MAX         556      /*   55.6 m/s (+200 km/h) */", "#define SENSOR_MAX_STEP    14       /*    1.4 m/s per 72 ms cycle */"],
+          r1: "An object relative velocity lower than -1111 (-111.1 m/s) shall be rejected as implausible.", r2: "An object relative velocity greater than 556 (55.6 m/s) shall be rejected as implausible.",
+          r4: "For every following measurement cycle, a velocity within the range shall be accepted only if |value - previous| <= 14 (1.4 m/s).", lbl: L("viteza relativă", "relative velocity") },
+  lat:  { def: ["/* Front radar, object lateral distance, unit 0.1 m */", "#define SENSOR_MIN         (-700)   /* -70.0 m */", "#define SENSOR_MAX         700      /*  70.0 m */", "#define SENSOR_MAX_STEP    7        /*   0.7 m per 72 ms cycle */"],
+          r1: "An object lateral distance lower than -700 (-70.0 m) shall be rejected as implausible.", r2: "An object lateral distance greater than 700 (70.0 m) shall be rejected as implausible.",
+          r4: "For every following measurement cycle, a lateral distance within the range shall be accepted only if |value - previous| <= 7 (0.7 m).", lbl: L("poziția laterală", "lateral position") }
+};
+const SW_FUNCS = {
+  F1: { fn: "can_frame_is_valid", code: () => [
+      "#define CAN_MAX_DLC        8u", "#define CAN_STD_ID_MAX     0x7FFu", "#define CAN_EXT_ID_MAX     0x1FFFFFFFu", "",
+      "/* F1 - ASIL B */", "bool can_frame_is_valid(uint32_t id, uint8_t dlc, bool extended)", "{", "    uint32_t max_id = CAN_STD_ID_MAX;", "",
+      "    if (extended) {", "        max_id = CAN_EXT_ID_MAX;", "    }", "    if (dlc > CAN_MAX_DLC) {", "        return false;", "    }",
+      "    if (id > max_id) {", "        return false;", "    }", "    return true;", "}"],
+    reqs: () => [
+      ["SWR-F1-01", "The function shall reject a frame whose data length code (DLC) is greater than 8."],
+      ["SWR-F1-02", "For a standard frame, the function shall reject an identifier greater than 0x7FF."],
+      ["SWR-F1-03", "For an extended frame, the function shall reject an identifier greater than 0x1FFFFFFF."],
+      ["SWR-F1-04", "The function shall accept every frame that is not rejected by SWR-F1-01 to SWR-F1-03."]] },
+  F2: { fn: "sensor_value_plausible", code: (sig) => SW_SIG[sig].def.concat(["",
+      "/* F2 - ASIL B */", "bool sensor_value_plausible(int16_t value, int16_t previous, bool first_sample)", "{",
+      "    int32_t delta = (int32_t)value - (int32_t)previous;", "", "    if (delta < 0) {", "        delta = -delta;", "    }",
+      "    if ((value >= SENSOR_MIN) && (value <= SENSOR_MAX) &&", "        (first_sample || (delta <= SENSOR_MAX_STEP))) {", "        return true;", "    }", "    return false;", "}"]),
+    reqs: (sig) => [["SWR-F2-01", SW_SIG[sig].r1], ["SWR-F2-02", SW_SIG[sig].r2],
+      ["SWR-F2-03", "For the first detection of an object, every value within the range shall be accepted."], ["SWR-F2-04", SW_SIG[sig].r4]] },
+  F3: { fn: "can_error_state", code: () => [
+      "#define CAN_PASSIVE_LIMIT  127u", "#define CAN_BUSOFF_LIMIT   255u", "",
+      "/* F3 - ASIL B */", "can_err_state_t can_error_state(uint16_t tec, uint16_t rec)", "{", "    if (tec > CAN_BUSOFF_LIMIT) {", "        return CAN_STATE_BUS_OFF;", "    }",
+      "    if ((tec > CAN_PASSIVE_LIMIT) || (rec > CAN_PASSIVE_LIMIT)) {", "        return CAN_STATE_ERROR_PASSIVE;", "    }", "    return CAN_STATE_ERROR_ACTIVE;", "}"],
+    reqs: () => [
+      ["SWR-F3-01", "The function shall report BUS_OFF when the transmit error counter (TEC) is greater than 255."],
+      ["SWR-F3-02", "If SWR-F3-01 does not apply, the function shall report ERROR_PASSIVE when TEC or the receive error counter (REC) is greater than 127."],
+      ["SWR-F3-03", "In all other cases, the function shall report ERROR_ACTIVE."]] },
+  INT: { fn: "can_rx_handler", code: () => [
+      "/* Integration - calls can_error_state(), can_frame_is_valid(), sensor_value_plausible() */",
+      "rx_result_t can_rx_handler(const can_msg_t *msg, const sensor_ctx_t *ctx,", "                           uint16_t tec, uint16_t rec)", "{",
+      "    rx_result_t result = RX_REJECTED;", "    can_err_state_t state = can_error_state(tec, rec);", "", "    switch (state) {",
+      "    case CAN_STATE_ERROR_ACTIVE:", "    case CAN_STATE_ERROR_PASSIVE:", "        if (can_frame_is_valid(msg->id, msg->dlc, msg->extended) &&",
+      "            sensor_value_plausible(msg->value, ctx->previous, ctx->first_sample)) {", "            result = RX_ACCEPTED;", "        }", "        break;",
+      "    case CAN_STATE_BUS_OFF:", "        result = RX_BUS_OFF;", "        break;", "    default:", "        /* Defensive: unreachable for the states returned by can_error_state() */",
+      "        result = RX_FAULT;", "        break;", "    }", "    return result;", "}"],
+    reqs: () => [
+      ["SWR-INT-01", "When the CAN controller is BUS_OFF, a received frame shall be discarded and RX_BUS_OFF shall be returned."],
+      ["SWR-INT-02", "Otherwise, a frame shall be accepted (RX_ACCEPTED) only if it is valid (SWR-F1) and its sensor value is plausible (SWR-F2)."],
+      ["SWR-INT-03", "A frame that is not accepted shall return RX_REJECTED."]] }
+};
+
+const VARIANTS = {
+  F1: { hw: "TXD", sw: "F3" }, F2: { hw: "RXD", sw: "F2", sig: "dist" }, F3: { hw: "VDD", sw: "F1" },
+  F4: { hw: "CAN", sw: "INT" }, F5: { hw: "RS", sw: "F2", sig: "vrel" }, F6: { hw: "TERM", sw: "F2", sig: "lat" }
+};
+
+/* structure elements: level 1 effect, level 2 focus (mode), level 3 cause */
+const L1_NAME = L("Radar frontal (ASIL B)", "Front radar (ASIL B)");
+const HW_L3 = [["C1", L("Alegerea componentelor", "Component selection")], ["C2", L("Dimensionarea componentelor", "Component dimensioning")],
+  ["C3", L("Definiția semnalului (niveluri, temporizare)", "Signal definition (levels, timing)")], ["C4", L("Schema electrică", "Schematic")], ["C5", L("Layout PCB", "PCB layout")]];
+const SW_L3 = [["C1", L("Cerințele software (SWR)", "Software requirements (SWR)")], ["C2", L("Constante și parametri (#define)", "Constants and parameters (#define)")],
+  ["C3", L("Logica de decizie (condiții, operatori)", "Decision logic (conditions, operators)")], ["C4", L("Tipuri de date și domenii de valori", "Data types and value ranges")],
+  ["C5", L("Interfața (apeluri, valori returnate)", "Interface (calls, return values)")]];
+function elements(kind) {
+  const v = VARIANTS[S.variant];
+  const l2 = kind === "hw" ? HW_SIGNALS[v.hw].name : L("Funcția " + SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + SW_SIG[v.sig].lbl.ro : ""), "Function " + SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + SW_SIG[v.sig].lbl.en : ""));
+  const l3 = kind === "hw" ? HW_L3 : SW_L3;
+  return [{ id: "L1", lvl: 1, name: L1_NAME }, { id: "L2", lvl: 2, name: l2 }].concat(l3.map((x) => ({ id: x[0], lvl: 3, name: x[1] })));
+}
+
+/* rating tables: short paraphrase of the AIAG-VDA DFMEA scales (full tables in the course) */
+const SEV = [
+  [10, L("Afectează siguranța vehiculului, a ocupanților sau a altor participanți la trafic", "Affects safe operation of the vehicle, occupants or other road users")],
+  [9, L("Neconformitate cu reglementările", "Noncompliance with regulations")],
+  [8, L("Pierderea unei funcții principale a vehiculului", "Loss of a primary vehicle function")],
+  [7, L("Degradarea unei funcții principale a vehiculului", "Degradation of a primary vehicle function")],
+  [6, L("Pierderea unei funcții secundare", "Loss of a secondary vehicle function")],
+  [5, L("Degradarea unei funcții secundare", "Degradation of a secondary vehicle function")],
+  [4, L("Aspect, zgomot, vibrații sau haptică foarte deranjante", "Very objectionable appearance, sound, vibration or haptics")],
+  [3, L("Aspect, zgomot, vibrații sau haptică moderat deranjante", "Moderately objectionable appearance, sound, vibration or haptics")],
+  [2, L("Aspect, zgomot, vibrații sau haptică ușor deranjante", "Slightly objectionable appearance, sound, vibration or haptics")],
+  [1, L("Niciun efect perceptibil", "No discernible effect")]
+];
+const OCC = [
+  [10, L("Prima aplicare a unei tehnologii noi; fără experiență, standarde sau bune practici; prevenția nu poate prezice performanța", "First application of new technology; no experience, standards or best practices; prevention cannot predict performance")],
+  [9, L("Prima utilizare în firmă a unor inovații sau materiale noi; prevenția nu țintește cerințele", "First use in the company of innovations or new materials; prevention not targeted to the requirements")],
+  [8, L("Inovații folosite într-o aplicație nouă; puține standarde aplicabile; prevenția nu e un indicator fiabil", "Innovations used in a new application; few applicable standards; prevention is not a reliable indicator")],
+  [7, L("Design nou pe tehnologie similară, aplicație nouă; prevenția dă o indicație limitată", "New design on similar technology, new application; prevention gives a limited indication")],
+  [6, L("Similar cu designuri anterioare, condiții de utilizare modificate; standardele nu sunt suficiente", "Similar to previous designs, changed duty cycle or conditions; standards not sufficient")],
+  [5, L("Modificări de detaliu pe un design dovedit; lecțiile învățate sunt aplicate, dar nedovedite", "Detail changes to a proven design; lessons learned applied but not proven")],
+  [4, L("Design aproape identic, expunere scurtă în teren; conform bunelor practici", "Almost identical design, short field exposure; conforms to best practices")],
+  [3, L("Modificări de detaliu pe un design cunoscut, cu experiență de test sau teren comparabilă", "Detail changes to a known design with comparable test or field experience")],
+  [2, L("Design matur, aproape identic, cu expunere lungă în teren", "Almost identical mature design with long field exposure")],
+  [1, L("Cauza e eliminată prin prevenție; nu e posibilă prin design", "Cause eliminated by prevention; not possible by design")]
+];
+const DET = [
+  [10, L("Procedura de test nu e încă dezvoltată; metodă nedefinită", "Test procedure not yet developed; method not defined")],
+  [9, L("Metoda de test nu e concepută special pentru acest mod sau această cauză", "Test method not designed specifically for this mode or cause")],
+  [8, L("Metodă de test nouă, nedovedită", "New, unproven test method")],
+  [7, L("Metodă dovedită, planificată târziu (pass / fail)", "Proven method, planned late (pass / fail)")],
+  [6, L("Metodă dovedită, planificată târziu (test până la defectare)", "Proven method, planned late (test-to-failure)")],
+  [5, L("Metodă dovedită, planificată târziu (test de degradare)", "Proven method, planned late (degradation testing)")],
+  [4, L("Metodă dovedită, la timp înainte de lansare (pass / fail)", "Proven method, in time before release (pass / fail)")],
+  [3, L("Metodă dovedită, la timp înainte de lansare (test până la defectare)", "Proven method, in time before release (test-to-failure)")],
+  [2, L("Metodă dovedită, la timp înainte de lansare (test de degradare)", "Proven method, in time before release (degradation testing)")],
+  [1, L("Testele anterioare confirmă că defectul nu poate apărea, sau metoda îl detectează mereu", "Prior testing confirms the failure cannot occur, or the method always detects it")]
+];
+const AP = {
+  "9-10": { "8-10": "HHHH", "6-7": "HHHH", "4-5": "HHHM", "2-3": "HMLL", "1": "LLLL" },
+  "7-8":  { "8-10": "HHHH", "6-7": "HHHM", "4-5": "HMMM", "2-3": "MMLL", "1": "LLLL" },
+  "4-6":  { "8-10": "HHMM", "6-7": "MMML", "4-5": "MLLL", "2-3": "LLLL", "1": "LLLL" },
+  "2-3":  { "8-10": "MMLL", "6-7": "LLLL", "4-5": "LLLL", "2-3": "LLLL", "1": "LLLL" },
+  "1":    { "8-10": "LLLL", "6-7": "LLLL", "4-5": "LLLL", "2-3": "LLLL", "1": "LLLL" }
+};
+const SB = ["9-10", "7-8", "4-6", "2-3", "1"], OB = ["8-10", "6-7", "4-5", "2-3", "1"], DB = ["7-10", "5-6", "2-4", "1"];
+const sBand = (s) => (s >= 9 ? "9-10" : s >= 7 ? "7-8" : s >= 4 ? "4-6" : s >= 2 ? "2-3" : "1");
+const oBand = (o) => (o >= 8 ? "8-10" : o >= 6 ? "6-7" : o >= 4 ? "4-5" : o >= 2 ? "2-3" : "1");
+const dIdx = (d) => (d >= 7 ? 0 : d >= 5 ? 1 : d >= 2 ? 2 : 3);
+function apOf(s, o, d) { if (!s || !o || !d) return null; return AP[sBand(s)][oBand(o)][dIdx(d)]; }
+
+const CTRL = {
+  hw: {
+    pc: [L("Recomandările din datasheet-ul furnizorului", "Supplier datasheet recommendations"), L("Calcul worst case", "Worst-case calculation"), L("Simulare de circuit", "Circuit simulation"),
+      L("Simulare power integrity", "Power integrity simulation"), L("Analiza toleranțelor", "Tolerance analysis"), L("Reguli de design (design guidelines)", "Design guidelines"),
+      L("Componente din lista aprobată", "Components from the approved list"), L("Lecții învățate din proiecte anterioare", "Lessons learned from previous projects")],
+    dc: [L("Schematic review", "Schematic review"), L("Layout review", "Layout review"), L("Validarea modulului", "Module validation"), L("Test de validare a designului", "Design validation test"),
+      L("Test EMC (emisii și imunitate)", "EMC test (emissions and immunity)"), L("Test de conformitate CAN (ISO 11898-2)", "CAN conformance test (ISO 11898-2)"),
+      L("Măsurători cu osciloscopul pe prototip", "Oscilloscope measurements on the prototype"), L("Test de mediu și anduranță", "Environmental and endurance test")]
+  },
+  sw: {
+    pc: [L("Reguli de codare MISRA C", "MISRA C coding rules"), L("Review al cerințelor", "Requirements review"), L("Review al arhitecturii / designului SW", "SW architecture / design review"),
+      L("Programare defensivă (ghid intern)", "Defensive programming (internal guideline)"), L("Șabloane de cod reutilizate, dovedite", "Reused, proven code templates"), L("Trasabilitate cerințe → cod", "Requirements → code traceability")],
+    dc: [L("Testare pe cerințe (requirements-based)", "Requirements-based testing"), L("Teste la limite (boundary values)", "Boundary value tests"), L("Test unitar cu acoperire MC/DC", "Unit test with MC/DC coverage"),
+      L("Analiză statică", "Static analysis"), L("Code review", "Code review"), L("Test de integrare", "Integration test"), L("Test HIL (hardware-in-the-loop)", "HIL test (hardware-in-the-loop)")]
+  }
+};
+
+/* ================================================================ i18n */
+const I18N = {
+  ro: {
+    subtitle: "DFMEA după metoda AIAG-VDA în 7 pași · nodul CAN al radarului frontal",
+    name: "Nume și prenume", group: "Grupa", variant: "Varianta", load: "Încarcă varianta",
+    tabStart: "Pasul 1 · Planificare", tabReport: "Pasul 7 · Raport",
+    badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu F2).", variantLoaded: "Varianta {v} a fost încărcată.",
+    introTitle: "Analiza modurilor de defectare și a efectelor (DFMEA)",
+    introP1: "Faci două analize DFMEA pentru nodul CAN al radarului frontal: una pentru un semnal hardware și una pentru o funcție software. Metoda e aceeași pentru amândouă: cei 7 pași AIAG-VDA.",
+    introP2: "La fiecare analiză scrii funcțiile elementelor din structură și defectările lor, apoi legi efectul, modul de defectare și cauza într-o rețea de defectare. Pe fiecare legătură mod–cauză evaluezi riscul (S, O, D, AP) și propui optimizări.",
+    introP3: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
+    sysTitle: "Sistemul analizat",
+    sys: ["Radarul frontal (ASIL B) detectează obiectele din fața vehiculului și trimite lista de obiecte către ECU-ul ADAS pe CAN, la 500 kbit/s, cam la fiecare 72 ms.",
+      "Nodul CAN al radarului e format din controllerul CAN al MCU și modulul transceiver cu MCP2551: J1 (VDD, TXD, RXD, GND), U1 MCP2551, C3 100 nF, R3 4,7 kΩ pe RS, R4 120 Ω + JP1 (terminație), R1/C1 și R2/C2 100 Ω / 560 pF (filtre RC), J2 (CAN_H, CAN_L, GND), LED1 + R5 1 kΩ (indicator de alimentare).",
+      "Software-ul de recepție validează cadrele CAN, verifică plauzibilitatea valorilor radarului și urmărește starea de eroare a controllerului CAN (funcțiile din laboratorul de TCA SW)."],
+    fiveT: "Cei 5T (pasul 1)", tIntent: "Scop (inTent)", tTiming: "Moment (Timing)", tTeam: "Echipă (Team)", tTask: "Sarcini (Task)", tTools: "Instrumente (Tools)",
+    vIntent: "DFMEA pentru semnalul HW „{hw}” și funcția SW „{sw}” ale nodului CAN. Nu intră în analiză: restul radarului, vehiculul și procesul de fabricație (acela e subiect de PFMEA).",
+    vTiming: "Faza de design: după schemă și cod, înainte de validarea designului și de lansarea în producție.",
+    vTeam: "{name} (analist FMEA). Roluri pe care le reprezinți: proiectant HW, dezvoltator SW, inginer de test și validare, inginer de siguranță funcțională.",
+    vTask: "Pașii 2–6 pentru fiecare analiză; pasul 7 este raportul generat de aplicație.",
+    vTools: "Această aplicație, schema modulului, datasheet-ul MCP2551, codul și cerințele software, tabelele AIAG-VDA (S, O, D, AP).",
+    youGet: "Varianta ta", hwAnalysis: "Analiza HW", swAnalysis: "Analiza SW",
+    howTitle: "Cum lucrezi",
+    how: ["Pașii 2–3: în arborele de structură selectezi fiecare element și îi scrii funcțiile (ce trebuie să facă).", "Pasul 4: scrii defectările fiecărei funcții și legi efectele (stânga) de modurile de defectare (mijloc) și de cauze (dreapta), trăgând o linie de la un punct la o defectare.",
+      "Pasul 5: pentru fiecare legătură mod–cauză alegi controale de prevenție și de detecție și evaluezi S, O, D. AP rezultă din tabelul AIAG-VDA.", "Pasul 6: dacă AP e H sau M, propui acțiuni (starea revizuită). Dacă riscul rămâne H sau M, propui un test suplimentar.",
+      "Pasul 7: verifici lista de verificări și descarci raportul."],
+    st23: "Structură și funcții", st4: "Rețeaua de defectare", st56: "Risc și optimizare",
+    structTree: "Arborele de structură", lvl1: "Nivel efect", lvl2: "Nivel mod (element analizat)", lvl3: "Nivel cauză",
+    fnOf: "Funcțiile elementului", fnHint: "Scrie o funcție: verb + obiect + condiție măsurabilă.", fnPh: "ex.: Asigură ... în limitele ...", add: "Adaugă", noFn: "Încă nu ai adăugat funcții pentru acest element.",
+    context: "Date de intrare", path: "Traseul semnalului", hwReqs: "Cerințe și date din datasheet", swReqs: "Cerințe software", code: "Codul",
+    netHelp: "Scrie defectările sub fiecare funcție (cu roșu). Leagă: trage de la punctul unei defectări până pe o defectare din coloana vecină. Alternativ: dă clic pe un mod din mijloc, apoi pe „leagă” la efecte sau cauze. Ștergi o legătură cu × de pe linie.",
+    colEff: "Efecte", colMode: "Moduri de defectare", colCause: "Cauze", failPh: "defectare nouă…", noFns: "Adaugă întâi funcții la pasul 2–3.",
+    sev: "S", smax: "S max", link: "leagă", unlink: "dezleagă", del: "Șterge",
+    riskHelp: "Fiecare legătură mod–cauză are o evaluare. S vine din efectele legate de mod (maximul). O se evaluează pe cauză, cu prevenția existentă; D pe detecția existentă.",
+    noModes: "Nu ai încă moduri de defectare legate de cauze. Fă legăturile la pasul 4.", modeNoCause: "Modul nu e legat de nicio cauză.", effects: "Efecte",
+    init: "Starea inițială", rev: "Starea revizuită", extra: "Test suplimentar", pc: "Prevenție (PC)", dc: "Detecție (DC)", O: "O", D: "D", AP: "AP",
+    ctlPh: "alege din listă sau scrie…", revNeed: "Necesară: AP inițial este H sau M.", revOpt: "Opțională: AP inițial este L.",
+    actions: "Acțiuni", addAct: "+ acțiune", type: "Tip", resp: "Responsabil", due: "Termen", status: "Stare", stPlanned: "planificat", stProg: "în lucru", stDone: "finalizat",
+    oNew: "O nou", dNew: "D nou", extraNeed: "Necesar: după revizie riscul rămâne H sau M. Propune un test care să detecteze modul sau cauza.", extraNo: "Nu e necesar.",
+    extraPh: "test propus (metodă, condiții, criteriu de acceptare)", dExp: "D estimat", resid: "Justificarea riscului rezidual (riscul rămâne H sau M)",
+    refTables: "Tabele de referință (rezumat AIAG-VDA DFMEA)", sevT: "Severitate (S)", occT: "Ocurență (O)", detT: "Detecție (D)", apT: "Prioritate de acțiune (AP)",
+    refNote: "Rezumat orientativ; tabelele complete sunt în curs și în manualul AIAG-VDA.",
+    checks: "Verificări", noIssues: "Nicio problemă găsită.", err: "lipsă", warn: "atenție",
+    c_noFn: "Elementul „{el}” nu are funcții.", c_noFail: "Nu există moduri de defectare la nivelul mod.", c_modeNoEff: "Modul „{m}” nu e legat de niciun efect.", c_modeNoCause: "Modul „{m}” nu e legat de nicio cauză.",
+    c_noS: "Efectul „{e}” nu are S.", c_orphanE: "Efectul „{e}” nu e legat de niciun mod.", c_orphanC: "Cauza „{c}” nu e legată de niciun mod.",
+    c_noO: "„{m} ← {c}”: lipsește O.", c_noD: "„{m} ← {c}”: lipsește D.", c_noPC: "„{m} ← {c}”: nu are control de prevenție.", c_noDC: "„{m} ← {c}”: nu are control de detecție.",
+    c_noRev: "„{m} ← {c}”: AP {ap}; lipsesc acțiunile din starea revizuită.", c_revOD: "„{m} ← {c}”: completează O nou și D nou în starea revizuită.", c_actInc: "„{m} ← {c}”: o acțiune nu are text, responsabil sau termen.",
+    c_noExtra: "„{m} ← {c}”: după revizie AP {ap}; propune un test suplimentar.", c_extraD: "„{m} ← {c}”: testul suplimentar nu are D estimat.", c_noResid: "„{m} ← {c}”: riscul rămâne {ap}; justifică riscul rezidual.",
+    reportTitle: "Raport DFMEA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
+    reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.", student: "Student", generated: "Generat", structure: "Structură și funcții", netR: "Rețeaua de defectare", form: "Formularul DFMEA",
+    matrix: "Matricea de risc (număr de legături mod–cauză: inițial / final)", sumR: "Rezumat AP", initial: "inițial", final: "final", fe: "Efect (FE)", fm: "Mod (FM)", fc: "Cauză (FC)",
+    revActs: "Acțiuni (revizie)", apFinal: "AP final", none: "–", conclusion: "Concluzii (apar în raport)"
+  },
+  en: {
+    subtitle: "DFMEA with the 7-step AIAG-VDA method · CAN node of the front radar",
+    name: "Full name", group: "Group", variant: "Variant", load: "Load variant",
+    tabStart: "Step 1 · Planning", tabReport: "Step 7 · Report",
+    badVariant: "This variant code does not exist. Use the code you received in the lab (for example F2).", variantLoaded: "Variant {v} loaded.",
+    introTitle: "Failure mode and effects analysis (DFMEA)",
+    introP1: "You perform two DFMEAs for the CAN node of the front radar: one for a hardware signal and one for a software function. The method is the same for both: the 7 AIAG-VDA steps.",
+    introP2: "In each analysis you write the functions of the structure elements and their failures, then link effect, failure mode and cause in a failure net. On every mode–cause link you rate the risk (S, O, D, AP) and propose optimizations.",
+    introP3: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
+    sysTitle: "System under analysis",
+    sys: ["The front radar (ASIL B) detects the objects in front of the vehicle and sends the object list to the ADAS ECU over CAN at 500 kbit/s, about every 72 ms.",
+      "The radar CAN node consists of the MCU CAN controller and the MCP2551 transceiver module: J1 (VDD, TXD, RXD, GND), U1 MCP2551, C3 100 nF, R3 4.7 kΩ on RS, R4 120 Ω + JP1 (termination), R1/C1 and R2/C2 100 Ω / 560 pF (RC filters), J2 (CAN_H, CAN_L, GND), LED1 + R5 1 kΩ (power indicator).",
+      "The receive software validates the CAN frames, checks the plausibility of the radar values and tracks the error state of the CAN controller (the functions from the SW TCA lab)."],
+    fiveT: "The 5T (step 1)", tIntent: "InTent", tTiming: "Timing", tTeam: "Team", tTask: "Task", tTools: "Tools",
+    vIntent: "DFMEA for the HW signal “{hw}” and the SW function “{sw}” of the CAN node. Out of scope: the rest of the radar, the vehicle and the manufacturing process (that is a PFMEA topic).",
+    vTiming: "Design phase: after schematic and code, before design validation and production release.",
+    vTeam: "{name} (FMEA analyst). Roles you represent: HW designer, SW developer, test and validation engineer, functional safety engineer.",
+    vTask: "Steps 2–6 for each analysis; step 7 is the report generated by the app.",
+    vTools: "This app, the module schematic, the MCP2551 datasheet, the software code and requirements, the AIAG-VDA tables (S, O, D, AP).",
+    youGet: "Your variant", hwAnalysis: "HW analysis", swAnalysis: "SW analysis",
+    howTitle: "How to work",
+    how: ["Steps 2–3: in the structure tree select each element and write its functions (what it has to do).", "Step 4: write the failures of each function and link the effects (left) to the failure modes (middle) and the causes (right) by dragging a line from a dot to a failure.",
+      "Step 5: for every mode–cause link choose prevention and detection controls and rate S, O, D. The AP follows from the AIAG-VDA table.", "Step 6: if the AP is H or M, propose actions (revised state). If the risk is still H or M, propose an additional test.",
+      "Step 7: review the checks and download the report."],
+    st23: "Structure and functions", st4: "Failure net", st56: "Risk and optimization",
+    structTree: "Structure tree", lvl1: "Effect level", lvl2: "Mode level (element analysed)", lvl3: "Cause level",
+    fnOf: "Functions of the element", fnHint: "Write a function: verb + object + measurable condition.", fnPh: "e.g.: Ensures ... within ...", add: "Add", noFn: "No functions added for this element yet.",
+    context: "Inputs", path: "Signal path", hwReqs: "Requirements and datasheet data", swReqs: "Software requirements", code: "Code",
+    netHelp: "Write the failures under each function (in red). To link, drag from the dot of a failure onto a failure in the neighbouring column. Alternatively click a mode in the middle, then “link” on effects or causes. Remove a link with the × on the line.",
+    colEff: "Effects", colMode: "Failure modes", colCause: "Causes", failPh: "new failure…", noFns: "Add functions in step 2–3 first.",
+    sev: "S", smax: "S max", link: "link", unlink: "unlink", del: "Delete",
+    riskHelp: "Every mode–cause link gets a rating. S comes from the effects linked to the mode (the maximum). O is rated on the cause with the existing prevention; D on the existing detection.",
+    noModes: "There are no failure modes linked to causes yet. Make the links in step 4.", modeNoCause: "The mode is not linked to any cause.", effects: "Effects",
+    init: "Initial state", rev: "Revised state", extra: "Additional test", pc: "Prevention (PC)", dc: "Detection (DC)", O: "O", D: "D", AP: "AP",
+    ctlPh: "choose from the list or type…", revNeed: "Required: the initial AP is H or M.", revOpt: "Optional: the initial AP is L.",
+    actions: "Actions", addAct: "+ action", type: "Type", resp: "Responsible", due: "Due date", status: "Status", stPlanned: "planned", stProg: "in progress", stDone: "completed",
+    oNew: "New O", dNew: "New D", extraNeed: "Required: after the revision the risk is still H or M. Propose a test that detects the mode or the cause.", extraNo: "Not required.",
+    extraPh: "proposed test (method, conditions, acceptance criterion)", dExp: "Expected D", resid: "Residual risk justification (the risk stays H or M)",
+    refTables: "Reference tables (AIAG-VDA DFMEA summary)", sevT: "Severity (S)", occT: "Occurrence (O)", detT: "Detection (D)", apT: "Action priority (AP)",
+    refNote: "Indicative summary; the full tables are in the course and in the AIAG-VDA handbook.",
+    checks: "Checks", noIssues: "No issues found.", err: "missing", warn: "warning",
+    c_noFn: "Element “{el}” has no functions.", c_noFail: "There are no failure modes at mode level.", c_modeNoEff: "Mode “{m}” is not linked to any effect.", c_modeNoCause: "Mode “{m}” is not linked to any cause.",
+    c_noS: "Effect “{e}” has no S.", c_orphanE: "Effect “{e}” is not linked to any mode.", c_orphanC: "Cause “{c}” is not linked to any mode.",
+    c_noO: "“{m} ← {c}”: O is missing.", c_noD: "“{m} ← {c}”: D is missing.", c_noPC: "“{m} ← {c}”: no prevention control.", c_noDC: "“{m} ← {c}”: no detection control.",
+    c_noRev: "“{m} ← {c}”: AP {ap}; the revised state has no actions.", c_revOD: "“{m} ← {c}”: fill in the new O and new D in the revised state.", c_actInc: "“{m} ← {c}”: an action has no text, responsible or due date.",
+    c_noExtra: "“{m} ← {c}”: after the revision AP {ap}; propose an additional test.", c_extraD: "“{m} ← {c}”: the additional test has no expected D.", c_noResid: "“{m} ← {c}”: the risk stays {ap}; justify the residual risk.",
+    reportTitle: "DFMEA report", download: "Download report (.html)", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
+    reportHint: "Download the report and hand it in as instructed in the lab.", student: "Student", generated: "Generated", structure: "Structure and functions", netR: "Failure net", form: "DFMEA form",
+    matrix: "Risk matrix (number of mode–cause links: initial / final)", sumR: "AP summary", initial: "initial", final: "final", fe: "Effect (FE)", fm: "Mode (FM)", fc: "Cause (FC)",
+    revActs: "Actions (revision)", apFinal: "Final AP", none: "–", conclusion: "Conclusions (included in the report)"
+  }
+};
+let LANG = "ro";
+const t = (k) => (I18N[LANG][k] !== undefined ? I18N[LANG][k] : k);
+const tr = (o) => (o && typeof o === "object" ? o[LANG] : o);
+const fmt = (s, o) => s.replace(/\{(\w+)\}/g, (m, k) => (o[k] !== undefined ? o[k] : m));
+
+/* ================================================================ state */
+const STORE_KEY = "fmea-lab-v1";
+const blankA = () => ({ fns: [], fails: [], links: [], risk: {}, step: "s23", selEl: "L1", selMode: "" });
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", hw: blankA(), sw: blankA(), conclusion: "", seq: 1 };
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
+function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
+const nid = (p) => p + (S.seq++);
+const V = () => VARIANTS[S.variant];
+
+/* ================================================================ model helpers */
+const fnById = (A, id) => A.fns.find((f) => f.id === id);
+const failById = (A, id) => A.fails.find((f) => f.id === id);
+function lvlOfFail(A, f) { const fn = fnById(A, f.fn); if (!fn) return 0; return fn.el === "L1" ? 1 : fn.el === "L2" ? 2 : 3; }
+const failsAt = (A, lvl) => A.fails.filter((f) => lvlOfFail(A, f) === lvl);
+const linked = (A, m, x) => A.links.some((l) => l[0] === m && l[1] === x);
+const effectsOf = (A, m) => A.links.filter((l) => l[0] === m && lvlOfFail(A, failById(A, l[1])) === 1).map((l) => failById(A, l[1]));
+const causesOf = (A, m) => A.links.filter((l) => l[0] === m && lvlOfFail(A, failById(A, l[1])) === 3).map((l) => failById(A, l[1]));
+function sMax(A, m) { const s = effectsOf(A, m).map((e) => +e.s || 0); return s.length && Math.max.apply(null, s) > 0 ? Math.max.apply(null, s) : null; }
+const rkey = (m, c) => m + "|" + c;
+function riskRec(A, m, c) {
+  const k = rkey(m, c);
+  if (!A.risk[k]) A.risk[k] = { pc: [], dc: [], o: "", d: "", acts: [], o2: "", d2: "", xt: "", xd: "", resid: "" };
+  return A.risk[k];
+}
+function evalRisk(A, m, c) {
+  const r = A.risk[rkey(m, c)] || {}; const s = sMax(A, m);
+  const ap0 = apOf(s, +r.o, +r.d);
+  const hasRev = (r.acts || []).length > 0 && r.o2 && r.d2;
+  const o1 = hasRev ? +r.o2 : +r.o, d1 = hasRev ? +r.d2 : +r.d;
+  const ap1 = hasRev ? apOf(s, o1, d1) : null;
+  const afterRev = ap1 || ap0;
+  const extraNeeded = !!(hasRev && (ap1 === "H" || ap1 === "M"));
+  const apX = extraNeeded && r.xt && r.xd ? apOf(s, o1, Math.min(d1, +r.xd)) : null;
+  const fin = apX || afterRev;
+  return { s: s, ap0: ap0, ap1: ap1, apX: apX, fin: fin, hasRev: hasRev, extraNeeded: extraNeeded, r: r };
+}
+function removeFail(A, id) {
+  A.fails = A.fails.filter((f) => f.id !== id);
+  A.links = A.links.filter((l) => l[0] !== id && l[1] !== id);
+  Object.keys(A.risk).forEach((k) => { const p = k.split("|"); if (p[0] === id || p[1] === id) delete A.risk[k]; });
+  if (A.selMode === id) A.selMode = "";
+}
+function removeFn(A, id) { A.fails.filter((f) => f.fn === id).map((f) => f.id).forEach((fid) => removeFail(A, fid)); A.fns = A.fns.filter((f) => f.id !== id); }
+function toggleLink(A, a, b) {
+  const fa = failById(A, a), fb = failById(A, b); if (!fa || !fb) return false;
+  const la = lvlOfFail(A, fa), lb = lvlOfFail(A, fb);
+  let m, x;
+  if (la === 2 && (lb === 1 || lb === 3)) { m = a; x = b; } else if (lb === 2 && (la === 1 || la === 3)) { m = b; x = a; } else return false;
+  if (linked(A, m, x)) { A.links = A.links.filter((l) => !(l[0] === m && l[1] === x)); if (lvlOfFail(A, failById(A, x)) === 3) delete A.risk[rkey(m, x)]; }
+  else A.links.push([m, x]);
+  return true;
+}
+function addLink(A, a, b) {
+  const fa = failById(A, a), fb = failById(A, b); if (!fa || !fb) return false;
+  const la = lvlOfFail(A, fa), lb = lvlOfFail(A, fb);
+  let m, x;
+  if (la === 2 && (lb === 1 || lb === 3)) { m = a; x = b; } else if (lb === 2 && (la === 1 || la === 3)) { m = b; x = a; } else return false;
+  if (!linked(A, m, x)) A.links.push([m, x]);
+  return true;
+}
+
+/* ================================================================ checks */
+function checks(kind) {
+  const A = S[kind]; const out = [];
+  const add = (sev, key, o) => out.push({ sev: sev, msg: fmt(t(key), o || {}) });
+  const short = (s) => (s.length > 48 ? s.slice(0, 46) + "…" : s);
+  elements(kind).filter((e) => e.lvl < 3).forEach((e) => { if (!A.fns.some((f) => f.el === e.id)) add("err", "c_noFn", { el: tr(e.name) }); });
+  const modes = failsAt(A, 2);
+  if (!modes.length) add("err", "c_noFail");
+  modes.forEach((m) => {
+    if (!effectsOf(A, m.id).length) add("err", "c_modeNoEff", { m: short(m.text) });
+    const cs = causesOf(A, m.id);
+    if (!cs.length) add("err", "c_modeNoCause", { m: short(m.text) });
+    cs.forEach((c) => {
+      const ev = evalRisk(A, m.id, c.id); const r = ev.r; const o = { m: short(m.text), c: short(c.text) };
+      if (!r.o) add("err", "c_noO", o);
+      if (!r.d) add("err", "c_noD", o);
+      if (!(r.pc || []).length) add("warn", "c_noPC", o);
+      if (!(r.dc || []).length) add("warn", "c_noDC", o);
+      if ((ev.ap0 === "H" || ev.ap0 === "M") && !(r.acts || []).length) add("err", "c_noRev", Object.assign({ ap: ev.ap0 }, o));
+      if ((r.acts || []).length && (!r.o2 || !r.d2)) add("err", "c_revOD", o);
+      if ((r.acts || []).some((a) => !a.text || !a.resp || !a.due)) add("warn", "c_actInc", o);
+      if (ev.extraNeeded && !r.xt) add("err", "c_noExtra", Object.assign({ ap: ev.ap1 }, o));
+      if (ev.extraNeeded && r.xt && !r.xd) add("err", "c_extraD", o);
+      if ((ev.fin === "H" || ev.fin === "M") && ev.extraNeeded && r.xt && r.xd && !r.resid) add("err", "c_noResid", Object.assign({ ap: ev.fin }, o));
+    });
+  });
+  failsAt(A, 1).forEach((e) => {
+    if (!A.links.some((l) => l[1] === e.id)) add("warn", "c_orphanE", { e: short(e.text) });
+    else if (!e.s) add("err", "c_noS", { e: short(e.text) });
+  });
+  failsAt(A, 3).forEach((c) => { if (!A.links.some((l) => l[1] === c.id)) add("warn", "c_orphanC", { c: short(c.text) }); });
+  return out;
+}
+
+/* ================================================================ rendering helpers */
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function toast(msg) { const e = document.getElementById("toast"); e.textContent = msg; e.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { e.hidden = true; }, 2600); }
+let pendingFocus = null;
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach((n) => { n.textContent = t(n.dataset.i18n); });
+  document.getElementById("langRo").setAttribute("aria-pressed", String(LANG === "ro"));
+  document.getElementById("langEn").setAttribute("aria-pressed", String(LANG === "en"));
+}
+function hwLabel() { return tr(HW_SIGNALS[V().hw].name); }
+function swLabel() { const v = V(); return SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + tr(SW_SIG[v.sig].lbl) : ""); }
+function renderTabs() {
+  const box = document.getElementById("tabs");
+  const on = !!V();
+  const items = [["start", t("tabStart")], ["hw", "HW · " + (on ? hwLabel() : "–")], ["sw", "SW · " + (on ? swLabel() : "–")], ["report", t("tabReport")]];
+  box.innerHTML = items.map((it) => '<button role="tab" data-tab="' + it[0] + '" aria-selected="' + (S.tab === it[0]) + '"' + (it[0] !== "start" && !on ? " disabled" : "") + ">" + esc(it[1]) + "</button>").join("");
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.tab; save(); render(); window.scrollTo(0, 0); }));
+}
+function render() {
+  applyI18n(); renderTabs();
+  const view = document.getElementById("view");
+  if (S.tab === "start" || !V()) renderStart(view);
+  else if (S.tab === "report") renderReport(view);
+  else renderAnalysis(view, S.tab);
+  if (pendingFocus) { const n = view.querySelector(pendingFocus); if (n) n.focus(); pendingFocus = null; }
+}
+function renderStart(view) {
+  const v = V();
+  let h = '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p>" +
+    '<p class="notice">' + esc(v ? t("variantLoaded").replace("{v}", S.variant) : t("introP3")) + "</p></section>";
+  h += '<div class="grid-start"><div class="panel stack"><h3>' + esc(t("sysTitle")) + "</h3>" + t("sys").map((p) => "<p>" + esc(p) + "</p>").join("") + "</div>";
+  h += '<div class="panel stack"><h3>' + esc(t("howTitle")) + '</h3><ol style="margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px">' + t("how").map((p) => "<li>" + esc(p) + "</li>").join("") + "</ol></div></div>";
+  if (v) {
+    h += '<div class="panel stack"><div class="row between"><h3>' + esc(t("fiveT")) + '</h3><span class="chip">' + esc(t("youGet")) + " " + esc(S.variant) + " · ASIL B</span></div>" +
+      '<table class="mini"><tr><th style="width:170px">' + esc(t("tIntent")) + "</th><td>" + esc(fmt(t("vIntent"), { hw: hwLabel(), sw: swLabel() })) + "</td></tr>" +
+      "<tr><th>" + esc(t("tTiming")) + "</th><td>" + esc(t("vTiming")) + "</td></tr>" +
+      "<tr><th>" + esc(t("tTeam")) + "</th><td>" + esc(fmt(t("vTeam"), { name: S.name || "–" })) + "</td></tr>" +
+      "<tr><th>" + esc(t("tTask")) + "</th><td>" + esc(t("vTask")) + "</td></tr>" +
+      "<tr><th>" + esc(t("tTools")) + "</th><td>" + esc(t("vTools")) + "</td></tr></table></div>";
+  }
+  view.innerHTML = h;
+}
+
+/* ---------------------------------------------------------------- reference tables */
+function refTables() {
+  const tbl = (rows) => '<table class="mini">' + rows.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + "</table>";
+  const apRows = SB.map((sb) => OB.map((ob) => '<tr><td class="c">S ' + sb + '</td><td class="c">O ' + ob + "</td>" + AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("")).join("");
+  const ap = '<table class="mini"><tr><th>S</th><th>O</th><th>D 7–10</th><th>D 5–6</th><th>D 2–4</th><th>D 1</th></tr>' + apRows + "</table>";
+  const d = (k, body) => '<details class="ref"><summary>' + esc(t(k)) + "</summary><div>" + body + "</div></details>";
+  return '<div class="stack"><div class="row between"><span class="label">' + esc(t("refTables")) + '</span><span class="muted small">' + esc(t("refNote")) + '</span></div><div class="refs">' +
+    d("sevT", tbl(SEV)) + d("occT", tbl(OCC)) + d("detT", tbl(DET)) + d("apT", ap) + "</div></div>";
+}
+function checksPanel(kind) {
+  const c = checks(kind);
+  const errs = c.filter((x) => x.sev === "err").length;
+  return '<details class="ref"' + (S[kind].openChecks ? " open" : "") + ' data-checks="' + kind + '"><summary>' + esc(t("checks")) + " " +
+    (c.length ? '<span class="chip ' + (errs ? "bad" : "warn") + '">' + c.length + "</span>" : '<span class="chip ok">0</span>') + "</summary><div>" +
+    (c.length ? '<ul class="checks">' + c.map((x) => '<li class="' + x.sev + '"><b>' + esc(t(x.sev)) + "</b><span>" + esc(x.msg) + "</span></li>").join("") + "</ul>" : '<p class="muted">' + esc(t("noIssues")) + "</p>") +
+    "</div></details>";
+}
+
+/* ---------------------------------------------------------------- analysis tab */
+function renderAnalysis(view, kind) {
+  const A = S[kind];
+  const steps = [["s23", "2–3", t("st23")], ["s4", "4", t("st4")], ["s56", "5–6", t("st56")]];
+  let h = '<div class="row between"><h2>' + esc(kind === "hw" ? t("hwAnalysis") + " · " + hwLabel() : t("swAnalysis") + " · " + swLabel()) + '</h2><span class="chip">' + esc(S.variant) + " · ASIL B</span></div>";
+  h += '<nav class="steps" aria-label="Steps">' + steps.map((s) => '<button type="button" data-step="' + s[0] + '"' + (A.step === s[0] ? ' aria-current="step"' : "") + '><span class="n">' + (LANG === "ro" ? "Pașii " : "Steps ") + s[1] + '</span><span class="tt">' + esc(s[2]) + "</span></button>").join("") + "</nav>";
+  h += checksPanel(kind);
+  h += '<div id="stepBody"></div>';
+  view.innerHTML = h;
+  view.querySelectorAll("[data-step]").forEach((b) => b.addEventListener("click", () => { A.step = b.dataset.step; save(); render(); }));
+  view.querySelector("[data-checks]").addEventListener("toggle", (e) => { A.openChecks = e.target.open; save(); });
+  const body = view.querySelector("#stepBody");
+  if (A.step === "s23") renderStructure(body, kind);
+  else if (A.step === "s4") renderNet(body, kind);
+  else renderRisk(body, kind);
+}
+
+function contextPanel(kind) {
+  const v = V();
+  if (kind === "hw") {
+    const sg = HW_SIGNALS[v.hw];
+    return '<div class="panel stack ctx"><span class="label">' + esc(t("context")) + "</span><h4>" + esc(t("path")) + '</h4><p class="small">' + esc(tr(sg.path)) + "</p><h4>" + esc(t("hwReqs")) + "</h4><div>" +
+      sg.reqs.map((r) => '<div class="req"><span class="id">' + r[0] + "</span><span>" + esc(tr(r[1])) + "</span></div>").join("") + "</div></div>";
+  }
+  const f = SW_FUNCS[v.sw];
+  return '<div class="panel stack ctx"><span class="label">' + esc(t("context")) + "</span><h4>" + esc(t("swReqs")) + "</h4><div>" +
+    f.reqs(v.sig).map((r) => '<div class="req"><span class="id">' + r[0] + "</span><span>" + esc(r[1]) + "</span></div>").join("") + "</div><h4>" + esc(t("code")) + '</h4><pre class="code">' + esc(f.code(v.sig).join("\n")) + "</pre></div>";
+}
+function renderStructure(body, kind) {
+  const A = S[kind]; const els = elements(kind);
+  if (!els.some((e) => e.id === A.selEl)) A.selEl = "L1";
+  const sel = els.find((e) => e.id === A.selEl);
+  const lvlName = (l) => t(l === 1 ? "lvl1" : l === 2 ? "lvl2" : "lvl3");
+  const tree = '<ul class="tree">' + els.map((e) => {
+    const n = A.fns.filter((f) => f.el === e.id).length;
+    return '<li class="l' + e.lvl + '"><button type="button" data-el="' + e.id + '"' + (e.id === A.selEl ? ' aria-current="true"' : "") + '><span class="lvl">N' + e.lvl + "</span><span>" + esc(tr(e.name)) + '</span><span class="cnt">' + (n ? "f " + n : "") + "</span></button></li>";
+  }).join("") + "</ul>";
+  const fns = A.fns.filter((f) => f.el === sel.id);
+  const list = fns.length ? '<div class="fnlist">' + fns.map((f) => '<div class="fnitem"><span class="txt">' + esc(f.text) + '</span><button class="x" type="button" data-delfn="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button></div>').join("") + "</div>" : '<p class="empty">' + esc(t("noFn")) + "</p>";
+  body.innerHTML = '<div class="grid-struct"><div class="panel stack"><span class="label">' + esc(t("structTree")) + "</span>" + tree + '<p class="muted small">N1 ' + esc(t("lvl1")) + " · N2 " + esc(t("lvl2")) + " · N3 " + esc(t("lvl3")) + "</p></div>" +
+    '<div class="panel stack"><span class="label">' + esc(lvlName(sel.lvl)) + "</span><h3>" + esc(tr(sel.name)) + "</h3><h4>" + esc(t("fnOf")) + "</h4>" + list +
+    '<form class="addrow" id="addFn"><input class="in" id="fnText" placeholder="' + esc(t("fnPh")) + '" aria-label="' + esc(t("fnOf")) + '"><button class="btn primary" type="submit">' + esc(t("add")) + '</button></form><p class="muted small">' + esc(t("fnHint")) + "</p></div>" +
+    contextPanel(kind) + "</div>";
+  body.querySelectorAll("[data-el]").forEach((b) => b.addEventListener("click", () => { A.selEl = b.dataset.el; save(); render(); }));
+  body.querySelectorAll("[data-delfn]").forEach((b) => b.addEventListener("click", () => { removeFn(A, b.dataset.delfn); save(); render(); }));
+  body.querySelector("#addFn").addEventListener("submit", (e) => {
+    e.preventDefault(); const v = body.querySelector("#fnText").value.trim(); if (!v) return;
+    A.fns.push({ id: nid("f"), el: A.selEl, text: v }); pendingFocus = "#fnText"; save(); render();
+  });
+}
+
+/* ---------------------------------------------------------------- failure net */
+function renderNet(body, kind) {
+  const A = S[kind]; const els = elements(kind);
+  const sel = A.selMode && failById(A, A.selMode) ? A.selMode : "";
+  const card = (f, lvl) => {
+    const isMode = lvl === 2; const on = sel && (f.id === sel || linked(A, sel, f.id));
+    let meta = "";
+    if (lvl === 1) meta = '<label>' + esc(t("sev")) + ' <select data-sev="' + f.id + '" aria-label="S"><option value="">–</option>' + [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => '<option value="' + n + '"' + (String(f.s) === String(n) ? " selected" : "") + ">" + n + "</option>").join("") + "</select></label>";
+    if (isMode) { const s = sMax(A, f.id); meta = "<span>" + esc(t("smax")) + " = <b>" + (s || "–") + "</b></span>"; }
+    if (!isMode && sel) meta += '<button type="button" class="lk' + (linked(A, sel, f.id) ? " on" : "") + '" data-tlink="' + f.id + '">' + esc(linked(A, sel, f.id) ? t("unlink") : t("link")) + "</button>";
+    const hds = (lvl === 1 ? '<span class="hd r" data-h="' + f.id + '"></span>' : lvl === 3 ? '<span class="hd l" data-h="' + f.id + '"></span>' : '<span class="hd l" data-h="' + f.id + '"></span><span class="hd r" data-h="' + f.id + '"></span>');
+    return '<div class="fcard' + (isMode ? " mode" : "") + (isMode && f.id === sel ? " sel" : "") + (on && !isMode ? " linked" : "") + '" data-fid="' + f.id + '" data-lvl="' + lvl + '"' + (isMode ? ' tabindex="0" role="button"' : "") + ">" +
+      '<span class="ft">' + esc(f.text) + "</span>" + (meta ? '<div class="meta">' + meta + "</div>" : "") +
+      '<button class="x" type="button" data-delf="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button>' + hds + "</div>";
+  };
+  const column = (lvl, title) => {
+    const lels = els.filter((e) => e.lvl === lvl);
+    let inner = "";
+    let any = false;
+    lels.forEach((e) => {
+      const fns = A.fns.filter((f) => f.el === e.id); if (!fns.length) return; any = true;
+      inner += '<div class="grp">' + (lvl === 3 ? '<span class="el">' + esc(tr(e.name)) + "</span>" : "");
+      fns.forEach((fn) => {
+        inner += '<span class="fn">' + esc(fn.text) + "</span>" + A.fails.filter((f) => f.fn === fn.id).map((f) => card(f, lvl)).join("") +
+          '<form class="addf" data-addf="' + fn.id + '"><input class="in" placeholder="' + esc(t("failPh")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
+      });
+      inner += "</div>";
+    });
+    if (!any) inner = '<p class="empty">' + esc(t("noFns")) + "</p>";
+    return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span></div>" + inner + "</div>";
+  };
+  body.innerHTML = '<div class="stack"><p class="muted">' + esc(t("netHelp")) + '</p><div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
+    column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + refTables() + "</div>";
+
+  const net = body.querySelector("#net");
+  body.querySelectorAll("[data-sev]").forEach((n) => n.addEventListener("change", () => { const f = failById(A, n.dataset.sev); f.s = n.value; save(); render(); }));
+  body.querySelectorAll("[data-delf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); removeFail(A, n.dataset.delf); save(); render(); }));
+  body.querySelectorAll("[data-tlink]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); toggleLink(A, sel, n.dataset.tlink); save(); render(); }));
+  body.querySelectorAll("[data-addf]").forEach((n) => n.addEventListener("submit", (e) => {
+    e.preventDefault(); const inp = n.querySelector("input"); const v = inp.value.trim(); if (!v) return;
+    A.fails.push({ id: nid("x"), fn: n.dataset.addf, text: v, s: "" }); pendingFocus = '[data-fin="' + n.dataset.addf + '"]'; save(); render();
+  }));
+  body.querySelectorAll(".fcard.mode").forEach((n) => {
+    const pick = () => { A.selMode = A.selMode === n.dataset.fid ? "" : n.dataset.fid; save(); render(); };
+    n.addEventListener("click", (e) => { if (e.target.closest("button, select, .hd, input")) return; pick(); });
+    n.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target === n) { e.preventDefault(); pick(); } });
+  });
+  drawLinks(A, net, sel);
+  /* drag to link */
+  net.querySelectorAll(".hd").forEach((hd) => hd.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const from = hd.dataset.h; const svg = net.querySelector("#links"); const nr = net.getBoundingClientRect();
+    const hr = hd.getBoundingClientRect(); const x0 = hr.left + hr.width / 2 - nr.left, y0 = hr.top + hr.height / 2 - nr.top;
+    const tmp = document.createElementNS("http://www.w3.org/2000/svg", "path"); tmp.setAttribute("class", "tmp"); svg.appendChild(tmp);
+    hd.classList.add("active");
+    try { hd.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    const move = (ev) => { const x = ev.clientX - nr.left, y = ev.clientY - nr.top; tmp.setAttribute("d", curve(x0, y0, x, y)); };
+    const up = (ev) => {
+      hd.removeEventListener("pointermove", move); hd.removeEventListener("pointerup", up); hd.removeEventListener("pointercancel", up);
+      hd.classList.remove("active"); tmp.remove();
+      const el = document.elementFromPoint(ev.clientX, ev.clientY); const target = el && el.closest(".fcard");
+      if (target && target.dataset.fid !== from && addLink(A, from, target.dataset.fid)) { save(); render(); }
+    };
+    hd.addEventListener("pointermove", move); hd.addEventListener("pointerup", up); hd.addEventListener("pointercancel", up);
+  }));
+}
+function curve(x1, y1, x2, y2) { const dx = Math.max(30, Math.abs(x2 - x1) / 2); return "M" + x1 + "," + y1 + " C" + (x1 + (x2 >= x1 ? dx : -dx)) + "," + y1 + " " + (x2 - (x2 >= x1 ? dx : -dx)) + "," + y2 + " " + x2 + "," + y2; }
+function drawLinks(A, net, sel) {
+  const svg = net.querySelector("#links"); if (!svg) return;
+  svg.setAttribute("width", net.scrollWidth); svg.setAttribute("height", net.scrollHeight);
+  const nr = net.getBoundingClientRect();
+  const pt = (fid, side) => { const n = net.querySelector('.fcard[data-fid="' + fid + '"] .hd.' + side); if (!n) return null; const r = n.getBoundingClientRect(); return [r.left + r.width / 2 - nr.left, r.top + r.height / 2 - nr.top]; };
+  let g = "";
+  A.links.forEach((l) => {
+    const x = failById(A, l[1]); if (!x) return; const lvl = lvlOfFail(A, x);
+    const a = lvl === 1 ? pt(l[1], "r") : pt(l[0], "r"); const b = lvl === 1 ? pt(l[0], "l") : pt(l[1], "l"); if (!a || !b) return;
+    const cls = sel ? (l[0] === sel ? "hi" : "dim") : "";
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    g += '<path class="' + cls + '" d="' + curve(a[0], a[1], b[0], b[1]) + '"/><g class="del" data-del="' + l[0] + "|" + l[1] + '" role="button" aria-label="' + esc(t("unlink")) + '"><title>' + esc(t("unlink")) + '</title><circle cx="' + mx + '" cy="' + my + '" r="8"/><text x="' + mx + '" y="' + (my + 4) + '" text-anchor="middle">×</text></g>';
+  });
+  svg.innerHTML = g;
+  svg.querySelectorAll("[data-del]").forEach((n) => n.addEventListener("click", () => { const p = n.dataset.del.split("|"); toggleLink(A, p[0], p[1]); save(); render(); }));
+}
+let resizeT = null;
+window.addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(() => { const net = document.getElementById("net"); if (net && (S.tab === "hw" || S.tab === "sw")) drawLinks(S[S.tab], net, S[S.tab].selMode); }, 120); });
+
+/* ---------------------------------------------------------------- risk + optimization */
+function apChip(ap) { return '<span class="ap ' + (ap || "na") + '">' + (ap || "–") + "</span>"; }
+function sel10(key, val, label) { return '<label class="row" style="gap:6px">' + esc(label) + ' <select class="in" data-r="' + key + '" aria-label="' + esc(label) + '"><option value="">–</option>' + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => '<option value="' + n + '"' + (String(val) === String(n) ? " selected" : "") + ">" + n + "</option>").join("") + "</select></label>"; }
+function ctlBlock(kind, k, list, field) {
+  const dl = "dl-" + kind + "-" + field;
+  return '<div class="stack" style="gap:6px"><span class="label">' + esc(t(field)) + '</span><div class="ctl">' + list.map((c, i) => '<span class="c"><span>' + esc(c) + '</span><button class="x" type="button" data-rmctl="' + k + "|" + field + "|" + i + '" aria-label="' + esc(t("del")) + '">×</button></span>').join("") + "</div>" +
+    '<form class="addf" data-addctl="' + k + "|" + field + '"><input class="in" list="' + dl + '" placeholder="' + esc(t("ctlPh")) + '" aria-label="' + esc(t(field)) + '"><button class="btn sm" type="submit">+</button></form></div>';
+}
+function renderRisk(body, kind) {
+  const A = S[kind]; const modes = failsAt(A, 2).filter((m) => causesOf(A, m.id).length);
+  const lists = ["pc", "dc"].map((f) => '<datalist id="dl-' + kind + "-" + f + '">' + CTRL[kind][f].map((c) => '<option value="' + esc(tr(c)) + '"></option>').join("") + "</datalist>").join("") +
+    '<datalist id="dl-' + kind + '-all">' + CTRL[kind].pc.concat(CTRL[kind].dc).map((c) => '<option value="' + esc(tr(c)) + '"></option>').join("") + "</datalist>";
+  let h = lists + '<p class="muted">' + esc(t("riskHelp")) + "</p>" + refTables();
+  if (!modes.length) h += '<p class="empty">' + esc(t("noModes")) + "</p>";
+  modes.forEach((m) => {
+    const effs = effectsOf(A, m.id); const s = sMax(A, m.id);
+    h += '<section class="panel mode-block"><div class="mode-head"><span class="label">' + esc(t("fm")) + '</span><span class="ft">' + esc(m.text) + '</span><span class="chip">' + esc(t("smax")) + " = " + (s || "–") + "</span></div>" +
+      '<p class="small"><span class="muted">' + esc(t("effects")) + ":</span> " + (effs.length ? effs.map((e) => '<span style="color:var(--fail)">' + esc(e.text) + "</span> (S " + (e.s || "–") + ")").join("; ") : "–") + "</p>";
+    causesOf(A, m.id).forEach((c) => {
+      const k = rkey(m.id, c.id); riskRec(A, m.id, c.id); const ev = evalRisk(A, m.id, c.id); const r = ev.r;
+      const need = ev.ap0 === "H" || ev.ap0 === "M";
+      const acts = (r.acts || []).map((a, i) => '<div class="act"><select class="in" data-act="' + k + "|" + i + '|type" aria-label="' + esc(t("type")) + '"><option' + (a.type === "P" ? " selected" : "") + '>P</option><option' + (a.type === "D" ? " selected" : "") + ">D</option></select>" +
+        '<input class="in" list="dl-' + kind + '-all" data-act="' + k + "|" + i + '|text" value="' + esc(a.text) + '" placeholder="' + esc(t("actions")) + '" aria-label="' + esc(t("actions")) + '">' +
+        '<div class="full"><input class="in" data-act="' + k + "|" + i + '|resp" value="' + esc(a.resp) + '" placeholder="' + esc(t("resp")) + '" aria-label="' + esc(t("resp")) + '">' +
+        '<input class="in" type="date" data-act="' + k + "|" + i + '|due" value="' + esc(a.due) + '" aria-label="' + esc(t("due")) + '">' +
+        '<select class="in" data-act="' + k + "|" + i + '|status" aria-label="' + esc(t("status")) + '">' + [["planned", "stPlanned"], ["progress", "stProg"], ["done", "stDone"]].map((o) => '<option value="' + o[0] + '"' + (a.status === o[0] ? " selected" : "") + ">" + esc(t(o[1])) + "</option>").join("") + "</select>" +
+        '<button class="x" type="button" data-rmact="' + k + "|" + i + '" aria-label="' + esc(t("del")) + '">×</button></div></div>').join("");
+      h += '<div class="risk" data-k="' + k + '"><div><span class="label">' + esc(t("fc")) + '</span> <span class="cause">' + esc(c.text) + "</span></div><div class=\"states\">" +
+        '<div class="state"><h4>' + esc(t("init")) + " " + apChip(ev.ap0) + "</h4>" + ctlBlock(kind, k, r.pc, "pc") + ctlBlock(kind, k, r.dc, "dc") +
+          '<div class="rate"><span class="muted small">S ' + (s || "–") + "</span>" + sel10(k + "|o", r.o, "O") + sel10(k + "|d", r.d, "D") + "</div></div>" +
+        '<div class="state' + (need || (r.acts || []).length ? "" : " off") + '"><h4>' + esc(t("rev")) + " " + apChip(ev.ap1) + '</h4><p class="muted small">' + esc(need ? t("revNeed") : t("revOpt")) + "</p>" + acts +
+          '<button class="btn sm" type="button" data-addact="' + k + '">' + esc(t("addAct")) + "</button>" +
+          ((r.acts || []).length ? '<div class="rate">' + sel10(k + "|o2", r.o2, t("oNew")) + sel10(k + "|d2", r.d2, t("dNew")) + "</div>" : "") + "</div>" +
+        '<div class="state' + (ev.extraNeeded ? "" : " off") + '"><h4>' + esc(t("extra")) + " " + apChip(ev.apX) + '</h4><p class="muted small">' + esc(ev.extraNeeded ? t("extraNeed") : t("extraNo")) + "</p>" +
+          (ev.extraNeeded ? '<textarea class="in" data-rt="' + k + '|xt" placeholder="' + esc(t("extraPh")) + '" aria-label="' + esc(t("extra")) + '">' + esc(r.xt) + "</textarea>" + '<div class="rate">' + sel10(k + "|xd", r.xd, t("dExp")) + "</div>" +
+            ((ev.fin === "H" || ev.fin === "M") && r.xt && r.xd ? '<label class="stack" style="gap:4px"><span class="small">' + esc(t("resid")) + '</span><textarea class="in" data-rt="' + k + '|resid">' + esc(r.resid) + "</textarea></label>" : "") : "") +
+        "</div></div></div>";
+    });
+    h += "</section>";
+  });
+  body.innerHTML = '<div class="stack">' + h + "</div>";
+  const rec = (k) => A.risk[k];
+  body.querySelectorAll("select[data-r]").forEach((n) => n.addEventListener("change", () => { const p = n.dataset.r.split("|"); rec(p[0] + "|" + p[1])[p[2]] = n.value; save(); render(); }));
+  body.querySelectorAll("[data-rt]").forEach((n) => {
+    const p = n.dataset.rt.split("|"); const key = p[0] + "|" + p[1];
+    n.addEventListener("input", () => { rec(key)[p[2]] = n.value; save(); });
+    n.addEventListener("change", () => { rec(key)[p[2]] = n.value.trim(); save(); render(); });
+  });
+  body.querySelectorAll("[data-addctl]").forEach((n) => n.addEventListener("submit", (e) => {
+    e.preventDefault(); const p = n.dataset.addctl.split("|"); const v = n.querySelector("input").value.trim(); if (!v) return;
+    const r = rec(p[0] + "|" + p[1]); if (!r[p[2]].includes(v)) r[p[2]].push(v); pendingFocus = '[data-addctl="' + n.dataset.addctl + '"] input'; save(); render();
+  }));
+  body.querySelectorAll("[data-rmctl]").forEach((n) => n.addEventListener("click", () => { const p = n.dataset.rmctl.split("|"); rec(p[0] + "|" + p[1])[p[2]].splice(+p[3], 1); save(); render(); }));
+  body.querySelectorAll("[data-addact]").forEach((n) => n.addEventListener("click", () => { const r = rec(n.dataset.addact); r.acts.push({ type: "D", text: "", resp: "", due: "", status: "planned" }); save(); render(); }));
+  body.querySelectorAll("[data-rmact]").forEach((n) => n.addEventListener("click", () => { const p = n.dataset.rmact.split("|"); const r = rec(p[0] + "|" + p[1]); r.acts.splice(+p[2], 1); if (!r.acts.length) { r.o2 = ""; r.d2 = ""; } save(); render(); }));
+  body.querySelectorAll("[data-act]").forEach((n) => {
+    const p = n.dataset.act.split("|"); const a = () => rec(p[0] + "|" + p[1]).acts[+p[2]];
+    if (n.tagName === "SELECT" || n.type === "date") n.addEventListener("change", () => { a()[p[3]] = n.value; save(); render(); });
+    else { n.addEventListener("input", () => { a()[p[3]] = n.value; save(); }); n.addEventListener("change", () => { a()[p[3]] = n.value.trim(); save(); render(); }); }
+  });
+}
+
+/* ================================================================ report */
+function analysisReport(kind, text) {
+  const A = S[kind]; const els = elements(kind); const parts = [];
+  const title = kind === "hw" ? t("hwAnalysis") + " · " + hwLabel() : t("swAnalysis") + " · " + swLabel();
+  parts.push("<h2>" + esc(title) + "</h2>"); text.push("", "== " + title + " ==");
+  parts.push("<h3>" + esc(t("structure")) + "</h3><ul>" + els.map((e) => "<li><b>N" + e.lvl + " " + esc(tr(e.name)) + "</b>" +
+    (A.fns.filter((f) => f.el === e.id).length ? "<ul>" + A.fns.filter((f) => f.el === e.id).map((f) => '<li class="fn">' + esc(f.text) + (A.fails.filter((x) => x.fn === f.id).length ? "<ul>" + A.fails.filter((x) => x.fn === f.id).map((x) => '<li class="fl">' + esc(x.text) + "</li>").join("") + "</ul>" : "") + "</li>").join("") + "</ul>" : "") + "</li>").join("") + "</ul>");
+  els.forEach((e) => A.fns.filter((f) => f.el === e.id).forEach((f) => { text.push("N" + e.lvl + " " + tr(e.name) + " | F: " + f.text); A.fails.filter((x) => x.fn === f.id).forEach((x) => text.push("   - " + x.text)); }));
+  const modes = failsAt(A, 2);
+  parts.push("<h3>" + esc(t("netR")) + "</h3>");
+  modes.forEach((m) => {
+    const effs = effectsOf(A, m.id), cs = causesOf(A, m.id);
+    parts.push('<div class="chain"><div>' + (effs.map((e) => '<div class="box fl">' + esc(e.text) + " (S " + (e.s || "–") + ")</div>").join("") || '<div class="box">–</div>') + '</div><div class="arr">←</div><div><div class="box m fl">' + esc(m.text) + " (" + esc(t("smax")) + " " + (sMax(A, m.id) || "–") + ')</div></div><div class="arr">←</div><div>' +
+      (cs.map((c) => '<div class="box fl">' + esc(c.text) + "</div>").join("") || '<div class="box">–</div>') + "</div></div>");
+  });
+  const head = "<tr><th>" + t("fe") + "</th><th>S</th><th>" + t("fm") + "</th><th>" + t("fc") + "</th><th>PC</th><th>O</th><th>DC</th><th>D</th><th>AP</th><th>" + t("revActs") + "</th><th>O'</th><th>D'</th><th>AP'</th><th>" + t("extra") + "</th><th>" + t("apFinal") + "</th></tr>";
+  let rows = ""; const cnt = { i: {}, f: {} }; const sum = { i: { H: 0, M: 0, L: 0 }, f: { H: 0, M: 0, L: 0 } };
+  modes.forEach((m) => {
+    const effs = effectsOf(A, m.id);
+    causesOf(A, m.id).forEach((c) => {
+      const ev = evalRisk(A, m.id, c.id); const r = ev.r;
+      const acts = (r.acts || []).map((a) => "[" + a.type + "] " + esc(a.text) + (a.resp ? " · " + esc(a.resp) : "") + (a.due ? " · " + esc(a.due) : "") + " · " + esc(t(a.status === "done" ? "stDone" : a.status === "progress" ? "stProg" : "stPlanned"))).join("<br>");
+      rows += "<tr><td>" + effs.map((e) => esc(e.text) + " (S " + (e.s || "–") + ")").join("<br>") + "</td><td>" + (ev.s || "–") + "</td><td>" + esc(m.text) + "</td><td>" + esc(c.text) + "</td><td>" + (r.pc || []).map(esc).join("<br>") + "</td><td>" + (r.o || "–") +
+        "</td><td>" + (r.dc || []).map(esc).join("<br>") + "</td><td>" + (r.d || "–") + '</td><td class="' + (ev.ap0 || "") + '">' + (ev.ap0 || "–") + "</td><td>" + (acts || "–") + "</td><td>" + (r.o2 || "–") + "</td><td>" + (r.d2 || "–") + '</td><td class="' + (ev.ap1 || "") + '">' + (ev.ap1 || "–") +
+        "</td><td>" + (r.xt ? esc(r.xt) + (r.xd ? " (D " + r.xd + ")" : "") + (r.resid ? "<br><i>" + esc(r.resid) + "</i>" : "") : "–") + '</td><td class="' + (ev.fin || "") + '">' + (ev.fin || "–") + "</td></tr>";
+      text.push("FM: " + m.text + " | FE: " + effs.map((e) => e.text + " (S " + (e.s || "-") + ")").join("; ") + " | FC: " + c.text + " | PC: " + (r.pc || []).join("; ") + " | O=" + (r.o || "-") + " | DC: " + (r.dc || []).join("; ") + " | D=" + (r.d || "-") +
+        " | AP=" + (ev.ap0 || "-") + " | rev: " + (r.acts || []).map((a) => "[" + a.type + "] " + a.text + " / " + a.resp + " / " + a.due + " / " + a.status).join("; ") + " O'=" + (r.o2 || "-") + " D'=" + (r.d2 || "-") + " AP'=" + (ev.ap1 || "-") +
+        " | extra: " + (r.xt || "-") + " D=" + (r.xd || "-") + " | AP final=" + (ev.fin || "-") + (r.resid ? " | residual: " + r.resid : ""));
+      if (ev.s && r.o && r.d) {
+        const ki = sBand(ev.s) + "|" + oBand(+r.o) + "|" + dIdx(+r.d); cnt.i[ki] = (cnt.i[ki] || 0) + 1; sum.i[ev.ap0]++;
+        const o1 = ev.hasRev ? +r.o2 : +r.o; const d1 = ev.apX ? Math.min(ev.hasRev ? +r.d2 : +r.d, +r.xd) : ev.hasRev ? +r.d2 : +r.d;
+        const kf = sBand(ev.s) + "|" + oBand(o1) + "|" + dIdx(d1); cnt.f[kf] = (cnt.f[kf] || 0) + 1; sum.f[ev.fin]++;
+      }
+    });
+  });
+  parts.push("<h3>" + esc(t("form")) + '</h3><table class="r">' + head + rows + "</table>");
+  const mx = '<table class="r mx"><tr><th>S</th><th>O</th><th>D 1</th><th>D 2–4</th><th>D 5–6</th><th>D 7–10</th></tr>' + SB.map((sb) => OB.map((ob, oi) => "<tr>" + (oi === 0 ? '<th rowspan="5">' + sb + "</th>" : "") + "<th>" + ob + "</th>" + [3, 2, 1, 0].map((di) => {
+    const a = AP[sb][ob][di]; const k = sb + "|" + ob + "|" + di; const i = cnt.i[k] || 0, f = cnt.f[k] || 0;
+    return '<td class="' + a + '">' + (i || f ? i + " / " + f : "") + "</td>";
+  }).join("") + "</tr>").join("")).join("") + "</table>";
+  parts.push("<h3>" + esc(t("matrix")) + "</h3>" + mx);
+  parts.push("<p><b>" + esc(t("sumR")) + ":</b> " + esc(t("initial")) + " H " + sum.i.H + " · M " + sum.i.M + " · L " + sum.i.L + " — " + esc(t("final")) + " H " + sum.f.H + " · M " + sum.f.M + " · L " + sum.f.L + "</p>");
+  text.push(t("sumR") + ": " + t("initial") + " H " + sum.i.H + " M " + sum.i.M + " L " + sum.i.L + " / " + t("final") + " H " + sum.f.H + " M " + sum.f.M + " L " + sum.f.L);
+  const c = checks(kind);
+  parts.push("<h3>" + esc(t("checks")) + "</h3>" + (c.length ? "<ul>" + c.map((x) => "<li>[" + esc(t(x.sev)) + "] " + esc(x.msg) + "</li>").join("") + "</ul>" : "<p>" + esc(t("noIssues")) + "</p>"));
+  text.push(t("checks") + ": " + (c.length ? c.map((x) => "[" + t(x.sev) + "] " + x.msg).join(" | ") : t("noIssues")));
+  return parts.join("\n");
+}
+function buildReport() {
+  const date = new Date(); const text = [];
+  let body = "<h1>" + esc(t("reportTitle")) + "</h1><p><b>" + t("student") + ":</b> " + esc(S.name || "–") + " · <b>" + t("group") + ":</b> " + esc(S.group || "–") + " · <b>" + t("variant") + ":</b> " + esc(S.variant) +
+    " · <b>" + t("generated") + ":</b> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>";
+  text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString());
+  body += "<h2>" + esc(t("fiveT")) + '</h2><table class="r"><tr><th>' + t("tIntent") + "</th><td>" + esc(fmt(t("vIntent"), { hw: hwLabel(), sw: swLabel() })) + "</td></tr><tr><th>" + t("tTiming") + "</th><td>" + esc(t("vTiming")) +
+    "</td></tr><tr><th>" + t("tTeam") + "</th><td>" + esc(fmt(t("vTeam"), { name: S.name || "–" })) + "</td></tr><tr><th>" + t("tTask") + "</th><td>" + esc(t("vTask")) + "</td></tr><tr><th>" + t("tTools") + "</th><td>" + esc(t("vTools")) + "</td></tr></table>";
+  body += analysisReport("hw", text) + analysisReport("sw", text);
+  body += "<h2>" + esc(t("conclusion")) + "</h2><p>" + esc(S.conclusion || "–").replace(/\n/g, "<br>") + "</p>";
+  text.push("", t("conclusion") + ": " + (S.conclusion || "–"));
+  const css = "body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#17202D;max-width:1300px;margin:24px auto;padding:0 16px}h1{font-size:21px}h2{font-size:17px;margin-top:26px;border-bottom:1px solid #D9DEE7;padding-bottom:4px}h3{font-size:14px;margin:16px 0 6px}" +
+    "table.r{border-collapse:collapse;font-size:12px}table.r th,table.r td{border:1px solid #D9DEE7;padding:3px 6px;text-align:left;vertical-align:top}table.r th{background:#F3F5F8}.H{background:#FBE6E6;font-weight:bold}.M{background:#FAEFD8;font-weight:bold}.L{background:#DFF2E8}" +
+    ".fn{color:#1D7F54}.fl{color:#B83434}.chain{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:6px;align-items:center;margin:8px 0 14px}.chain .box{border:1px dashed #D9DEE7;border-radius:4px;padding:4px 6px;margin:3px 0}.chain .box.m{border:1px solid #B79A10;background:#FFF6BF}.arr{text-align:center;color:#5B6578}.mx td{width:46px;height:24px;text-align:center}";
+  const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>DFMEA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + body + "</body></html>";
+  return { html: html, body: body, text: text.join("\n") };
+}
+function renderReport(view) {
+  const r = buildReport();
+  view.innerHTML = '<div class="row between"><h2>' + esc(t("reportTitle")) + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + esc(t("download")) + '</button><button class="btn" id="cp" type="button">' + esc(t("copy")) + "</button></div></div>" +
+    '<p class="muted">' + esc(t("reportHint")) + '</p><div class="panel stack"><label class="label" for="conclusion">' + esc(t("conclusion")) + '</label><textarea class="in" id="conclusion">' + esc(S.conclusion) + "</textarea></div>" +
+    '<div class="report-frame" id="rframe">' + r.body + '</div><textarea class="in" id="reportText" readonly hidden></textarea>';
+  view.querySelector("#conclusion").addEventListener("input", (e) => { S.conclusion = e.target.value; save(); });
+  view.querySelector("#conclusion").addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body; });
+  view.querySelector("#dl").addEventListener("click", () => {
+    const b = new Blob([buildReport().html], { type: "text/html" }); const a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = "DFMEA_" + S.variant + "_" + (S.name || "student").replace(/[^\w\-]+/g, "_") + ".html";
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  view.querySelector("#cp").addEventListener("click", () => {
+    const txt = buildReport().text; const ta = view.querySelector("#reportText");
+    const fallback = () => { ta.hidden = false; ta.value = txt; ta.focus(); ta.select(); toast(t("copyFail")); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast(t("copied")), fallback); else fallback();
+  });
+}
+
+/* ================================================================ boot */
+load(); LANG = S.lang || "ro";
+if (!S.hw) S.hw = blankA(); if (!S.sw) S.sw = blankA();
+document.getElementById("stName").value = S.name; document.getElementById("stGroup").value = S.group; document.getElementById("stVariant").value = S.variant;
+document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
+document.getElementById("stGroup").addEventListener("input", (e) => { S.group = e.target.value; save(); });
+document.getElementById("studentForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const code = document.getElementById("stVariant").value.trim().toUpperCase();
+  if (!VARIANTS[code]) { toast(t("badVariant")); return; }
+  if (S.variant && S.variant !== code) { S.hw = blankA(); S.sw = blankA(); }
+  S.variant = code; document.getElementById("stVariant").value = code;
+  save(); render(); toast(t("variantLoaded").replace("{v}", code));
+});
+document.getElementById("langRo").addEventListener("click", () => { LANG = "ro"; S.lang = "ro"; save(); render(); });
+document.getElementById("langEn").addEventListener("click", () => { LANG = "en"; S.lang = "en"; save(); render(); });
+render();
+</script>
+</body>
+</html>
