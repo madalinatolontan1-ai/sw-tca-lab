@@ -107,6 +107,18 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .nets label.on { border-color: var(--tp); background: var(--warn-bg); }
 .nets label.na { opacity: 0.55; cursor: not-allowed; }
 .toggle { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+.ftc { display: flex; flex-direction: column; gap: 4px; width: 132px; }
+table.sheet .ftc select { width: 100%; font-family: var(--font-body); font-size: 0.8rem; }
+td.ra { min-width: 210px; }
+table.sheet td.ra select { width: 100%; margin-bottom: 4px; font-family: var(--font-body); }
+td.ra textarea { min-height: 54px; font-size: 0.82rem; padding: 4px 6px; }
+.tests { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tests li { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 4px 4px 10px; font-size: 0.9rem; }
+.tests li span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.addtest { display: flex; gap: 8px; flex-wrap: wrap; }
+.addtest input { flex: 1 1 220px; height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); min-width: 0; }
+.x { border: 0; background: transparent; color: var(--muted); cursor: pointer; width: 26px; height: 26px; border-radius: 4px; font-size: 1rem; flex: none; }
+.x:hover { color: var(--bad); background: var(--bad-bg); }
 
 /* sheet */
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
@@ -115,7 +127,7 @@ table.sheet th { text-align: left; font-size: 0.7rem; text-transform: uppercase;
 table.sheet td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.sheet tr:last-child td { border-bottom: 0; }
 table.sheet tr.sel td { background: var(--accent-soft); }
-table.sheet td.eff { min-width: 220px; max-width: 300px; }
+table.sheet td.eff { min-width: 190px; max-width: 250px; }
 table.sheet td.num { font-family: var(--font-mono); text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.sheet td.ref { font-family: var(--font-mono); font-weight: 600; white-space: nowrap; cursor: pointer; }
 table.sheet select { height: 30px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 0 4px; font-family: var(--font-mono); font-size: 0.82rem; }
@@ -218,23 +230,43 @@ const TWO_TERM = {
 };
 const NETS = ["VDD", "GND", "TXD", "RXD", "CANH", "CANL", "RS", "N_TERM", "N_F1", "N_F2", "N_LED", "VREF"];
 
+/* effect classes of the TCA library, worded after the AIAG-VDA severity scale */
 const SEVERITY = [
-  ["E9", 9, { ro: "Neconformitate cu reglementările: afectează conformitatea EMC (emisii sau imunitate)", en: "Regulatory non-compliance: affects EMC compliance (emissions or immunity)" }],
-  ["E8", 8, { ro: "Pierderea funcției principale: fără comunicație CAN sau fără funcționare", en: "Loss of primary function: no CAN communication or no operation" }],
-  ["E7", 7, { ro: "Degradarea funcției principale: comunicație coruptă sau intermitentă", en: "Degraded primary function: corrupted or intermittent communication" }],
-  ["E6", 6, { ro: "Pierderea unei funcții secundare: indicatorul LED nu funcționează", en: "Loss of a secondary function: the LED indicator does not work" }],
-  ["E5", 5, { ro: "Degradarea unei funcții secundare: indicație LED greșită", en: "Degraded secondary function: wrong LED indication" }],
-  ["E2", 2, { ro: "Efect minor, fără efect funcțional și fără efect EMC", en: "Minor effect, no functional and no EMC effect" }],
-  ["E1", 1, { ro: "Fără efect", en: "No effect" }]
+  ["E9", 9, { ro: "Neconformitate cu reglementările (EMC: emisii sau imunitate)", en: "Noncompliance with regulations (EMC: emissions or immunity)" }],
+  ["E8", 8, { ro: "Pierderea funcției principale (fără comunicație CAN sau fără funcționare)", en: "Loss of the primary function (no CAN communication or no operation)" }],
+  ["E7", 7, { ro: "Degradarea funcției principale (comunicație coruptă sau intermitentă)", en: "Degradation of the primary function (corrupted or intermittent communication)" }],
+  ["E6", 6, { ro: "Pierderea unei funcții secundare (indicatorul LED nu funcționează)", en: "Loss of a secondary function (the LED indicator does not work)" }],
+  ["E5", 5, { ro: "Degradarea unei funcții secundare (indicație LED greșită)", en: "Degradation of a secondary function (wrong LED indication)" }],
+  ["E2", 2, { ro: "Efect ușor deranjant, fără efect funcțional sau EMC", en: "Slightly objectionable effect, no functional or EMC effect" }],
+  ["E1", 1, { ro: "Niciun efect perceptibil", en: "No discernible effect" }]
+];
+/* AIAG-VDA scales, short paraphrase (full tables in the course) */
+const SEV_SCALE = [
+  ["10", { ro: "Afectează siguranța vehiculului, a ocupanților sau a altor participanți la trafic", en: "Affects safe operation of the vehicle, occupants or other road users" }],
+  ["9", { ro: "Neconformitate cu reglementările", en: "Noncompliance with regulations" }],
+  ["8", { ro: "Pierderea unei funcții principale", en: "Loss of a primary function" }],
+  ["7", { ro: "Degradarea unei funcții principale", en: "Degradation of a primary function" }],
+  ["6", { ro: "Pierderea unei funcții secundare", en: "Loss of a secondary function" }],
+  ["5", { ro: "Degradarea unei funcții secundare", en: "Degradation of a secondary function" }],
+  ["4", { ro: "Aspect, zgomot, vibrații sau haptică foarte deranjante", en: "Very objectionable appearance, sound, vibration or haptics" }],
+  ["3", { ro: "Aspect, zgomot, vibrații sau haptică moderat deranjante", en: "Moderately objectionable appearance, sound, vibration or haptics" }],
+  ["2", { ro: "Aspect, zgomot, vibrații sau haptică ușor deranjante", en: "Slightly objectionable appearance, sound, vibration or haptics" }],
+  ["1", { ro: "Niciun efect perceptibil", en: "No discernible effect" }]
 ];
 const OCC = [
-  ["10", { ro: "Tehnologie sau proces nou, fără experiență", en: "New technology or process, no experience" }],
-  ["8–9", { ro: "Tehnologie nouă pentru firmă sau aplicație nouă", en: "Technology new to the company or new application" }],
-  ["6–7", { ro: "Tehnologie similară, folosită în condiții noi", en: "Similar technology used under new conditions" }],
-  ["4–5", { ro: "Tehnologie cunoscută, cu modificări de proces", en: "Known technology with process changes" }],
-  ["2–3", { ro: "Tehnologie matură, proces SMT / THT standard, istoric bun", en: "Mature technology, standard SMT / THT process, good history" }],
-  ["1", { ro: "Defectul este eliminat prin prevenție (design sau proces)", en: "Failure eliminated by prevention (design or process)" }]
+  ["10", { ro: "Prima aplicare a unei tehnologii noi; fără experiență, standarde sau bune practici; prevenția nu poate prezice performanța", en: "First application of new technology; no experience, standards or best practices; prevention cannot predict performance" }],
+  ["9", { ro: "Prima utilizare în firmă a unor inovații sau materiale noi; prevenția nu țintește cerințele", en: "First use in the company of innovations or new materials; prevention not targeted to the requirements" }],
+  ["8", { ro: "Inovații folosite într-o aplicație nouă; puține standarde aplicabile; prevenția nu e un indicator fiabil", en: "Innovations used in a new application; few applicable standards; prevention is not a reliable indicator" }],
+  ["7", { ro: "Design nou pe tehnologie similară, aplicație nouă; prevenția dă o indicație limitată", en: "New design on similar technology, new application; prevention gives a limited indication" }],
+  ["6", { ro: "Similar cu designuri anterioare, condiții de utilizare modificate; standardele nu sunt suficiente", en: "Similar to previous designs, changed duty cycle or conditions; standards not sufficient" }],
+  ["5", { ro: "Modificări de detaliu pe un design dovedit; lecțiile învățate sunt aplicate, dar nedovedite", en: "Detail changes to a proven design; lessons learned applied but not proven" }],
+  ["4", { ro: "Design aproape identic, expunere scurtă în teren; conform bunelor practici", en: "Almost identical design, short field exposure; conforms to best practices" }],
+  ["3", { ro: "Modificări de detaliu pe un design cunoscut, cu experiență de test sau teren comparabilă", en: "Detail changes to a known design with comparable test or field experience" }],
+  ["2", { ro: "Design matur, aproape identic, cu expunere lungă în teren", en: "Almost identical mature design with long field exposure" }],
+  ["1", { ro: "Cauza e eliminată prin prevenție; nu e posibilă prin design", en: "Cause eliminated by prevention; not possible by design" }]
 ];
+/* criterion C9: what the functional test can see */
+const C9 = [["1", { ro: "1 · localizabil", en: "1 · traceable" }], ["5", { ro: "5 · nelocalizabil", en: "5 · not traceable" }], ["10", { ro: "10 · nevizibil", en: "10 · not visible" }]];
 const FT_TESTS = [
   ["FT1", { ro: "Consum de curent (IDD recesiv ≤ 10 mA, dominant ≤ 75 mA)", en: "Supply current (IDD recessive ≤ 10 mA, dominant ≤ 75 mA)" }],
   ["FT2", { ro: "Indicator alimentare: LED1 aprins", en: "Power indicator: LED1 on" }],
@@ -276,20 +308,20 @@ const I18N = {
     stepsTitle: "Pașii",
     s1: "S: alege clasa de efect. Efectul e dat; severitatea rezultă din clasă.",
     s2: "O: alege ocurența din scala AIAG-VDA (rezumatul e mai jos).",
-    s3: "D: citește predicția pentru AOI, AXI, ICT și stabilește D pentru FT după criteriul C9.",
-    s4: "Îmbunătățiri: adaugă test point-uri pe net-uri sau AOI pe BOTTOM și urmărește AP.",
+    s3: "D: citește predicția pentru AOI, AXI, ICT. La FT alegi testul care vede defectul și clasa C9 (1, 5 sau 10).",
+    s4: "Îmbunătățiri: test point-uri, AOI pe BOTTOM sau teste FT noi. Unde AP rămâne H sau M, documentează riscul rezidual.",
     s5: "Raport: descarcă fișa de evaluare a riscului.",
     board: "Placa (vedere simplificată)", top: "TOP", bottom: "BOTTOM",
     tpTitle: "Test point-uri (ICT)", tpHint: "Bifează net-urile pe care adaugi un test point. ICT poate măsura doar ce poate atinge cu acele de pe fixture.",
     aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
     nc: "neconectat",
     sheet: "Fișa de analiză", colComp: "Componentă", colMode: "Mod de defectare", colEffect: "Efect", colClass: "Clasă efect", colS: "S", colO: "O",
-    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "D FT", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "FT existent (test · C9)", colFTnew: "FT nou (îmbun.)", colRA: "Evaluarea riscului rezidual", noTest: "niciun test", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
     choose: "–",
     summary: "Rezumat", mDone: "Moduri completate", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Risc rezidual (H + M)", mCov: "Acoperirea riscului",
     before: "fără îmbunătățiri",
     refTables: "Tabele de referință",
-    sevTitle: "Clase de severitate (S)", occTitle: "Scala de ocurență (O), rezumat orientativ", occNote: "Pentru valoarea exactă folosește tabelul de ocurență AIAG-VDA.",
+    sevTitle: "Clase de severitate (S)", occTitle: "Scala de ocurență AIAG-VDA (O), rezumat", occNote: "Rezumat orientativ; tabelele complete sunt în curs și în manualul AIAG-VDA.",
     ftTitle: "Teste funcționale (FT)", c9Title: "Criteriul C9 pentru D FT",
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
     apTitle: "Tabelul AP (AIAG-VDA)",
@@ -299,7 +331,11 @@ const I18N = {
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.",
     student: "Student", generated: "Generat", improvements: "Îmbunătățiri aplicate", tpOn: "Test point-uri", none: "niciuna", yes: "da", no: "nu",
-    incomplete: "incomplet"
+    incomplete: "incomplet",
+    raAcc: "risc acceptat", raAct: "acțiune propusă", raPh: "de ce rămâne riscul, ce se poate face sau de ce se acceptă",
+    newTestsTitle: "Teste FT noi (îmbunătățire)", newTestsHint: "Propune un test funcțional nou, apoi alege-l în coloana „FT nou” la modurile pe care le detectează. Testul contează doar în varianta cu îmbunătățiri.",
+    newTestPh: "ex.: Măsurarea tensiunii pe RS cu nodul activ (< 0,3 · VDD)", addTest: "Adaugă testul", testAdded: "Testul {id} a fost adăugat.", del: "Șterge", newTag: "nou",
+    mRA: "Risc rezidual documentat", sevScaleTitle: "Scala de severitate AIAG-VDA (rezumat)", newTests: "Teste FT noi", raCol: "Evaluarea riscului"
   },
   en: {
     subtitle: "Production test coverage analysis · MCP2551 CAN module of the front radar",
@@ -315,20 +351,20 @@ const I18N = {
     stepsTitle: "Steps",
     s1: "S: choose the effect class. The effect is given; the severity follows from the class.",
     s2: "O: choose the occurrence from the AIAG-VDA scale (summary below).",
-    s3: "D: read the prediction for AOI, AXI, ICT and set D for FT using criterion C9.",
-    s4: "Improvements: add test points on nets or AOI on BOTTOM and watch the AP.",
+    s3: "D: read the prediction for AOI, AXI, ICT. For FT choose the test that sees the defect and the C9 class (1, 5 or 10).",
+    s4: "Improvements: test points, AOI on BOTTOM or new FT tests. Where the AP stays H or M, document the residual risk.",
     s5: "Report: download the risk assessment sheet.",
     board: "Board (simplified view)", top: "TOP", bottom: "BOTTOM",
     tpTitle: "Test points (ICT)", tpHint: "Tick the nets where you add a test point. ICT can only measure what the fixture needles can reach.",
     aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
     nc: "not connected",
     sheet: "Analysis sheet", colComp: "Component", colMode: "Failure mode", colEffect: "Effect", colClass: "Effect class", colS: "S", colO: "O",
-    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "D FT", colD: "D", colAP: "AP", colAP0: "AP no impr.",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "Existing FT (test · C9)", colFTnew: "New FT (impr.)", colRA: "Residual risk assessment", noTest: "no test", colD: "D", colAP: "AP", colAP0: "AP no impr.",
     choose: "–",
     summary: "Summary", mDone: "Modes completed", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Residual risk (H + M)", mCov: "Risk coverage",
     before: "without improvements",
     refTables: "Reference tables",
-    sevTitle: "Severity classes (S)", occTitle: "Occurrence scale (O), indicative summary", occNote: "Use the AIAG-VDA occurrence table for the exact value.",
+    sevTitle: "Severity classes (S)", occTitle: "AIAG-VDA occurrence scale (O), summary", occNote: "Indicative summary; the full tables are in the course and in the AIAG-VDA handbook.",
     ftTitle: "Functional tests (FT)", c9Title: "Criterion C9 for D FT",
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
     apTitle: "AP table (AIAG-VDA)",
@@ -338,11 +374,16 @@ const I18N = {
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.",
     student: "Student", generated: "Generated", improvements: "Improvements applied", tpOn: "Test points", none: "none", yes: "yes", no: "no",
-    incomplete: "incomplete"
+    incomplete: "incomplete",
+    raAcc: "risk accepted", raAct: "action proposed", raPh: "why the risk remains, what can be done or why it is accepted",
+    newTestsTitle: "New FT tests (improvement)", newTestsHint: "Propose a new functional test, then pick it in the “New FT” column for the modes it detects. The test counts only in the version with improvements.",
+    newTestPh: "e.g.: Measure the RS voltage with the node active (< 0.3 · VDD)", addTest: "Add test", testAdded: "Test {id} added.", del: "Delete", newTag: "new",
+    mRA: "Residual risk documented", sevScaleTitle: "AIAG-VDA severity scale (summary)", newTests: "New FT tests", raCol: "Risk assessment"
   }
 };
 let LANG = "ro";
 const t = (k) => (I18N[LANG][k] !== undefined ? I18N[LANG][k] : k);
+const fmtT = (k, o) => t(k).replace(/\{(\w+)\}/g, (m, x) => (o[x] !== undefined ? o[x] : m));
 const tr = (o) => o[LANG];
 
 /* ---------------------------------------------------------------- state */
@@ -376,23 +417,28 @@ function detection(m, env) {
   const ictWhy = noNet ? t("whyNoNet") : (access ? t("whyTP") : t("whyNoTP")) + ": " + nets.join(", ");
   return { aoi: aoi, axi: axi, ict: ict, aoiWhy: aoiWhy.join(" · "), axiWhy: cat + " · " + m.mode, ictWhy: ictWhy };
 }
+const newTest = (id) => (S.newTests || []).find((x) => x.id === id);
 function evalRow(idx, env) {
   const m = MODES[idx]; const u = S.rows[idx] || {};
   const det = detection(m, env);
   const sev = SEVERITY.find((x) => x[0] === u.cls);
   const s = sev ? sev[1] : null;
   const o = u.o ? +u.o : null;
-  const ft = u.ft ? +u.ft : null;
+  const ft0 = u.ft ? +u.ft : null;                                              /* existing FT1-FT8 */
+  const ftN = env.newFT && u.nft && u.nfttest && newTest(u.nfttest) ? +u.nft : null; /* new FT test (improvement) */
+  const ft = ft0 && ftN ? Math.min(ft0, ftN) : ft0;
   const d = ft ? Math.min(det.aoi, det.axi, det.ict, ft) : null;
   const ap = (s && o && d) ? apOf(s, o, d) : null;
-  return { m: m, det: det, s: s, o: o, ft: ft, d: d, ap: ap };
+  return { m: m, det: det, s: s, o: o, ft: ft, ft0: ft0, ftN: ftN, d: d, ap: ap };
 }
-const ENV_NOW = () => ({ tps: S.tps, aoiBottom: S.aoiBottom });
-const ENV_BASE = { tps: {}, aoiBottom: false };
+const ENV_NOW = () => ({ tps: S.tps, aoiBottom: S.aoiBottom, newFT: true });
+const ENV_BASE = { tps: {}, aoiBottom: false, newFT: false };
+const needsRA = (ap) => ap === "H" || ap === "M";
 function summary(env) {
   const idxs = V(); let h = 0, mm = 0, l = 0, done = 0;
-  idxs.forEach((i) => { const r = evalRow(i, env); if (r.ap) { done++; if (r.ap === "H") h++; else if (r.ap === "M") mm++; else l++; } });
-  return { n: idxs.length, done: done, H: h, M: mm, L: l, res: h + mm, cov: done ? Math.round(100 * l / done) : 0 };
+  let ra = 0;
+  idxs.forEach((i) => { const r = evalRow(i, env); if (r.ap) { done++; if (r.ap === "H") h++; else if (r.ap === "M") mm++; else l++; if (needsRA(r.ap)) { const u = S.rows[i] || {}; if (u.rad && (u.ra || "").trim()) ra++; } } });
+  return { n: idxs.length, done: done, H: h, M: mm, L: l, res: h + mm, ra: ra, cov: done ? Math.round(100 * l / done) : 0 };
 }
 
 /* ---------------------------------------------------------------- board drawing (units: 1 = 1 mm) */
@@ -497,53 +543,82 @@ function dCell(v, why) {
 function apCell(ap) { return '<td class="num"><span class="ap ' + (ap || "na") + '">' + (ap || "–") + "</span></td>"; }
 function refTables() {
   const sev = '<table class="mini"><tr><th>' + t("colClass") + "</th><th>S</th><th></th></tr>" + SEVERITY.map((x) => '<tr><td class="c">' + x[0] + '</td><td class="c">' + x[1] + "</td><td>" + esc(tr(x[2])) + "</td></tr>").join("") + "</table>";
+  const scale = '<table class="mini"><tr><th>S</th><th></th></tr>' + SEV_SCALE.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + '</table><p class="muted" style="margin-top:6px;font-size:0.85rem">' + esc(t("occNote")) + "</p>";
   const occ = '<table class="mini"><tr><th>O</th><th></th></tr>' + OCC.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + '</table><p class="muted" style="margin-top:6px;font-size:0.85rem">' + esc(t("occNote")) + "</p>";
-  const ft = '<table class="mini">' + FT_TESTS.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + "</table>";
+  const ft = '<table class="mini">' + FT_TESTS.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") +
+    (S.newTests || []).map((x) => '<tr><td class="c">' + esc(x.id) + "</td><td>" + esc(x.desc) + ' <span class="chip neutral">' + esc(t("newTag")) + "</span></td></tr>").join("") + "</table>";
   const c9 = '<ul style="margin:0;padding-left:1.1em;font-size:0.9rem">' + t("c9").map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>";
   const apRows = ["9-10", "7-8", "4-6", "2-3", "1"].map((sb) => ["8-10", "6-7", "4-5", "2-3", "1"].map((ob) => "<tr><td class=\"c\">S " + sb + '</td><td class="c">O ' + ob + "</td>" +
     AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("")).join("");
   const ap = '<table class="mini"><tr><th>S</th><th>O</th><th>D 7–10</th><th>D 5–6</th><th>D 2–4</th><th>D 1</th></tr>' + apRows + "</table>";
-  return [["sevTitle", sev, true], ["occTitle", occ, false], ["c9Title", c9, true], ["ftTitle", ft, false], ["apTitle", ap, false]]
+  return [["sevTitle", sev, true], ["sevScaleTitle", scale, false], ["occTitle", occ, false], ["c9Title", c9, true], ["ftTitle", ft, false], ["apTitle", ap, false]]
     .map((x) => '<details class="ref"' + (x[2] ? " open" : "") + "><summary>" + esc(t(x[0])) + "</summary><div>" + x[1] + "</div></details>").join("");
 }
 function renderAnalysis(view) {
   const idxs = V(); const env = ENV_NOW();
   const refs = new Set(idxs.map((i) => MODES[i].ref));
   const now = summary(env), base = summary(ENV_BASE);
+  const hasNew = (S.newTests || []).length > 0;
   const nets = '<div class="nets">' + NETS.map((n) => {
     const na = n === "VREF";
     return '<label class="' + (S.tps[n] ? "on" : "") + (na ? " na" : "") + '"><input type="checkbox" data-tp="' + n + '"' + (S.tps[n] ? " checked" : "") + (na ? " disabled" : "") + "> " + n + (na ? " (" + t("nc") + ")" : "") + "</label>";
   }).join("") + "</div>";
   const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>" + t("colS") + "</th><th>" + t("colO") +
-    "</th><th>" + t("colAOI") + "</th><th>" + t("colAXI") + "</th><th>" + t("colICT") + "</th><th>" + t("colFTtest") + "</th><th>" + t("colFT") + "</th><th>" + t("colD") + "</th><th>" + t("colAP") + "</th><th>" + t("colAP0") + "</th></tr>";
+    "</th><th>" + t("colAOI") + "</th><th>" + t("colAXI") + "</th><th>" + t("colICT") + "</th><th>" + t("colFT") + "</th>" + (hasNew ? "<th>" + t("colFTnew") + "</th>" : "") +
+    "<th>" + t("colD") + "</th><th>" + t("colAP") + "</th><th>" + t("colAP0") + "</th><th>" + t("colRA") + "</th></tr>";
   const body = idxs.map((i, k) => {
     const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
-    const sel = (name, opts, val) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + name + '"><option value="">' + t("choose") + "</option>" + opts.map((o) => '<option value="' + o + '"' + (String(val) === String(o) ? " selected" : "") + ">" + o + "</option>").join("") + "</select>";
+    const sel = (name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"><option value="">' + t("choose") + "</option>" +
+      opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
     const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const c9opts = C9.map((x) => [x[0], tr(x[1])]);
+    const ftCell = '<td><div class="ftc">' + sel("fttest", FT_TESTS.map((x) => x[0]).concat([["–", t("noTest")]]), u.fttest, t("colFTtest")) + sel("ft", c9opts, u.ft, t("colFT")) + "</div></td>";
+    const ftNewCell = hasNew ? '<td><div class="ftc">' + sel("nfttest", S.newTests.map((x) => x.id), u.nfttest, t("colFTnew")) + sel("nft", c9opts, u.nft, t("colFTnew")) + "</div></td>" : "";
+    const raCell = needsRA(r.ap) ? '<td class="ra"><select data-row="' + i + '" data-k="rad" aria-label="' + esc(t("colRA")) + '"><option value="">' + t("choose") + "</option>" +
+        [["acc", t("raAcc")], ["act", t("raAct")]].map((o) => '<option value="' + o[0] + '"' + (u.rad === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>").join("") + "</select>" +
+        '<textarea data-ra="' + i + '" placeholder="' + esc(t("raPh")) + '" aria-label="' + esc(t("raPh")) + '">' + esc(u.ra || "") + "</textarea></td>"
+      : '<td class="num muted">–</td>';
     return '<tr class="' + (S.sel === r.m.ref ? "sel" : "") + '"><td class="num">' + (k + 1) + '</td><td class="ref" data-sel="' + r.m.ref + '">' + esc(r.m.ref) + '<span class="why">' + esc(r.m.pin === "–" ? "" : r.m.pin) + "</span></td>" +
       "<td>" + esc(r.m.mode) + '</td><td class="eff">' + esc(r.m.effect) + "</td>" +
       "<td>" + sel("cls", SEVERITY.map((x) => x[0]), u.cls) + '</td><td class="num">' + (r.s || "–") + "</td><td>" + sel("o", nums, u.o) + "</td>" +
       dCell(r.det.aoi, r.det.aoiWhy) + dCell(r.det.axi, r.det.axiWhy) + dCell(r.det.ict, r.det.ictWhy) +
-      "<td>" + sel("fttest", FT_TESTS.map((x) => x[0]).concat(["–"]), u.fttest) + "</td><td>" + sel("ft", nums, u.ft) + '</td><td class="num">' + (r.d || "–") + "</td>" + apCell(r.ap) + apCell(r0.ap) + "</tr>";
+      ftCell + ftNewCell + '<td class="num">' + (r.d || "–") + "</td>" + apCell(r.ap) + apCell(r0.ap) + raCell + "</tr>";
   }).join("");
+  const testsPanel = '<div class="stack"><h3>' + t("newTestsTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("newTestsHint") + "</p>" +
+    ((S.newTests || []).length ? '<ul class="tests">' + S.newTests.map((x) => '<li><span class="mono">' + esc(x.id) + "</span><span>" + esc(x.desc) + '</span><button class="x" type="button" data-rmtest="' + esc(x.id) + '" aria-label="' + esc(t("del")) + '">×</button></li>').join("") + "</ul>" : "") +
+    '<form class="addtest" id="addTest"><input id="newTestDesc" placeholder="' + esc(t("newTestPh")) + '" aria-label="' + esc(t("newTestsTitle")) + '"><button class="btn" type="submit">' + t("addTest") + "</button></form></div>";
   const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
   view.innerHTML =
     '<div class="row" style="justify-content:space-between"><h2>' + t("sheet") + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
     '<div class="grid2"><div class="panel stack"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side !== "top") + '">' + t("bottom") + "</button></div></div>" +
       '<div id="boardBox">' + boardSVG(S.side === "top", S.sel, refs) + "</div>" +
       '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
-      '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div></div>" +
+      '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel + "</div>" +
       '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" +
     '<div class="panel stack"><h3>' + t("summary") + '</h3><div class="meters">' +
       meter(t("mDone"), now.done + " / " + now.n, base.done + " / " + base.n) +
       meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
       meter(t("mRes"), now.res, base.res, now.done && !now.res ? "good" : now.res ? "risk" : "") + meter(t("mCov"), now.cov + "%", base.cov + "%", now.done && now.cov === 100 ? "good" : "") +
+      meter(t("mRA"), now.ra + " / " + now.res, "–", now.res && now.ra === now.res ? "good" : now.res ? "risk" : "") +
     "</div></div>" +
     '<div class="panel stack"><div class="tablewrap"><table class="sheet"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>" +
     '<div class="panel stack"><label class="label" for="conclusion">' + t("conclusion") + '</label><textarea id="conclusion">' + esc(S.conclusion) + "</textarea></div>";
 
   view.querySelectorAll("select[data-row]").forEach((n) => n.addEventListener("change", () => {
     const i = n.dataset.row; S.rows[i] = S.rows[i] || {}; S.rows[i][n.dataset.k] = n.value; save(); render();
+  }));
+  view.querySelectorAll("textarea[data-ra]").forEach((n) => {
+    n.addEventListener("input", () => { const i = n.dataset.ra; S.rows[i] = S.rows[i] || {}; S.rows[i].ra = n.value; save(); });
+    n.addEventListener("change", () => render());
+  });
+  view.querySelector("#addTest").addEventListener("submit", (e) => {
+    e.preventDefault(); const d = view.querySelector("#newTestDesc").value.trim(); if (!d) return;
+    S.newTests = S.newTests || []; let n = 9; while (S.newTests.some((x) => x.id === "FT" + n)) n++;
+    S.newTests.push({ id: "FT" + n, desc: d }); save(); render(); toast(fmtT("testAdded", { id: "FT" + n }));
+  });
+  view.querySelectorAll("[data-rmtest]").forEach((b) => b.addEventListener("click", () => {
+    const id = b.dataset.rmtest; S.newTests = S.newTests.filter((x) => x.id !== id);
+    Object.keys(S.rows).forEach((i) => { if (S.rows[i].nfttest === id) { S.rows[i].nfttest = ""; S.rows[i].nft = ""; } }); save(); render();
   }));
   view.querySelectorAll("input[data-tp]").forEach((n) => n.addEventListener("change", () => { S.tps[n.dataset.tp] = n.checked; save(); render(); }));
   view.querySelector("#aoiBottom").addEventListener("change", (e) => { S.aoiBottom = e.target.checked; save(); render(); });
@@ -567,19 +642,23 @@ function buildReport() {
   parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("group") + ":</strong> " + esc(S.group || "–") + " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) +
     " · <strong>" + t("generated") + ":</strong> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>");
   text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString(), "");
-  parts.push("<h2>" + t("improvements") + "</h2><ul><li>" + t("tpOn") + ": " + (tpList.length ? tpList.join(", ") : t("none")) + "</li><li>" + esc(t("aoiBottom")) + ": " + (S.aoiBottom ? t("yes") : t("no")) + "</li></ul>");
-  text.push(t("improvements") + ": " + t("tpOn") + " = " + (tpList.length ? tpList.join(", ") : t("none")) + "; AOI BOTTOM = " + (S.aoiBottom ? t("yes") : t("no")), "");
-  const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>S</th><th>O</th><th>AOI</th><th>AXI</th><th>ICT</th><th>" + t("colFTtest") + "</th><th>FT</th><th>D</th><th>AP</th><th>" + t("colAP0") + "</th></tr>";
+  const nt = (S.newTests || []);
+  parts.push("<h2>" + t("improvements") + "</h2><ul><li>" + t("tpOn") + ": " + (tpList.length ? tpList.join(", ") : t("none")) + "</li><li>" + esc(t("aoiBottom")) + ": " + (S.aoiBottom ? t("yes") : t("no")) + "</li><li>" + esc(t("newTests")) + ": " +
+    (nt.length ? nt.map((x) => esc(x.id) + " – " + esc(x.desc)).join("; ") : t("none")) + "</li></ul>");
+  text.push(t("improvements") + ": " + t("tpOn") + " = " + (tpList.length ? tpList.join(", ") : t("none")) + "; AOI BOTTOM = " + (S.aoiBottom ? t("yes") : t("no")) + "; " + t("newTests") + " = " + (nt.length ? nt.map((x) => x.id + " " + x.desc).join("; ") : t("none")), "");
+  const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>S</th><th>O</th><th>AOI</th><th>AXI</th><th>ICT</th><th>" + t("colFT") + "</th><th>" + t("colFTnew") + "</th><th>D</th><th>AP</th><th>" + t("colAP0") + "</th><th>" + t("raCol") + "</th></tr>";
   const rows = idxs.map((i, k) => {
     const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
     text.push((k + 1) + ". " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " | " + r.m.mode + " | " + r.m.effect + " | " + (u.cls || "–") + " S=" + (r.s || "–") + " O=" + (r.o || "–") +
-      " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft || "–") + " (" + (u.fttest || "–") + ") | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")");
+      " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft0 || "–") + " (" + (u.fttest || "–") + ")" + (r.ftN ? " FTnew=" + r.ftN + " (" + u.nfttest + ")" : "") + " | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")" +
+      (needsRA(r.ap) ? " | RA: " + (u.rad ? t(u.rad === "acc" ? "raAcc" : "raAct") : "–") + " – " + (u.ra || "–") : ""));
+    const raTxt = needsRA(r.ap) ? (u.rad ? "<b>" + esc(t(u.rad === "acc" ? "raAcc" : "raAct")) + "</b><br>" : "") + esc(u.ra || "–") : "–";
     return "<tr><td>" + (k + 1) + "</td><td>" + esc(r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin)) + "</td><td>" + esc(r.m.mode) + "</td><td>" + esc(r.m.effect) + "</td><td>" + esc(u.cls || "–") + "</td><td>" + (r.s || "–") +
-      "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(u.fttest || "–") + "</td><td>" + (r.ft || "–") + "</td><td>" + (r.d || "–") +
-      '</td><td class="ap-' + (r.ap || "na") + '">' + (r.ap || "–") + "</td><td>" + (r0.ap || "–") + "</td></tr>";
+      "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(u.fttest || "–") + " · " + (r.ft0 || "–") + "</td><td>" + (r.ftN ? esc(u.nfttest) + " · " + r.ftN : "–") + "</td><td>" + (r.d || "–") +
+      '</td><td class="ap-' + (r.ap || "na") + '">' + (r.ap || "–") + "</td><td>" + (r0.ap || "–") + "</td><td>" + raTxt + "</td></tr>";
   }).join("");
   parts.push("<h2>" + t("sheet") + '</h2><table class="r">' + head + rows + "</table>");
-  const sum = (x) => t("mDone") + ": " + x.done + "/" + x.n + " · H: " + x.H + " · M: " + x.M + " · L: " + x.L + " · " + t("mRes") + ": " + x.res + " · " + t("mCov") + ": " + x.cov + "%";
+  const sum = (x) => t("mDone") + ": " + x.done + "/" + x.n + " · H: " + x.H + " · M: " + x.M + " · L: " + x.L + " · " + t("mRes") + ": " + x.res + " · " + t("mCov") + ": " + x.cov + "%" + (x === now ? " · " + t("mRA") + ": " + x.ra + "/" + x.res : "");
   parts.push("<h2>" + t("summary") + "</h2><ul><li><strong>" + esc(sum(now)) + "</strong></li><li>" + esc(t("before")) + ": " + esc(sum(base)) + "</li></ul>");
   text.push("", t("summary") + ": " + sum(now), t("before") + ": " + sum(base));
   parts.push("<h2>" + esc(t("conclusion")) + "</h2><p>" + esc(S.conclusion || "–").replace(/\n/g, "<br>") + "</p>");
