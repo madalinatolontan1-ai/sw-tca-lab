@@ -41,9 +41,17 @@ function doPost(e) {
   }
 }
 
-/* Health check: opening the web app URL in a browser shows {"ok":true,...}. */
+/* Health check: opening the web app URL in a browser shows {"ok":true,...,"version":...}.
+   The version tells which code the deployment runs. */
+const VERSION = "2026-10-28";
 function doGet() {
-  return out_({ ok: true, service: "lab-reports", labs: Object.keys(LABS) });
+  return out_({ ok: true, service: "lab-reports", version: VERSION, labs: Object.keys(LABS) });
+}
+
+/* Run from the editor (Run → testPost): writes a test row and a test report, without the web app. */
+function testPost() {
+  const r = doPost({ postData: { contents: JSON.stringify({ lab: "HW-TCA", lang: "ro", name: "TEST", group: "0", variant: "H0", summary: "test din editor", html: "<p>test</p>" }) } });
+  Logger.log(r.getContent());
 }
 
 function out_(obj) {
