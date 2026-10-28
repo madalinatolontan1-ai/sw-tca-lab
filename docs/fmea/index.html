@@ -535,6 +535,8 @@ const SUG_MODE = {
     L("Procesează cadre în starea bus-off", "Processes frames in the bus-off state"), L("Returnează RX_FAULT în funcționare normală", "Returns RX_FAULT in normal operation"),
     L("Omite una dintre verificări (validitate sau plauzibilitate)", "Skips one of the checks (validity or plausibility)")]
 };
+/* explicit "no control" entry, as in APIS */
+const NONE_CTL = L("Niciuna (none)", "None");
 const CTRL = {
   hw: {
     pc: [L("Recomandările din datasheet-ul furnizorului", "Supplier datasheet recommendations"), L("Calcul worst case", "Worst-case calculation"), L("Simulare de circuit", "Circuit simulation"),
@@ -974,7 +976,7 @@ function ctlBlock(kind, k, list, field) {
 }
 function renderRisk(body, kind) {
   const A = S[kind]; const modes = failsAt(A, 2).filter((m) => causesOf(A, m.id).length);
-  const lists = ["pc", "dc"].map((f) => '<datalist id="dl-' + kind + "-" + f + '">' + CTRL[kind][f].map((c) => '<option value="' + esc(tr(c)) + '"></option>').join("") + "</datalist>").join("") +
+  const lists = ["pc", "dc"].map((f) => '<datalist id="dl-' + kind + "-" + f + '">' + [NONE_CTL].concat(CTRL[kind][f]).map((c) => '<option value="' + esc(tr(c)) + '"></option>').join("") + "</datalist>").join("") +
     '<datalist id="dl-' + kind + '-all">' + CTRL[kind].pc.concat(CTRL[kind].dc).map((c) => '<option value="' + esc(tr(c)) + '"></option>').join("") + "</datalist>";
   let h = lists + '<p class="muted">' + esc(t("riskHelp")) + "</p>" + refTables();
   if (!modes.length) h += '<p class="empty">' + esc(t("noModes")) + "</p>";
