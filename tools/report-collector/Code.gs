@@ -110,7 +110,8 @@ function setup() {
  * Your own edits live in Drive; re-importing replaces them, so rename your edited copy first if you want to keep it. */
 const MATERIALS_FOLDER = "Materiale curs laboratoare";
 const MATERIALS = [
-  { name: "HW TCA – curs (RO)", url: "https://raw.githubusercontent.com/madalinatolontan1-ai/sw-tca-lab/main/materials/HW_TCA_curs_RO.pptx" }
+  { name: "HW TCA – curs (RO)", url: "https://raw.githubusercontent.com/madalinatolontan1-ai/sw-tca-lab/main/materials/HW_TCA_curs_RO.pptx" },
+  { name: "HW TCA – lecture (EN)", url: "https://raw.githubusercontent.com/madalinatolontan1-ai/sw-tca-lab/main/materials/HW_TCA_lecture_EN.pptx" }
 ];
 function importMaterials() {
   const folder = (function () { const it = DriveApp.getFoldersByName(MATERIALS_FOLDER); return it.hasNext() ? it.next() : DriveApp.createFolder(MATERIALS_FOLDER); })();
