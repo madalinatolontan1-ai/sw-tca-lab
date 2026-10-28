@@ -108,7 +108,8 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .nets label.on { border-color: var(--tp); background: var(--warn-bg); }
 .nets label.na { opacity: 0.55; cursor: not-allowed; }
 .toggle { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
-.ftc { display: flex; flex-direction: column; gap: 4px; width: 190px; }
+.ftc { display: flex; flex-direction: column; gap: 4px; width: 200px; }
+textarea.ftj { width: 100%; min-height: 48px; font-size: 0.8rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); resize: vertical; }
 .ftd { display: flex; gap: 6px; align-items: flex-start; }
 .ftd .why { max-width: 150px; margin-top: 0; }
 .sch { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
@@ -298,58 +299,36 @@ const OCC = [
   ["1", { ro: "Cauza e eliminată prin prevenție; nu e posibilă prin design", en: "Cause eliminated by prevention; not possible by design" }]
 ];
 /* criterion C9: what the functional test can see */
-const C9 = [["1", { ro: "1 · localizează", en: "1 · localises" }], ["5", { ro: "5 · nu localizează", en: "5 · does not localise" }]];
-const FT_TESTS = [
-  ["FT1", { ro: "Consum de curent (IDD recesiv ≤ 10 mA, dominant ≤ 75 mA)", en: "Supply current (IDD recessive ≤ 10 mA, dominant ≤ 75 mA)" }],
-  ["FT2", { ro: "Indicator alimentare: LED1 aprins", en: "Power indicator: LED1 on" }],
-  ["FT3", { ro: "Tensiuni bus recesiv: VCANH, VCANL 2,0–3,0 V", en: "Recessive bus voltages: VCANH, VCANL 2.0–3.0 V" }],
-  ["FT4", { ro: "Tensiune diferențială dominant 1,5–3,0 V (sarcină 40–60 Ω)", en: "Dominant differential voltage 1.5–3.0 V (40–60 Ω load)" }],
-  ["FT5", { ro: "Loopback TXD → RXD", en: "Loopback TXD → RXD" }],
-  ["FT6", { ro: "Rezistența de terminație pe J2 (≈ 120 Ω cu JP1, ≥ 20 kΩ fără)", en: "Termination resistance on J2 (≈ 120 Ω with JP1, ≥ 20 kΩ without)" }],
-  ["FT7", { ro: "Transmisie CAN prin conectori (J1 → J2), 125 kbit/s și 1 Mbit/s", en: "CAN transmission through the connectors (J1 → J2), 125 kbit/s and 1 Mbit/s" }],
-  ["FT8", { ro: "Recepție CAN prin conectori (J2 → J1), 125 kbit/s și 1 Mbit/s", en: "CAN reception through the connectors (J2 → J1), 125 kbit/s and 1 Mbit/s" }]
+const C9 = [["1", { ro: "1", en: "1" }], ["5", { ro: "5", en: "5" }], ["10", { ro: "10", en: "10" }]];
+/* functional test list given to the students (sheet "Teste FT"); D FT is their judgement */
+const FT_LIST = [
+  { id: "FT1", name: { ro: "Consum de curent", en: "Supply current" }, meas: { ro: "IDD pe VDD (J1), în stare recesivă și dominantă", en: "IDD on VDD (J1), in the recessive and the dominant state" },
+    lim: { ro: "Recesiv ≤ 10 mA; dominant ≤ 75 mA", en: "Recessive ≤ 10 mA; dominant ≤ 75 mA" },
+    catches: { ro: "Short pe C3, short / wrong polarity LED1, pin short U1 (VDD–GND), U1 missing, wrong functionality VDD", en: "C3 short, LED1 short / wrong polarity, U1 pin short (VDD–GND), U1 missing, VDD wrong functionality" } },
+  { id: "FT2", name: { ro: "Indicator de alimentare", en: "Power indicator" }, meas: { ro: "LED1 aprins, verificat automat cu un senzor optic", en: "LED1 on, checked automatically with an optical sensor" },
+    lim: { ro: "Aprins la VDD nominal", en: "On at nominal VDD" },
+    catches: { ro: "LED1 open / missing / wrong polarity, R5 open / missing", en: "LED1 open / missing / wrong polarity, R5 open / missing" } },
+  { id: "FT3", name: { ro: "Tensiuni pe bus în recesiv", en: "Recessive bus voltages" }, meas: { ro: "VCANH, VCANL fără sarcină, TXD = 1", en: "VCANH, VCANL without load, TXD = 1" },
+    lim: { ro: "2,0 – 3,0 V", en: "2.0 – 3.0 V" },
+    catches: { ro: "Short R1/C1, R2/C2 (linie la GND), pin open / short U1 pe CANH / CANL", en: "R1/C1, R2/C2 short (line to GND), U1 pin open / short on CANH / CANL" } },
+  { id: "FT4", name: { ro: "Tensiune diferențială în dominant", en: "Dominant differential voltage" }, meas: { ro: "VCANH – VCANL cu sarcină 40–60 Ω, TXD = 0", en: "VCANH – VCANL with a 40–60 Ω load, TXD = 0" },
+    lim: { ro: "1,5 – 3,0 V", en: "1.5 – 3.0 V" },
+    catches: { ro: "Driver defect (wrong functionality CANH / CANL), R3 wrong value (mod standby)", en: "Faulty driver (CANH / CANL wrong functionality), R3 wrong value (standby mode)" } },
+  { id: "FT5", name: { ro: "Loopback TXD → RXD", en: "Loopback TXD → RXD" }, meas: { ro: "Se comută TXD; RXD trebuie să urmeze starea bus-ului", en: "TXD is toggled; RXD has to follow the bus state" },
+    lim: { ro: "RXD = 0 în dominant, 1 în recesiv", en: "RXD = 0 in dominant, 1 in recessive" },
+    catches: { ro: "Pin open TXD / RXD pe U1 și J1, wrong functionality TXD / RXD, mod standby greșit (R3)", en: "TXD / RXD pin open on U1 and J1, TXD / RXD wrong functionality, wrong standby mode (R3)" } },
+  { id: "FT6", name: { ro: "Rezistență de terminație", en: "Termination resistance" }, meas: { ro: "Rezistența CAN_H–CAN_L pe J2, cu JP1 montat și nemontat", en: "CAN_H–CAN_L resistance on J2, with JP1 fitted and removed" },
+    lim: { ro: "≈ 120 Ω cu JP1; ≥ 20 kΩ fără JP1", en: "≈ 120 Ω with JP1; ≥ 20 kΩ without JP1" },
+    catches: { ro: "R4 open / missing / wrong value, JP1 missing / open / short", en: "R4 open / missing / wrong value, JP1 missing / open / short" } },
+  { id: "FT7", name: { ro: "Transmisie CAN prin conectori", en: "CAN transmission through the connectors" }, meas: { ro: "Testerul trimite cadre pe TXD (J1); un nod de referință pe J2 le recepționează și le confirmă (ACK), la 500 kbit/s", en: "The tester sends frames on TXD (J1); a reference node on J2 receives and acknowledges them (ACK), at 500 kbit/s" },
+    lim: { ro: "Toate cadrele recepționate corect, fără error frames", en: "All frames received correctly, no error frames" },
+    catches: { ro: "Pin open / short pe J1 (VDD, TXD, GND) și J2 (CAN_H, CAN_L), U1 TXD / CANH / CANL / RS, R3 open / missing / wrong value (standby), short R1/C1, R2/C2", en: "Pin open / short on J1 (VDD, TXD, GND) and J2 (CAN_H, CAN_L), U1 TXD / CANH / CANL / RS, R3 open / missing / wrong value (standby), R1/C1, R2/C2 short" } },
+  { id: "FT8", name: { ro: "Recepție CAN prin conectori", en: "CAN reception through the connectors" }, meas: { ro: "Nodul de referință trimite cadre pe J2; testerul citește RXD pe J1, la 500 kbit/s", en: "The reference node sends frames on J2; the tester reads RXD on J1, at 500 kbit/s" },
+    lim: { ro: "Toate cadrele citite corect pe RXD, fără error frames", en: "All frames read correctly on RXD, no error frames" },
+    catches: { ro: "Pin open / short pe J1 (RXD) și J2 (CAN_H, CAN_L), U1 RXD / CANH / CANL, wrong functionality RXD", en: "Pin open / short on J1 (RXD) and J2 (CAN_H, CAN_L), U1 RXD / CANH / CANL, RXD wrong functionality" } }
 ];
+const FT_TESTS = FT_LIST.map((x) => [x.id, x.name]);
 const L = (ro, en) => ({ ro: ro, en: en });
-/* ---------------------------------------------------------------- product test specification (PTS) */
-const PTS = [
-  { id: "FT1.1", name: L("Consum de curent, recesiv", "Supply current, recessive"), cond: L("TXD = 1, J2 în gol", "TXD = 1, J2 open"), point: "J1 pin 1 (VDD)", param: L("IDD modul (U1 + LED1)", "Module IDD (U1 + LED1)"), lim: "4 – 13 mA", res: ["0mA", "lowA", "overA"] },
-  { id: "FT1.2", name: L("Consum de curent, dominant", "Supply current, dominant"), cond: L("TXD = 0, sarcină 60 Ω pe J2", "TXD = 0, 60 Ω load on J2"), point: "J1 pin 1 (VDD)", param: L("IDD modul în dominant", "Module IDD in dominant"), lim: "20 – 78 mA", res: ["noDom", "overA"] },
-  { id: "FT2.1", name: L("Indicator de alimentare", "Power indicator"), cond: L("Senzor optic automat deasupra LED1", "Automatic optical sensor above LED1"), point: "LED1", param: L("Intensitate și culoare", "Intensity and colour"), lim: L("aprins, verde", "on, green"), res: ["ledOff", "ledCol"] },
-  { id: "FT3.1", name: L("Bus recesiv, CAN_H", "Recessive bus, CAN_H"), cond: L("TXD = 1, J2 fără sarcină", "TXD = 1, no load on J2"), point: "J2 pin 1 – GND", param: "VCANH", lim: "2,0 – 3,0 V", res: ["canhRec"] },
-  { id: "FT3.2", name: L("Bus recesiv, CAN_L", "Recessive bus, CAN_L"), cond: L("TXD = 1, J2 fără sarcină", "TXD = 1, no load on J2"), point: "J2 pin 2 – GND", param: "VCANL", lim: "2,0 – 3,0 V", res: ["canlRec"] },
-  { id: "FT4.1", name: L("Bus dominant, diferențial", "Dominant bus, differential"), cond: L("TXD = 0, sarcină 60 Ω pe J2", "TXD = 0, 60 Ω load on J2"), point: "J2 pin 1 – pin 2", param: "VDIFF", lim: "1,5 – 3,0 V", res: ["vd0", "vdOut"] },
-  { id: "FT4.2", name: L("Bus dominant, CAN_H", "Dominant bus, CAN_H"), cond: L("TXD = 0, sarcină 60 Ω pe J2", "TXD = 0, 60 Ω load on J2"), point: "J2 pin 1 – GND", param: "VCANH", lim: "2,75 – 4,5 V", res: ["canhDom"] },
-  { id: "FT4.3", name: L("Bus dominant, CAN_L", "Dominant bus, CAN_L"), cond: L("TXD = 0, sarcină 60 Ω pe J2", "TXD = 0, 60 Ω load on J2"), point: "J2 pin 2 – GND", param: "VCANL", lim: "0,5 – 2,25 V", res: ["canlDom"] },
-  { id: "FT5.1", name: L("Loopback, recesiv", "Loopback, recessive"), cond: L("TXD = 1, sarcină 60 Ω pe J2", "TXD = 1, 60 Ω load on J2"), point: "J1 pin 3 (RXD)", param: L("Nivel RXD", "RXD level"), lim: "high", res: ["rxdLow", "rxdNone"] },
-  { id: "FT5.2", name: L("Loopback, dominant", "Loopback, dominant"), cond: L("TXD = 0, sarcină 60 Ω pe J2", "TXD = 0, 60 Ω load on J2"), point: "J1 pin 3 (RXD)", param: L("Nivel RXD", "RXD level"), lim: "low", res: ["rxdHigh"] },
-  { id: "FT5.3", name: L("Loopback, întârziere", "Loopback, delay"), cond: L("TXD comutat la 500 kbit/s, sarcină 60 Ω", "TXD toggled at 500 kbit/s, 60 Ω load"), point: "J1 pin 2 → pin 3", param: L("Întârziere TXD → RXD", "TXD → RXD delay"), lim: L("≤ limita din datasheet", "≤ datasheet limit"), res: ["slow"] },
-  { id: "FT6.1", name: L("Terminație, cu JP1", "Termination, with JP1"), cond: L("Alimentare oprită, JP1 montat", "Supply off, JP1 fitted"), point: "J2 pin 1 – pin 2", param: L("Rezistență CAN_H–CAN_L", "CAN_H–CAN_L resistance"), lim: "114 – 126 Ω", res: ["r0", "rOpen", "rVal"] },
-  { id: "FT6.2", name: L("Terminație, fără JP1", "Termination, without JP1"), cond: L("Alimentare oprită, JP1 scos", "Supply off, JP1 removed"), point: "J2 pin 1 – pin 2", param: L("Rezistență CAN_H–CAN_L", "CAN_H–CAN_L resistance"), lim: "≥ 20 kΩ", res: ["r120"] },
-  { id: "FT7.1", name: L("Transmisie CAN", "CAN transmission"), cond: L("1000 de cadre la 500 kbit/s; nod de referință pe J2", "1000 frames at 500 kbit/s; reference node on J2"), point: L("Nodul de referință (J2)", "Reference node (J2)"), param: L("Cadre primite + ACK", "Frames received + ACK"), lim: L("1000 / 1000, fără error frames", "1000 / 1000, no error frames"), res: ["noCom", "errCom"], comm: true },
-  { id: "FT8.1", name: L("Recepție CAN", "CAN reception"), cond: L("Nodul de referință trimite 1000 de cadre pe J2", "The reference node sends 1000 frames on J2"), point: "J1 pin 3 (RXD)", param: L("Cadre citite pe RXD", "Frames read on RXD"), lim: L("1000 / 1000, fără error frames", "1000 / 1000, no error frames"), res: ["noCom", "errCom"], comm: true }
-];
-const PTS_RES = {
-  "0mA": L("≈ 0 mA (modulul nu se alimentează)", "≈ 0 mA (module not supplied)"), lowA: L("sub minim (doar LED-ul consumă)", "below minimum (only the LED draws current)"),
-  overA: L("supracurent", "overcurrent"), noDom: L("sub minim (nu trece în dominant)", "below minimum (does not go dominant)"),
-  ledOff: L("LED stins", "LED off"), ledCol: L("culoare greșită", "wrong colour"),
-  canhRec: L("VCANH în afara 2,0–3,0 V", "VCANH outside 2.0–3.0 V"), canlRec: L("VCANL în afara 2,0–3,0 V", "VCANL outside 2.0–3.0 V"),
-  vd0: L("VDIFF ≈ 0 V", "VDIFF ≈ 0 V"), vdOut: L("VDIFF în afara 1,5–3,0 V", "VDIFF outside 1.5–3.0 V"),
-  canhDom: L("VCANH în afara limitelor", "VCANH out of limits"), canlDom: L("VCANL în afara limitelor", "VCANL out of limits"),
-  rxdLow: L("RXD blocat pe low", "RXD stuck low"), rxdNone: L("RXD nu răspunde (flotant)", "RXD does not respond (floating)"), rxdHigh: L("RXD blocat pe high", "RXD stuck high"),
-  slow: L("întârziere peste limită", "delay above limit"), r0: L("≈ 0 Ω", "≈ 0 Ω"), rOpen: L("gol (≥ 20 kΩ)", "open (≥ 20 kΩ)"), rVal: L("valoare finită ≠ 120 Ω", "finite value ≠ 120 Ω"),
-  r120: L("≈ 120 Ω fără JP1", "≈ 120 Ω without JP1"), noCom: L("fără comunicație", "no communication"), errCom: L("erori de comunicație", "communication errors")
-};
-/* library modes whose first failing PTS step gives this result (sheet "Analiză TCA", columns W–X) */
-const PTS_GROUPS = {"FT1.1|0mA": [0, 1, 4], "FT1.2|noDom": [2, 5, 9, 14, 15, 16, 23, 28, 29, 35, 37, 63, 64, 65], "FT5.1|rxdNone": [3, 12], "FT7.1|errCom": [6], "FT5.1|rxdLow": [7, 26], "FT1.1|lowA": [8, 10, 11, 24, 25], "FT7.1|noCom": [17], "FT1.1|overA": [18, 32, 75], "FT5.2|rxdHigh": [19], "FT4.1|vd0": [21, 67], "FT3.1|canhRec": [22, 52], "FT5.3|slow": [30, 38], "FT6.1|rOpen": [39, 41, 43, 45, 46], "FT6.1|r0": [40], "FT6.1|rVal": [42], "FT6.2|r120": [44], "FT3.2|canlRec": [60, 68], "FT2.1|ledOff": [69, 70, 71, 73, 74, 76], "FT2.1|ledCol": [72]};
-const ptsStep = (id) => PTS.find((p) => p.id === id);
-function ftFromPTS(step, res) {
-  if (step === "none") return { d: 10, n: 0, why: "none" };
-  if (!step || !res) return null;
-  const p = ptsStep(step); if (!p) return null;
-  const n = (PTS_GROUPS[step + "|" + res] || []).length;
-  if (p.comm) return { d: 5, n: n, why: "comm" };
-  return { d: n <= 1 ? 1 : 5, n: n, why: n <= 1 ? "unique" : "shared" };
-}
 /* AIAG-VDA Action Priority: [S band][O band] -> [D 7-10, D 5-6, D 2-4, D 1] */
 const AP = {
   "9-10": { "8-10": "HHHH", "6-7": "HHHH", "4-5": "HHHM", "2-3": "HMLL", "1": "LLLL" },
@@ -381,7 +360,7 @@ const I18N = {
     stepsTitle: "Pașii",
     s1: "S: alege clasa de efect. Efectul e dat; severitatea rezultă din clasă.",
     s2: "O: alege ocurența din scala AIAG-VDA (rezumatul e mai jos).",
-    s3: "D: citește predicția pentru AOI, AXI, ICT. Pentru FT folosește specificația de test (PTS): alegi primul pas PTS picat și rezultatul, iar D FT rezultă din localizare.",
+    s3: "D: citește predicția pentru AOI, AXI, ICT. Pentru FT alegi din lista FT1–FT8 testul potrivit (sau NONE), valoarea D și scrii de ce.",
     s4: "Îmbunătățiri: test point-uri, AOI pe BOTTOM sau teste FT noi. Unde AP rămâne H sau M, documentează riscul rezidual.",
     s5: "Raport: descarcă fișa de evaluare a riscului.",
     board: "Placa (vedere simplificată)", top: "TOP", bottom: "BOTTOM",
@@ -389,7 +368,7 @@ const I18N = {
     aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
     nc: "neconectat",
     sheet: "Fișa de analiză", colComp: "Componentă", colMode: "Mod de defectare", colEffect: "Efect", colClass: "Clasă efect", colS: "S", colO: "O",
-    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "FT · primul pas PTS picat", colFTnew: "Pas PTS nou (îmbun.)", colFTstep: "Primul pas PTS picat", colFTres: "Rezultat la pas", ftNone: "niciun pas (nu se vede la FT)", schematic: "SCHEMĂ", colRA: "Evaluarea riscului rezidual", noTest: "niciun test", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "FT · test, D și justificare", colFTnew: "Test FT nou (îmbun.)", colFTd: "D FT", ftNone: "NONE (niciun test nu se potrivește)", ftJustPh: "de ce ai ales testul și valoarea?", schematic: "SCHEMĂ", colRA: "Evaluarea riscului rezidual", noTest: "niciun test", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
     choose: "–",
     summary: "Rezumat", mDone: "Moduri completate", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Risc rezidual (H + M)", mCov: "Acoperirea riscului",
     before: "fără îmbunătățiri",
@@ -406,16 +385,11 @@ const I18N = {
     student: "Student", generated: "Generat", improvements: "Îmbunătățiri aplicate", tpOn: "Test point-uri", none: "niciuna", yes: "da", no: "nu",
     incomplete: "incomplet",
     raAcc: "risc acceptat", raAct: "acțiune propusă", raPh: "de ce rămâne riscul, ce se poate face sau de ce se acceptă",
-    newTestsTitle: "Pași PTS noi (îmbunătățire)", newTestsHint: "Propune un pas de test nou (ce măsori, unde, ce limită), apoi alege-l în coloana „Pas PTS nou” la modurile pe care le detectează, cu clasa C9: 1 dacă localizează defectul, 5 dacă nu. Pasul contează doar în varianta cu îmbunătățiri.",
+    newTestsTitle: "Teste FT noi (îmbunătățire)", newTestsHint: "Propune un test funcțional nou (ce măsori, unde, ce limită), apoi alege-l în coloana „Test FT nou” la modurile pe care le prinde, cu valoarea D. Testul contează doar în varianta cu îmbunătățiri.",
     newTestPh: "ex.: Măsurarea tensiunii pe RS cu nodul activ (< 0,3 · VDD)", addTest: "Adaugă testul", testAdded: "Testul {id} a fost adăugat.", del: "Șterge", newTag: "nou",
-    whyFTnone: "niciun pas afectat → 10", whyFTcomm: "test de comunicație, nu localizează → 5", whyFTone: "un singur mod dă acest rezultat → 1", whyFTn: "{n} moduri dau acest rezultat → 5",
-    nModes: "{n} moduri", nMode1: "1 mod", nMode0: "niciun mod din bibliotecă nu se oprește aici", showModes: "Arată modurile", commNote: "nu localizează", hintsUsed: "Indicii folosite (Arată modurile)",
-    ptsTitle: "Specificația testului de produs (PTS) · cum stabilești D FT", ptsStep: "Pas", ptsTest: "Test și condiții", ptsPoint: "Punct de măsură", ptsParam: "Parametru", ptsLim: "Limite", ptsRes: "Rezultate posibile (moduri din bibliotecă)",
-    ftHowTitle: "Cum stabilești D FT pentru un mod de defectare",
-    ftHow: ["Testul funcțional vede modulul doar prin J1, J2 și LED. Pornește de la efectul defectului și de la schemă: ce mărime măsurată în PTS se schimbă (curent, tensiuni pe bus, RXD, rezistența CAN_H–CAN_L, comunicația)?",
-      "Programul de test rulează pașii în ordine și se oprește la primul pas picat. Alege primul pas a cărui limită e depășită și rezultatul de la acel pas. Dacă niciun pas nu e afectat (de exemplu, efectul e doar EMC), alege „niciun pas”: D FT = 10.",
-      "Localizare: dacă doar defectul tău produce acest rezultat, D FT = 1; dacă îl produc și alte defecte (numărul e afișat lângă rezultat) sau pasul e un test de comunicație (FT7, FT8), D FT = 5. Gândește din schemă ce alte defecte de pe aceleași net-uri dau același rezultat; folosește „Arată modurile” doar dacă te blochezi (se notează în raport)."],
-    ptsNote: "Limitele marcate în specificație ca „de stabilit pe plăci bune” sunt propuneri. Numărul de moduri se referă la toată biblioteca de defecte a modulului, nu doar la varianta ta.",
+    ftListTitle: "Lista testelor funcționale (FT1–FT8) · cum alegi D FT", ftHowTitle: "Cum alegi testul și D FT",
+    ftHow: ["Citește efectul și tipul modului de defectare (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Caută în listă, la „Ce poate prinde”, un test care se potrivește cu componenta și cu tipul defectului.", "Consultă schema (butonul SCHEMĂ de lângă placă): unde e plasată componenta față de semnalele măsurate de test, pe ce net se află și ce pin de conector atinge.", "Alege testul cel mai potrivit sau NONE dacă niciunul nu se potrivește.", "Alege valoarea de detecție pe care o consideri potrivită și scrie de ce. Orientativ: 1 – testul prinde sigur defectul; 5 – îl prinde doar parțial (pentru anumite valori, condiții sau intermitent); 10 – niciun test nu îl prinde (NONE)."],
+    ftColId: "Test", ftColName: "Denumire", ftColMeas: "Ce se măsoară", ftColLim: "Limite", ftColCatch: "Ce poate prinde",
     mRA: "Risc rezidual documentat", sevScaleTitle: "Scala de severitate AIAG-VDA (rezumat)", newTests: "Teste FT noi", raCol: "Evaluarea riscului"
   },
   en: {
@@ -432,7 +406,7 @@ const I18N = {
     stepsTitle: "Steps",
     s1: "S: choose the effect class. The effect is given; the severity follows from the class.",
     s2: "O: choose the occurrence from the AIAG-VDA scale (summary below).",
-    s3: "D: read the prediction for AOI, AXI, ICT. For FT use the product test specification (PTS): choose the first failing PTS step and the result; D FT follows from localisation.",
+    s3: "D: read the prediction for AOI, AXI, ICT. For FT choose the matching test from the FT1–FT8 list (or NONE), the D value, and write why.",
     s4: "Improvements: test points, AOI on BOTTOM or new FT tests. Where the AP stays H or M, document the residual risk.",
     s5: "Report: download the risk assessment sheet.",
     board: "Board (simplified view)", top: "TOP", bottom: "BOTTOM",
@@ -440,7 +414,7 @@ const I18N = {
     aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
     nc: "not connected",
     sheet: "Analysis sheet", colComp: "Component", colMode: "Failure mode", colEffect: "Effect", colClass: "Effect class", colS: "S", colO: "O",
-    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "FT · first failing PTS step", colFTnew: "New PTS step (impr.)", colFTstep: "First failing PTS step", colFTres: "Result at the step", ftNone: "no step (not visible at FT)", schematic: "SCHEMATIC", colRA: "Residual risk assessment", noTest: "no test", colD: "D", colAP: "AP", colAP0: "AP no impr.",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "FT · test, D and justification", colFTnew: "New FT test (impr.)", colFTd: "D FT", ftNone: "NONE (no test fits)", ftJustPh: "why did you choose this test and value?", schematic: "SCHEMATIC", colRA: "Residual risk assessment", noTest: "no test", colD: "D", colAP: "AP", colAP0: "AP no impr.",
     choose: "–",
     summary: "Summary", mDone: "Modes completed", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Residual risk (H + M)", mCov: "Risk coverage",
     before: "without improvements",
@@ -457,16 +431,11 @@ const I18N = {
     student: "Student", generated: "Generated", improvements: "Improvements applied", tpOn: "Test points", none: "none", yes: "yes", no: "no",
     incomplete: "incomplete",
     raAcc: "risk accepted", raAct: "action proposed", raPh: "why the risk remains, what can be done or why it is accepted",
-    newTestsTitle: "New PTS steps (improvement)", newTestsHint: "Propose a new test step (what you measure, where, which limit), then pick it in the “New PTS step” column for the modes it detects, with the C9 class: 1 if it localises the defect, 5 if not. The step counts only in the version with improvements.",
+    newTestsTitle: "New FT tests (improvement)", newTestsHint: "Propose a new functional test (what you measure, where, which limit), then pick it in the “New FT test” column for the modes it catches, with the D value. The test counts only in the version with improvements.",
     newTestPh: "e.g.: Measure the RS voltage with the node active (< 0.3 · VDD)", addTest: "Add test", testAdded: "Test {id} added.", del: "Delete", newTag: "new",
-    whyFTnone: "no step affected → 10", whyFTcomm: "communication test, does not localise → 5", whyFTone: "only one mode gives this result → 1", whyFTn: "{n} modes give this result → 5",
-    nModes: "{n} modes", nMode1: "1 mode", nMode0: "no library mode stops here", showModes: "Show the modes", commNote: "does not localise", hintsUsed: "Hints used (Show the modes)",
-    ptsTitle: "Product test specification (PTS) · how to set D FT", ptsStep: "Step", ptsTest: "Test and conditions", ptsPoint: "Measuring point", ptsParam: "Parameter", ptsLim: "Limits", ptsRes: "Possible results (modes in the library)",
-    ftHowTitle: "How to set D FT for a failure mode",
-    ftHow: ["The functional test sees the module only through J1, J2 and the LED. Start from the effect of the defect and from the schematic: which quantity measured in the PTS changes (current, bus voltages, RXD, CAN_H–CAN_L resistance, communication)?",
-      "The test program runs the steps in order and stops at the first failing step. Choose the first step whose limit is exceeded and the result at that step. If no step is affected (for example, the effect is EMC only), choose “no step”: D FT = 10.",
-      "Localisation: if only your defect produces this result, D FT = 1; if other defects produce it too (the number is shown next to the result) or the step is a communication test (FT7, FT8), D FT = 5. Work out from the schematic which other defects on the same nets give the same result; use “Show the modes” only if you get stuck (it is noted in the report)."],
-    ptsNote: "Limits marked in the specification as “to be set on good boards” are proposals. The number of modes refers to the whole defect library of the module, not only to your variant.",
+    ftListTitle: "Functional test list (FT1–FT8) · how to choose D FT", ftHowTitle: "How to choose the test and D FT",
+    ftHow: ["Read the effect and the type of the failure mode (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Look in the list, under “What it can catch”, for a test that matches the component and the defect type.", "Check the schematic (the SCHEMATIC button next to the board): where the component sits relative to the signals the test measures, which net it is on and which connector pin it reaches.", "Choose the most suitable test, or NONE if no test fits.", "Choose the detection value you consider right and write why. As a guide: 1 – the test surely catches the defect; 5 – it catches it only partly (for some values, conditions or intermittently); 10 – no test catches it (NONE)."],
+    ftColId: "Test", ftColName: "Name", ftColMeas: "What is measured", ftColLim: "Limits", ftColCatch: "What it can catch",
     mRA: "Residual risk documented", sevScaleTitle: "AIAG-VDA severity scale (summary)", newTests: "New FT tests", raCol: "Risk assessment"
   }
 };
@@ -513,8 +482,7 @@ function evalRow(idx, env) {
   const sev = SEVERITY.find((x) => x[0] === u.cls);
   const s = sev ? sev[1] : null;
   const o = u.o ? +u.o : null;
-  const pf = ftFromPTS(u.ftstep, u.ftres);
-  const ft0 = pf ? pf.d : null;                                                 /* existing PTS (first failing step) */
+  const ft0 = u.fttest === "none" ? 10 : (u.fttest && u.ft ? +u.ft : null);   /* existing FT1-FT8: student's D with justification */
   const ftN = env.newFT && u.nft && u.nfttest && newTest(u.nfttest) ? +u.nft : null; /* new FT test (improvement) */
   const ft = ft0 && ftN ? Math.min(ft0, ftN) : ft0;
   const d = ft ? Math.min(det.aoi, det.axi, det.ict, ft) : null;
@@ -700,23 +668,12 @@ function refTables() {
   return [["sevTitle", sev, true], ["sevScaleTitle", scale, false], ["occTitle", occ, false], ["apTitle", ap, false]]
     .map((x) => '<details class="ref"' + (x[2] ? " open" : "") + "><summary>" + esc(t(x[0])) + "</summary><div>" + x[1] + "</div></details>").join("");
 }
-function ptsPanel() {
-  const hints = S.hints || {};
-  const rows = PTS.map((p) => {
-    const res = p.res.map((k) => {
-      const key = p.id + "|" + k; const ids = PTS_GROUPS[key] || [];
-      const shown = hints[key];
-      return '<div class="pres"><span class="rl">' + esc(tr(PTS_RES[k])) + '</span> <span class="chip neutral">' + (ids.length ? fmtT(ids.length === 1 ? "nMode1" : "nModes", { n: ids.length }) : t("nMode0")) + "</span>" +
-        (ids.length ? (shown ? '<div class="pmodes">' + ids.map((i) => esc(MODES[i].ref + (MODES[i].pin === "–" ? "" : " " + MODES[i].pin) + " · " + MODES[i].mode)).join("<br>") + "</div>"
-          : ' <button class="btn small" type="button" data-hint="' + key + '">' + t("showModes") + "</button>") : "") + "</div>";
-    }).join("");
-    return "<tr><td class=\"mono\"><b>" + p.id + "</b>" + (p.comm ? '<span class="why">' + esc(t("commNote")) + "</span>" : "") + "</td><td>" + esc(tr(p.name)) + '<span class="why">' + esc(tr(p.cond)) + "</span></td><td>" + esc(tr(p.point)) + "</td><td>" + esc(tr(p.param)) +
-      '</td><td class="mono">' + esc(tr(p.lim)) + "</td><td>" + res + "</td></tr>";
-  }).join("");
-  return '<details class="ref pts" open><summary>' + t("ptsTitle") + '</summary><div class="stack">' +
+function ftPanel() {
+  const rows = FT_LIST.map((x) => '<tr><td class="mono"><b>' + x.id + "</b></td><td>" + esc(tr(x.name)) + "</td><td>" + esc(tr(x.meas)) + "</td><td>" + esc(tr(x.lim)) + "</td><td>" + esc(tr(x.catches)) + "</td></tr>").join("") +
+    (S.newTests || []).map((x) => '<tr><td class="mono"><b>' + esc(x.id) + '</b></td><td colspan="3">' + esc(x.desc) + ' <span class="chip neutral">' + esc(t("newTag")) + "</span></td><td>–</td></tr>").join("");
+  return '<details class="ref pts" open><summary>' + t("ftListTitle") + '</summary><div class="stack">' +
     '<div class="notice"><b>' + t("ftHowTitle") + "</b><ol>" + t("ftHow").map((x) => "<li>" + esc(x) + "</li>").join("") + "</ol></div>" +
-    '<div class="tablewrap"><table class="sheet ptst"><thead><tr><th>' + t("ptsStep") + "</th><th>" + t("ptsTest") + "</th><th>" + t("ptsPoint") + "</th><th>" + t("ptsParam") + "</th><th>" + t("ptsLim") + "</th><th>" + t("ptsRes") + "</th></tr></thead><tbody>" + rows + "</tbody></table></div>" +
-    '<p class="muted" style="font-size:0.85rem">' + t("ptsNote") + "</p></div></details>";
+    '<div class="tablewrap"><table class="sheet ptst"><thead><tr><th>' + t("ftColId") + "</th><th>" + t("ftColName") + "</th><th>" + t("ftColMeas") + "</th><th>" + t("ftColLim") + "</th><th>" + t("ftColCatch") + "</th></tr></thead><tbody>" + rows + "</tbody></table></div></div></details>";
 }
 function renderAnalysis(view) {
   const idxs = V(); const env = ENV_NOW();
@@ -736,12 +693,10 @@ function renderAnalysis(view) {
       opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
     const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     const c9opts = C9.map((x) => [x[0], tr(x[1])]);
-    const pf = ftFromPTS(u.ftstep, u.ftres); const stp = ptsStep(u.ftstep);
-    const resOpts = stp ? stp.res.map((k) => [k, tr(PTS_RES[k])]) : [];
-    const ftWhy = !pf ? "" : pf.why === "none" ? t("whyFTnone") : pf.why === "comm" ? t("whyFTcomm") : fmtT(pf.n <= 1 ? "whyFTone" : "whyFTn", { n: pf.n });
-    const ftCell = '<td><div class="ftc">' + sel("ftstep", PTS.map((x) => [x.id, x.id + " · " + tr(x.name)]).concat([["none", t("ftNone")]]), u.ftstep, t("colFTstep")) +
-      (stp ? sel("ftres", resOpts, u.ftres, t("colFTres")) : "") +
-      (pf ? '<span class="ftd"><span class="dv ' + (pf.d === 1 ? "d1" : pf.d === 10 ? "d10" : "dm") + '">' + pf.d + '</span><span class="why">' + esc(ftWhy) + "</span></span>" : "") + "</div></td>";
+    const dOpts = [["1", "1"], ["5", "5"], ["10", "10"]];
+    const ftCell = '<td><div class="ftc">' + sel("fttest", FT_LIST.map((x) => [x.id, x.id + " · " + tr(x.name)]).concat([["none", t("ftNone")]]), u.fttest, t("colFTtest")) +
+      (u.fttest && u.fttest !== "none" ? sel("ft", dOpts, u.ft, t("colFTd")) : "") +
+      '<textarea class="ftj" data-ftj="' + i + '" placeholder="' + esc(t("ftJustPh")) + '" aria-label="' + esc(t("ftJustPh")) + '">' + esc(u.ftj || "") + "</textarea></div></td>";
     const ftNewCell = hasNew ? '<td><div class="ftc">' + sel("nfttest", S.newTests.map((x) => x.id), u.nfttest, t("colFTnew")) + sel("nft", c9opts, u.nft, t("colFTnew")) + "</div></td>" : "";
     const raCell = needsRA(r.ap) ? '<td class="ra"><select data-row="' + i + '" data-k="rad" aria-label="' + esc(t("colRA")) + '"><option value="">' + t("choose") + "</option>" +
         [["acc", t("raAcc")], ["act", t("raAct")]].map((o) => '<option value="' + o[0] + '"' + (u.rad === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>").join("") + "</select>" +
@@ -763,7 +718,7 @@ function renderAnalysis(view) {
       '<div id="boardBox">' + (S.side === "sch" ? schSVG(S.sel, refs) : boardSVG(S.side === "top", S.sel, refs)) + "</div>" +
       '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
       '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel + "</div>" +
-      '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" + ptsPanel() +
+      '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" + ftPanel() +
     '<div class="panel stack"><h3>' + t("summary") + '</h3><div class="meters">' +
       meter(t("mDone"), now.done + " / " + now.n, base.done + " / " + base.n) +
       meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
@@ -775,9 +730,10 @@ function renderAnalysis(view) {
 
   view.querySelectorAll("select[data-row]").forEach((n) => n.addEventListener("change", () => {
     const i = n.dataset.row; S.rows[i] = S.rows[i] || {}; S.rows[i][n.dataset.k] = n.value;
-    if (n.dataset.k === "ftstep") { const p = ptsStep(n.value); S.rows[i].ftres = p && p.res.length === 1 ? p.res[0] : ""; }
+    if (n.dataset.k === "fttest" && n.value === "none") S.rows[i].ft = "10";
     save(); render();
   }));
+  view.querySelectorAll("textarea[data-ftj]").forEach((n) => n.addEventListener("input", () => { const i = n.dataset.ftj; S.rows[i] = S.rows[i] || {}; S.rows[i].ftj = n.value; save(); }));
   view.querySelectorAll("textarea[data-ra]").forEach((n) => {
     n.addEventListener("input", () => { const i = n.dataset.ra; S.rows[i] = S.rows[i] || {}; S.rows[i].ra = n.value; save(); });
     n.addEventListener("change", () => render());
@@ -796,7 +752,6 @@ function renderAnalysis(view) {
   view.querySelector("#sideTop").addEventListener("click", () => { S.side = "top"; save(); render(); });
   view.querySelector("#sideBot").addEventListener("click", () => { S.side = "bottom"; save(); render(); });
   view.querySelector("#sideSch").addEventListener("click", () => { S.side = "sch"; save(); render(); });
-  view.querySelectorAll("[data-hint]").forEach((b) => b.addEventListener("click", () => { S.hints = S.hints || {}; S.hints[b.dataset.hint] = true; save(); render(); }));
   const pick = (ref) => { S.sel = S.sel === ref ? "" : ref; save(); render(); };
   view.querySelectorAll("[data-sel]").forEach((n) => n.addEventListener("click", () => pick(n.dataset.sel)));
   view.querySelectorAll(".board .comp, .sch .comp").forEach((n) => {
@@ -808,9 +763,8 @@ function renderAnalysis(view) {
 
 /* ---------------------------------------------------------------- report */
 function ftLabel(u) {
-  if (u.ftstep === "none") return t("ftNone");
-  if (!u.ftstep) return "–";
-  return u.ftstep + (u.ftres && PTS_RES[u.ftres] ? ": " + tr(PTS_RES[u.ftres]) : "");
+  if (u.fttest === "none") return "NONE";
+  return u.fttest || "–";
 }
 function buildReport() {
   const idxs = V(); const env = ENV_NOW(); const now = summary(env), base = summary(ENV_BASE); const date = new Date();
@@ -828,21 +782,17 @@ function buildReport() {
   const rows = idxs.map((i, k) => {
     const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
     text.push((k + 1) + ". " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " | " + r.m.mode + " | " + r.m.effect + " | " + (u.cls || "–") + " S=" + (r.s || "–") + " O=" + (r.o || "–") +
-      " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft0 || "–") + " (" + ftLabel(u) + ")" + (r.ftN ? " FTnew=" + r.ftN + " (" + u.nfttest + ")" : "") + " | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")" +
+      " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft0 || "–") + " (" + ftLabel(u) + (u.ftj ? ": " + u.ftj : "") + ")" + (r.ftN ? " FTnew=" + r.ftN + " (" + u.nfttest + ")" : "") + " | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")" +
       (needsRA(r.ap) ? " | RA: " + (u.rad ? t(u.rad === "acc" ? "raAcc" : "raAct") : "–") + " – " + (u.ra || "–") : ""));
     const raTxt = needsRA(r.ap) ? (u.rad ? "<b>" + esc(t(u.rad === "acc" ? "raAcc" : "raAct")) + "</b><br>" : "") + esc(u.ra || "–") : "–";
     return "<tr><td>" + (k + 1) + "</td><td>" + esc(r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin)) + "</td><td>" + esc(r.m.mode) + "</td><td>" + esc(r.m.effect) + "</td><td>" + esc(u.cls || "–") + "</td><td>" + (r.s || "–") +
-      "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(ftLabel(u)) + " · " + (r.ft0 || "–") + "</td><td>" + (r.ftN ? esc(u.nfttest) + " · " + r.ftN : "–") + "</td><td>" + (r.d || "–") +
+      "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(ftLabel(u)) + " · " + (r.ft0 || "–") + (u.ftj ? "<br><i>" + esc(u.ftj) + "</i>" : "") + "</td><td>" + (r.ftN ? esc(u.nfttest) + " · " + r.ftN : "–") + "</td><td>" + (r.d || "–") +
       '</td><td class="ap-' + (r.ap || "na") + '">' + (r.ap || "–") + "</td><td>" + (r0.ap || "–") + "</td><td>" + raTxt + "</td></tr>";
   }).join("");
   parts.push("<h2>" + t("sheet") + '</h2><table class="r">' + head + rows + "</table>");
   const sum = (x) => t("mDone") + ": " + x.done + "/" + x.n + " · H: " + x.H + " · M: " + x.M + " · L: " + x.L + " · " + t("mRes") + ": " + x.res + " · " + t("mCov") + ": " + x.cov + "%" + (x === now ? " · " + t("mRA") + ": " + x.ra + "/" + x.res : "");
   parts.push("<h2>" + t("summary") + "</h2><ul><li><strong>" + esc(sum(now)) + "</strong></li><li>" + esc(t("before")) + ": " + esc(sum(base)) + "</li></ul>");
   text.push("", t("summary") + ": " + sum(now), t("before") + ": " + sum(base));
-  const hk = Object.keys(S.hints || {}).filter((k) => S.hints[k]);
-  const hl = hk.map((k) => { const p = k.split("|"); return p[0] + ": " + tr(PTS_RES[p[1]] || p[1]); });
-  parts.push("<h2>" + esc(t("hintsUsed")) + "</h2><p>" + (hl.length ? esc(hl.join("; ")) : t("none")) + "</p>");
-  text.push(t("hintsUsed") + ": " + (hl.length ? hl.join("; ") : t("none")));
   parts.push("<h2>" + esc(t("conclusion")) + "</h2><p>" + esc(S.conclusion || "–").replace(/\n/g, "<br>") + "</p>");
   text.push("", t("conclusion") + ": " + (S.conclusion || "–"));
   const css = "body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#17202D;max-width:1200px;margin:24px auto;padding:0 16px}h1{font-size:21px}h2{font-size:16px;margin-top:20px;border-bottom:1px solid #D9DEE7;padding-bottom:4px}" +
