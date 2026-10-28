@@ -186,6 +186,8 @@ pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line);
 .act .full > * { flex: 1 1 110px; }
 .act .full > .x { flex: none; align-self: center; }
 .act input, .act select { height: 30px; font-size: 0.84rem; }
+.act select.res-pass { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); font-weight: 600; }
+.act select.res-fail { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); font-weight: 600; }
 .ap { display: inline-block; min-width: 1.8em; text-align: center; border-radius: 4px; font-weight: 700; font-family: var(--font-mono); padding: 1px 6px; }
 .ap.H { background: var(--bad-bg); color: var(--bad); }
 .ap.M { background: var(--warn-bg); color: var(--warn); }
@@ -534,7 +536,7 @@ const I18N = {
     noModes: "Nu ai încă moduri de defectare legate de cauze. Fă legăturile la pasul 4.", modeNoCause: "Modul nu e legat de nicio cauză.", effects: "Efecte",
     init: "Starea inițială", rev: "Starea revizuită", extra: "Test suplimentar", pc: "Prevenție (PC)", dc: "Detecție (DC)", O: "O", D: "D", AP: "AP",
     ctlPh: "alege din listă sau scrie…", revNeed: "Necesară: AP inițial este H sau M.", revOpt: "Opțională: AP inițial este L.",
-    actions: "Acțiuni", addAct: "+ acțiune", type: "Tip", resp: "Responsabil", due: "Termen", status: "Stare", stPlanned: "planificat", stProg: "în lucru", stDone: "finalizat",
+    actions: "Acțiuni", addAct: "+ acțiune", type: "Tip", resp: "Responsabil", due: "Termen", status: "Stare", stPlanned: "planificat", stProg: "în lucru", stDone: "finalizat", result: "Rezultat",
     oNew: "O nou", dNew: "D nou", extraNeed: "Necesar: după revizie riscul rămâne H sau M. Propune un test care să detecteze modul sau cauza.", extraNo: "Nu e necesar.",
     extraPh: "test propus (metodă, condiții, criteriu de acceptare)", dExp: "D estimat", resid: "Justificarea riscului rezidual (riscul rămâne H sau M)",
     refTables: "Tabele de referință (rezumat AIAG-VDA DFMEA)", sevT: "Severitate (S)", occT: "Ocurență (O)", detT: "Detecție (D)", apT: "Prioritate de acțiune (AP)",
@@ -543,7 +545,7 @@ const I18N = {
     c_noFn: "Elementul „{el}” nu are funcții.", c_noFail: "Nu există moduri de defectare la nivelul mod.", c_modeNoEff: "Modul „{m}” nu e legat de niciun efect.", c_modeNoCause: "Modul „{m}” nu e legat de nicio cauză.",
     c_noS: "Efectul „{e}” nu are S.", c_orphanE: "Efectul „{e}” nu e legat de niciun mod.", c_orphanC: "Cauza „{c}” nu e legată de niciun mod.",
     c_noO: "„{m} ← {c}”: lipsește O.", c_noD: "„{m} ← {c}”: lipsește D.", c_noPC: "„{m} ← {c}”: nu are control de prevenție.", c_noDC: "„{m} ← {c}”: nu are control de detecție.",
-    c_noRev: "„{m} ← {c}”: AP {ap}; lipsesc acțiunile din starea revizuită.", c_revOD: "„{m} ← {c}”: completează O nou și D nou în starea revizuită.", c_actInc: "„{m} ← {c}”: o acțiune nu are text, responsabil sau termen.",
+    c_noRev: "„{m} ← {c}”: AP {ap}; lipsesc acțiunile din starea revizuită.", c_revOD: "„{m} ← {c}”: completează O nou și D nou în starea revizuită.", c_noResult: "„{m} ← {c}”: acțiunea „{a}” e finalizată, dar nu are rezultat (PASS / FAIL).", c_failAct: "„{m} ← {c}”: acțiunea „{a}” a ieșit FAIL; defectul e confirmat. Propune o acțiune corectivă și reevaluează O și D noi.", c_actInc: "„{m} ← {c}”: o acțiune nu are text, responsabil sau termen.",
     c_noExtra: "„{m} ← {c}”: după revizie AP {ap}; propune un test suplimentar.", c_extraD: "„{m} ← {c}”: testul suplimentar nu are D estimat.", c_noResid: "„{m} ← {c}”: riscul rămâne {ap}; justifică riscul rezidual.",
     reportTitle: "Raport DFMEA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.", student: "Student", generated: "Generat", structure: "Structură și funcții", netR: "Rețeaua de defectare", form: "Formularul DFMEA",
@@ -585,7 +587,7 @@ const I18N = {
     noModes: "There are no failure modes linked to causes yet. Make the links in step 4.", modeNoCause: "The mode is not linked to any cause.", effects: "Effects",
     init: "Initial state", rev: "Revised state", extra: "Additional test", pc: "Prevention (PC)", dc: "Detection (DC)", O: "O", D: "D", AP: "AP",
     ctlPh: "choose from the list or type…", revNeed: "Required: the initial AP is H or M.", revOpt: "Optional: the initial AP is L.",
-    actions: "Actions", addAct: "+ action", type: "Type", resp: "Responsible", due: "Due date", status: "Status", stPlanned: "planned", stProg: "in progress", stDone: "completed",
+    actions: "Actions", addAct: "+ action", type: "Type", resp: "Responsible", due: "Due date", status: "Status", stPlanned: "planned", stProg: "in progress", stDone: "completed", result: "Result",
     oNew: "New O", dNew: "New D", extraNeed: "Required: after the revision the risk is still H or M. Propose a test that detects the mode or the cause.", extraNo: "Not required.",
     extraPh: "proposed test (method, conditions, acceptance criterion)", dExp: "Expected D", resid: "Residual risk justification (the risk stays H or M)",
     refTables: "Reference tables (AIAG-VDA DFMEA summary)", sevT: "Severity (S)", occT: "Occurrence (O)", detT: "Detection (D)", apT: "Action priority (AP)",
@@ -594,7 +596,7 @@ const I18N = {
     c_noFn: "Element “{el}” has no functions.", c_noFail: "There are no failure modes at mode level.", c_modeNoEff: "Mode “{m}” is not linked to any effect.", c_modeNoCause: "Mode “{m}” is not linked to any cause.",
     c_noS: "Effect “{e}” has no S.", c_orphanE: "Effect “{e}” is not linked to any mode.", c_orphanC: "Cause “{c}” is not linked to any mode.",
     c_noO: "“{m} ← {c}”: O is missing.", c_noD: "“{m} ← {c}”: D is missing.", c_noPC: "“{m} ← {c}”: no prevention control.", c_noDC: "“{m} ← {c}”: no detection control.",
-    c_noRev: "“{m} ← {c}”: AP {ap}; the revised state has no actions.", c_revOD: "“{m} ← {c}”: fill in the new O and new D in the revised state.", c_actInc: "“{m} ← {c}”: an action has no text, responsible or due date.",
+    c_noRev: "“{m} ← {c}”: AP {ap}; the revised state has no actions.", c_revOD: "“{m} ← {c}”: fill in the new O and new D in the revised state.", c_noResult: "“{m} ← {c}”: action “{a}” is completed but has no result (PASS / FAIL).", c_failAct: "“{m} ← {c}”: action “{a}” FAILED; the defect is confirmed. Propose a corrective action and re-rate the new O and D.", c_actInc: "“{m} ← {c}”: an action has no text, responsible or due date.",
     c_noExtra: "“{m} ← {c}”: after the revision AP {ap}; propose an additional test.", c_extraD: "“{m} ← {c}”: the additional test has no expected D.", c_noResid: "“{m} ← {c}”: the risk stays {ap}; justify the residual risk.",
     reportTitle: "DFMEA report", download: "Download report (.html)", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.", student: "Student", generated: "Generated", structure: "Structure and functions", netR: "Failure net", form: "DFMEA form",
@@ -689,6 +691,11 @@ function checks(kind) {
       if ((ev.ap0 === "H" || ev.ap0 === "M") && !(r.acts || []).length) add("err", "c_noRev", Object.assign({ ap: ev.ap0 }, o));
       if ((r.acts || []).length && (!r.o2 || !r.d2)) add("err", "c_revOD", o);
       if ((r.acts || []).some((a) => !a.text || !a.resp || !a.due)) add("warn", "c_actInc", o);
+      (r.acts || []).forEach((a) => {
+        if (a.status !== "done") return;
+        const ao = Object.assign({ a: short(a.text || "–") }, o);
+        if (!a.result) add("warn", "c_noResult", ao); else if (a.result === "fail") add("err", "c_failAct", ao);
+      });
       if (ev.extraNeeded && !r.xt) add("err", "c_noExtra", Object.assign({ ap: ev.ap1 }, o));
       if (ev.extraNeeded && r.xt && !r.xd) add("err", "c_extraD", o);
       if ((ev.fin === "H" || ev.fin === "M") && ev.extraNeeded && r.xt && r.xd && !r.resid) add("err", "c_noResid", Object.assign({ ap: ev.fin }, o));
@@ -929,6 +936,8 @@ function renderRisk(body, kind) {
         '<div class="full"><input class="in" data-act="' + k + "|" + i + '|resp" value="' + esc(a.resp) + '" placeholder="' + esc(t("resp")) + '" aria-label="' + esc(t("resp")) + '">' +
         '<input class="in" type="date" data-act="' + k + "|" + i + '|due" value="' + esc(a.due) + '" aria-label="' + esc(t("due")) + '">' +
         '<select class="in" data-act="' + k + "|" + i + '|status" aria-label="' + esc(t("status")) + '">' + [["planned", "stPlanned"], ["progress", "stProg"], ["done", "stDone"]].map((o) => '<option value="' + o[0] + '"' + (a.status === o[0] ? " selected" : "") + ">" + esc(t(o[1])) + "</option>").join("") + "</select>" +
+        (a.status === "done" ? '<select class="in res-' + (a.result || "none") + '" data-act="' + k + "|" + i + '|result" aria-label="' + esc(t("result")) + '"><option value="">' + esc(t("result")) + "…</option>" +
+          [["pass", "PASS"], ["fail", "FAIL"]].map((o) => '<option value="' + o[0] + '"' + (a.result === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" : "") +
         '<button class="x" type="button" data-rmact="' + k + "|" + i + '" aria-label="' + esc(t("del")) + '">×</button></div></div>').join("");
       h += '<div class="risk" data-k="' + k + '"><div><span class="label">' + esc(t("fc")) + '</span> <span class="cause">' + esc(c.text) + "</span></div><div class=\"states\">" +
         '<div class="state"><h4>' + esc(t("init")) + " " + apChip(ev.ap0) + "</h4>" + ctlBlock(kind, k, r.pc, "pc") + ctlBlock(kind, k, r.dc, "dc") +
@@ -986,12 +995,12 @@ function analysisReport(kind, text) {
     const effs = effectsOf(A, m.id);
     causesOf(A, m.id).forEach((c) => {
       const ev = evalRisk(A, m.id, c.id); const r = ev.r;
-      const acts = (r.acts || []).map((a) => "[" + a.type + "] " + esc(a.text) + (a.resp ? " · " + esc(a.resp) : "") + (a.due ? " · " + esc(a.due) : "") + " · " + esc(t(a.status === "done" ? "stDone" : a.status === "progress" ? "stProg" : "stPlanned"))).join("<br>");
+      const acts = (r.acts || []).map((a) => "[" + a.type + "] " + esc(a.text) + (a.resp ? " · " + esc(a.resp) : "") + (a.due ? " · " + esc(a.due) : "") + " · " + esc(t(a.status === "done" ? "stDone" : a.status === "progress" ? "stProg" : "stPlanned")) + (a.status === "done" && a.result ? ' · <b class="' + (a.result === "pass" ? "L" : "H") + '">' + a.result.toUpperCase() + "</b>" : "")).join("<br>");
       rows += "<tr><td>" + effs.map((e) => esc(e.text) + " (S " + (e.s || "–") + ")").join("<br>") + "</td><td>" + (ev.s || "–") + "</td><td>" + esc(m.text) + "</td><td>" + esc(c.text) + "</td><td>" + (r.pc || []).map(esc).join("<br>") + "</td><td>" + (r.o || "–") +
         "</td><td>" + (r.dc || []).map(esc).join("<br>") + "</td><td>" + (r.d || "–") + '</td><td class="' + (ev.ap0 || "") + '">' + (ev.ap0 || "–") + "</td><td>" + (acts || "–") + "</td><td>" + (r.o2 || "–") + "</td><td>" + (r.d2 || "–") + '</td><td class="' + (ev.ap1 || "") + '">' + (ev.ap1 || "–") +
         "</td><td>" + (r.xt ? esc(r.xt) + (r.xd ? " (D " + r.xd + ")" : "") + (r.resid ? "<br><i>" + esc(r.resid) + "</i>" : "") : "–") + '</td><td class="' + (ev.fin || "") + '">' + (ev.fin || "–") + "</td></tr>";
       text.push("FM: " + m.text + " | FE: " + effs.map((e) => e.text + " (S " + (e.s || "-") + ")").join("; ") + " | FC: " + c.text + " | PC: " + (r.pc || []).join("; ") + " | O=" + (r.o || "-") + " | DC: " + (r.dc || []).join("; ") + " | D=" + (r.d || "-") +
-        " | AP=" + (ev.ap0 || "-") + " | rev: " + (r.acts || []).map((a) => "[" + a.type + "] " + a.text + " / " + a.resp + " / " + a.due + " / " + a.status).join("; ") + " O'=" + (r.o2 || "-") + " D'=" + (r.d2 || "-") + " AP'=" + (ev.ap1 || "-") +
+        " | AP=" + (ev.ap0 || "-") + " | rev: " + (r.acts || []).map((a) => "[" + a.type + "] " + a.text + " / " + a.resp + " / " + a.due + " / " + a.status + (a.status === "done" && a.result ? " / " + a.result.toUpperCase() : "")).join("; ") + " O'=" + (r.o2 || "-") + " D'=" + (r.d2 || "-") + " AP'=" + (ev.ap1 || "-") +
         " | extra: " + (r.xt || "-") + " D=" + (r.xd || "-") + " | AP final=" + (ev.fin || "-") + (r.resid ? " | residual: " + r.resid : ""));
       if (ev.s && r.o && r.d) {
         const ki = sBand(ev.s) + "|" + oBand(+r.o) + "|" + dIdx(+r.d); cnt.i[ki] = (cnt.i[ki] || 0) + 1; sum.i[ev.ap0]++;
