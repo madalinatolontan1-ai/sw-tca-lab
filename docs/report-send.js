@@ -5,10 +5,10 @@
   var TXT = {
     ro: { title: "Trimite raportul profesorului", hint: "Raportul ajunge direct la profesor. Poți retrimite oricând; se păstrează toate trimiterile, iar ultima contează.",
       send: "Trimite raportul", sending: "Se trimite…", ok: "Raport trimis", okAt: "Trimis la {t}.", fail: "Trimiterea nu a mers. Verifică conexiunea și încearcă din nou; dacă tot nu merge, descarcă raportul și trimite-l separat.",
-      need: "Completează numele, grupa și varianta înainte de trimitere.", last: "Ultima trimitere: {t}." },
+      need: "Completează numele, grupa și varianta înainte de trimitere.", unconf: "Raportul a plecat, dar serverul nu a confirmat primirea. Descarcă raportul și păstrează-l până confirmă profesorul.", last: "Ultima trimitere: {t}." },
     en: { title: "Send the report to your instructor", hint: "The report goes straight to your instructor. You can send it again at any time; every submission is kept and the last one counts.",
       send: "Send report", sending: "Sending…", ok: "Report sent", okAt: "Sent at {t}.", fail: "Sending did not work. Check your connection and try again; if it still fails, download the report and send it separately.",
-      need: "Fill in your name, group and variant before sending.", last: "Last sent: {t}." }
+      need: "Fill in your name, group and variant before sending.", unconf: "The report was sent but the server did not confirm receipt. Download the report and keep it until your instructor confirms.", last: "Last sent: {t}." }
   };
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function getLast(lab) { try { return localStorage.getItem("labreport-sent-" + lab) || ""; } catch (e) { return ""; } }
@@ -40,7 +40,7 @@
         .then(function (j) { if (j && j.ok) done(j.received); else fail(); })
         .catch(function () {
           /* the response could not be read: retry without reading it */
-          fetch(ep, { method: "POST", mode: "no-cors", body: body }).then(function () { done(); }, fail);
+          fetch(ep, { method: "POST", mode: "no-cors", body: body }).then(function () { st.style.color = "var(--warn)"; st.textContent = T.unconf; btn.disabled = false; }, fail);
         });
     });
   }
