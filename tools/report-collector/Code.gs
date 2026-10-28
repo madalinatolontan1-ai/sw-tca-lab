@@ -95,3 +95,30 @@ function setup() {
   if (!(first.getName() in { "HW TCA": 1, "SW TCA": 1, "FMEA": 1 }) && first.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(first);
   Logger.log("Gata: tab-urile HW TCA, SW TCA, FMEA și folderul „" + ROOT_FOLDER + "” există.");
 }
+
+/* ---------------------------------------------------------------- course materials
+ * importMaterials(): copies the lecture decks from GitHub into Drive, folder "Materiale curs laboratoare",
+ * converted to Google Slides. Run it again after an update: the old copy goes to the trash and a fresh one is made.
+ * Your own edits live in Drive; re-importing replaces them, so rename your edited copy first if you want to keep it. */
+const MATERIALS_FOLDER = "Materiale curs laboratoare";
+const MATERIALS = [
+  { name: "HW TCA – curs (RO)", url: "https://raw.githubusercontent.com/madalinatolontan1-ai/sw-tca-lab/main/materials/HW_TCA_curs_RO.pptx" }
+];
+function importMaterials() {
+  const folder = (function () { const it = DriveApp.getFoldersByName(MATERIALS_FOLDER); return it.hasNext() ? it.next() : DriveApp.createFolder(MATERIALS_FOLDER); })();
+  MATERIALS.forEach(function (m) {
+    const blob = UrlFetchApp.fetch(m.url).getBlob();
+    const old = folder.getFilesByName(m.name);
+    while (old.hasNext()) old.next().setTrashed(true);
+    const boundary = "mat" + Date.now();
+    const meta = { name: m.name, mimeType: "application/vnd.google-apps.presentation", parents: [folder.getId()] };
+    const body = Utilities.newBlob("--" + boundary + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + JSON.stringify(meta) +
+      "\r\n--" + boundary + "\r\nContent-Type: " + MimeType.MICROSOFT_POWERPOINT + "\r\n\r\n").getBytes()
+      .concat(blob.getBytes()).concat(Utilities.newBlob("\r\n--" + boundary + "--").getBytes());
+    const res = UrlFetchApp.fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", {
+      method: "post", contentType: "multipart/related; boundary=" + boundary, payload: body,
+      headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() }, muteHttpExceptions: true
+    });
+    Logger.log(m.name + ": " + res.getContentText());
+  });
+}
