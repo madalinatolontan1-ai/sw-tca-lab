@@ -25,11 +25,16 @@ gcovr**, which report statement, branch and condition (MC/DC) coverage.
 | `make report SET=f2_branch` | every decision is true and false, but MC/DC is not reached |
 | `make report SET=int_one` | function and call coverage with one integration test |
 
+## Lab app
+
+The exercises run in the browser: **https://madalinatolontan1-ai.github.io/sw-tca-lab/** (source: `docs/index.html`). Enter your name, group and the variant code you received in the lab.
+
 ## Files
 
 - `src/can_node.h`, `src/can_node.c` – code under test
 - `test/test_demo.c` – demo test sets
 - `Makefile` – build with coverage, run the tests, generate the report
+- `docs/index.html` – the lab app (GitHub Pages)
 
 ---
 
