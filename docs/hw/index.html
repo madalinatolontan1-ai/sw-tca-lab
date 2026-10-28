@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HW TCA Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: production-test workbench. Header with student/variant, board view with test points
+   beside the reference tables, risk sheet (S/O/D per failure mode) and AP summary below. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #17202D; --muted: #5B6578; --line: #D9DEE7;
+  --accent: #2443C4; --accent-ink: #FFFFFF; --accent-soft: #E6EBFB; --code-bg: #F9FAFC;
+  --ok: #1D7F54; --ok-bg: #DFF2E8; --bad: #B83434; --bad-bg: #FBE6E6; --warn: #9A6514; --warn-bg: #FAEFD8;
+  --pcb: #2F6B4F; --pcb-edge: #24533D; --pad: #C9A44C; --silk: #F4F7F2; --part: #1E2630; --tp: #E0A21B;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 6px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E131B; --surface: #151C27; --ink: #E5E9F1; --muted: #98A2B4; --line: #2A3343;
+    --accent: #8197FF; --accent-ink: #0E131B; --accent-soft: #1D2747; --code-bg: #111823;
+    --ok: #4BC287; --ok-bg: #12301F; --bad: #F07474; --bad-bg: #3A1B1D; --warn: #E2B15C; --warn-bg: #35290F;
+    --pcb: #22553E; --pcb-edge: #183D2C; --pad: #B8933F; --silk: #E8EEE6; --part: #0B1016; --tp: #E8AE32;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E131B; --surface: #151C27; --ink: #E5E9F1; --muted: #98A2B4; --line: #2A3343;
+  --accent: #8197FF; --accent-ink: #0E131B; --accent-soft: #1D2747; --code-bg: #111823;
+  --ok: #4BC287; --ok-bg: #12301F; --bad: #F07474; --bad-bg: #3A1B1D; --warn: #E2B15C; --warn-bg: #35290F;
+  --pcb: #22553E; --pcb-edge: #183D2C; --pad: #B8933F; --silk: #E8EEE6; --part: #0B1016; --tp: #E8AE32;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+.wrap { max-width: 1440px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.01em; }
+h2 { font-size: 1.3rem; font-weight: 600; }
+h3 { font-size: 1.02rem; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 14px; }
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.brand .sub { font-size: 0.85rem; color: var(--muted); }
+.student { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-left: auto; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field input, .field select { height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); min-width: 0; }
+.field input.w-name { width: 190px; }
+.field input.w-small { width: 92px; }
+.btn { height: 34px; padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.small { height: 28px; padding: 0 10px; font-size: 0.85rem; }
+.lang, .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.lang button, .seg button { border: 0; background: transparent; padding: 0 10px; height: 32px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.lang button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.neutral { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+nav.tabs { border-bottom: 1px solid var(--line); background: var(--surface); }
+nav.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs button { border: 0; background: transparent; padding: 12px 14px 10px; cursor: pointer; border-bottom: 3px solid transparent; font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; color: var(--muted); white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:disabled { opacity: 0.45; cursor: not-allowed; }
+main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; gap: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 18px; align-items: start; }
+@media (max-width: 1050px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.intro { max-width: 72ch; display: flex; flex-direction: column; gap: 12px; }
+.notice { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.step { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
+
+/* board */
+.board { width: 100%; max-width: 100%; height: auto; display: block; border-radius: var(--radius); }
+.board .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 1.2; }
+.board .silk { fill: var(--silk); font-family: var(--font-mono); font-size: 3px; }
+.board .body { fill: var(--part); }
+.board .pad { fill: var(--pad); }
+.board .tht { fill: var(--pad); stroke: var(--pcb-edge); stroke-width: 0.4; }
+.board .hole { fill: var(--pcb-edge); }
+.board .comp { cursor: pointer; }
+.board .comp.sel .body, .board .comp.sel .outline { stroke: var(--tp); stroke-width: 0.9; }
+.board .outline { fill: none; stroke: transparent; }
+.board .comp.dim { opacity: 0.35; }
+.board .tpm circle { fill: var(--tp); stroke: var(--part); stroke-width: 0.4; }
+.board .tpm text { fill: var(--tp); font-family: var(--font-mono); font-size: 2.2px; font-weight: 600; }
+.nets { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.nets label { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 8px; font-family: var(--font-mono); font-size: 0.82rem; cursor: pointer; background: var(--surface); }
+.nets label.on { border-color: var(--tp); background: var(--warn-bg); }
+.nets label.na { opacity: 0.55; cursor: not-allowed; }
+.toggle { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+
+/* sheet */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table.sheet { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+table.sheet th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid var(--line); background: var(--bg); white-space: nowrap; vertical-align: bottom; }
+table.sheet td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.sheet tr:last-child td { border-bottom: 0; }
+table.sheet tr.sel td { background: var(--accent-soft); }
+table.sheet td.eff { min-width: 220px; max-width: 300px; }
+table.sheet td.num { font-family: var(--font-mono); text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.sheet td.ref { font-family: var(--font-mono); font-weight: 600; white-space: nowrap; cursor: pointer; }
+table.sheet select { height: 30px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 0 4px; font-family: var(--font-mono); font-size: 0.82rem; }
+.dv { display: inline-block; min-width: 2.2em; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+.dv.d1 { background: var(--ok-bg); color: var(--ok); }
+.dv.dm { background: var(--warn-bg); color: var(--warn); }
+.dv.d10 { background: var(--bad-bg); color: var(--bad); }
+.why { display: block; font-family: var(--font-body); font-size: 0.7rem; color: var(--muted); font-weight: 400; margin-top: 2px; white-space: normal; max-width: 120px; }
+.ap { display: inline-block; min-width: 1.8em; text-align: center; border-radius: 4px; font-weight: 700; font-family: var(--font-mono); padding: 1px 6px; }
+.ap.H { background: var(--bad-bg); color: var(--bad); }
+.ap.M { background: var(--warn-bg); color: var(--warn); }
+.ap.L { background: var(--ok-bg); color: var(--ok); }
+.ap.na { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.meter { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 4px; background: var(--surface); }
+.meter .val { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter .was { font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); }
+.meter.good .val { color: var(--ok); }
+.meter.risk .val { color: var(--bad); }
+details.ref { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+details.ref > summary { cursor: pointer; padding: 10px 14px; font-family: var(--font-display); font-weight: 600; }
+details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
+table.mini { border-collapse: collapse; font-size: 0.84rem; width: 100%; }
+table.mini th, table.mini td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+table.mini th { background: var(--bg); font-weight: 600; }
+table.mini td.c { text-align: center; font-family: var(--font-mono); font-weight: 600; }
+textarea { width: 100%; min-height: 96px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); padding: 8px 10px; resize: vertical; }
+.report-frame { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 18px; overflow-x: auto; }
+.report-frame h1 { font-size: 1.35rem; margin-bottom: 6px; }
+.report-frame h2 { font-size: 1.05rem; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.report-frame ul { margin: 6px 0; }
+.report-frame table.r { border-collapse: collapse; font-size: 0.84rem; }
+.report-frame table.r th, .report-frame table.r td { border: 1px solid var(--line); padding: 4px 7px; text-align: left; vertical-align: top; }
+.report-frame table.r th { background: var(--bg); font-size: 0.75rem; }
+.report-frame .ap-H { background: var(--bad-bg); color: var(--bad); font-weight: 700; }
+.report-frame .ap-M { background: var(--warn-bg); color: var(--warn); font-weight: 700; }
+.report-frame .ap-L { background: var(--ok-bg); color: var(--ok); }
+.toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: var(--radius); font-size: 0.9rem; z-index: 20; max-width: calc(100vw - 32px); }
+@media (max-width: 640px) { .student { margin-left: 0; } .field input.w-name { width: 150px; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>HW TCA Lab</h1>
+      <span class="sub" data-i18n="subtitle"></span>
+    </div>
+    <form class="student" id="studentForm" autocomplete="off">
+      <div class="field"><label class="label" for="stName" data-i18n="name"></label><input id="stName" class="w-name"></div>
+      <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="w-small"></div>
+      <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="w-small mono" placeholder="H1"></div>
+      <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" id="langRo" aria-pressed="true">RO</button>
+        <button type="button" id="langEn" aria-pressed="false">EN</button>
+      </div>
+    </form>
+  </div>
+</header>
+<nav class="tabs" aria-label="Sections"><div class="wrap" role="tablist" id="tabs"></div></nav>
+<main><div class="wrap" id="view"></div></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------------- data from the HW TCA library */
+const MODES = [{"ref": "J1", "type": "CON-HDR", "pin": "–", "mode": "Missing", "effect": "missing connection between CAN module and the sensor"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 1 VDD", "mode": "Pin open", "effect": "missing power connection"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 2 TXD", "mode": "Pin open", "effect": "no data transmitted"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 3 RXD", "mode": "Pin open", "effect": "no data received"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 4 GND", "mode": "Pin open", "effect": "no functionality of the CAN"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 1 VDD – pin 2 TXD", "mode": "Pin short", "effect": "no data transmitted; MCU TX output shorted to VDD"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 2 TXD – pin 3 RXD", "mode": "Pin short", "effect": "corrupted communication between CAN and the sensor"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 3 RXD – pin 4 GND", "mode": "Pin short", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "–", "mode": "Missing", "effect": "no CAN transceiver: no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 1 TXD", "mode": "Pin open", "effect": "no data transmitted on the CAN bus (reception still works)"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 2 VSS", "mode": "Pin open", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 3 VDD", "mode": "Pin open", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 4 RXD", "mode": "Pin open", "effect": "no data received; the CAN controller sees bit errors on its own frames, so communication fails"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 5 VREF", "mode": "Pin open", "effect": "no effect"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 6 CANL", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 7 CANH", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 8 RS", "mode": "Pin open", "effect": "transceiver may enter standby: no data transmitted"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 1 TXD – pin 2 VSS", "mode": "Pin short", "effect": "no data transmitted; MCU TX output shorted to GND"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 2 VSS – pin 3 VDD", "mode": "Pin short", "effect": "supply short: no functionality of the CAN, supply of the sensor overloaded"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 3 VDD – pin 4 RXD", "mode": "Pin short", "effect": "no data received; RXD output shorted to VDD"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 5 VREF – pin 6 CANL", "mode": "Pin short", "effect": "communication likely unaffected or slightly degraded (loss of robustness)"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 6 CANL – pin 7 CANH", "mode": "Pin short", "effect": "no communication on the whole CAN bus (all nodes affected)"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 7 CANH – pin 8 RS", "mode": "Pin short", "effect": "corrupted communication: CANH loaded to GND through R3, operating mode changed"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 1 TXD", "mode": "Pin wrong functionality", "effect": "no data transmitted"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 2 VSS", "mode": "Pin wrong functionality", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 3 VDD", "mode": "Pin wrong functionality", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 4 RXD", "mode": "Pin wrong functionality", "effect": "no data received"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 5 VREF", "mode": "Pin wrong functionality", "effect": "no effect"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 6 CANL", "mode": "Pin wrong functionality", "effect": "no communication or corrupted communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 7 CANH", "mode": "Pin wrong functionality", "effect": "no communication or corrupted communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 8 RS", "mode": "Pin wrong functionality", "effect": "wrong operating mode: standby (no transmission) or wrong slope (communication errors / EMC out of spec)"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Missing", "effect": "no supply decoupling: possible intermittent corrupted communication under noise (EMC)"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Short", "effect": "supply short: no functionality of the CAN, supply of the sensor overloaded"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Open", "effect": "no supply decoupling: possible intermittent corrupted communication under noise (EMC)"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Wrong value", "effect": "reduced supply filtering, no functional effect expected"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "RS floating: transceiver may enter standby, no data transmitted"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "RS tied directly to GND: high-speed mode, no functional effect (higher EMC emissions)"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "RS floating: transceiver may enter standby, no data transmitted"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "changed operating mode: slope-control (slower edges, errors at high bit rates) or standby (no transmission)"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "missing bus termination at this node: signal reflections, possible corrupted communication"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "CANH shorted to CANL (with JP1 fitted): no communication on the whole CAN bus"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "missing bus termination at this node: signal reflections, possible corrupted communication"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "wrong bus impedance: reduced differential voltage and reflections, possible corrupted communication"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Missing", "effect": "termination cannot be enabled: reflections, possible corrupted communication"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Short", "effect": "termination permanently enabled: bus overloaded if the node is not at the bus end, reduced differential voltage"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Open", "effect": "termination cannot be enabled: reflections, possible corrupted communication"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Wrong value", "effect": "termination in the wrong state (enabled / disabled)"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "560 pF directly on the CAN line: slower edges, possible errors at high bit rates, H/L asymmetry"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "filter characteristic changed: usually no functional effect; very low value behaves like a short"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Short", "effect": "CAN line pulled to GND through 100 Ω: no or corrupted communication on the whole CAN bus"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Wrong value", "effect": "larger value: slower edges, errors at high bit rates; smaller value: reduced filtering"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "560 pF directly on the CAN line: slower edges, possible errors at high bit rates, H/L asymmetry"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "filter characteristic changed: usually no functional effect; very low value behaves like a short"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Short", "effect": "CAN line pulled to GND through 100 Ω: no or corrupted communication on the whole CAN bus"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Wrong value", "effect": "larger value: slower edges, errors at high bit rates; smaller value: reduced filtering"}, {"ref": "J2", "type": "CON-HDR", "pin": "–", "mode": "Missing", "effect": "missing connection between CAN module and the CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 1 CAN_H", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 2 CAN_L", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 3 GND", "mode": "Pin open", "effect": "no common ground with the bus: common-mode voltage out of range, corrupted or no communication"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 1 CAN_H – pin 2 CAN_L", "mode": "Pin short", "effect": "CAN_H shorted to CAN_L: no communication on the whole CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 2 CAN_L – pin 3 GND", "mode": "Pin short", "effect": "CAN_L shorted to GND: corrupted or no communication on the CAN bus"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Missing", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Short", "effect": "LED off, slightly higher supply current through R5, CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Open", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Wrong value", "effect": "wrong indication (color / brightness) or LED off, CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Wrong polarity", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "LED overcurrent: LED damaged, supply overloaded, possible brown-out of the transceiver"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "LED brightness changed; very low value causes LED overcurrent"}];
+
+const VARIANTS = {
+  H1: [2, 6, 8, 14, 30, 31, 32, 42, 48, 54, 66, 73],
+  H2: [0, 3, 7, 9, 21, 23, 33, 34, 40, 44, 52, 75],
+  H3: [1, 5, 10, 17, 22, 26, 35, 36, 46, 50, 59, 71],
+  H4: [4, 11, 13, 18, 27, 29, 37, 39, 47, 56, 60, 67],
+  H5: [12, 15, 19, 20, 24, 38, 41, 45, 51, 58, 62, 69],
+  H6: [16, 25, 28, 43, 49, 53, 57, 61, 64, 68, 72, 76]
+};
+
+const CATEGORY = { "R-CHIP": "PAS-SMD", "C-MLCC": "PAS-SMD", "LED-SMD": "DIODE", "IC-SOIC": "IC-LEADED", "CON-HDR": "CONN-THT", "JMP": "CONN-THT" };
+/* [AOI, AXI, ICT with TP, ICT without TP] — sheet "Reguli detecție" */
+const RULES = {
+  "PAS-SMD": { "Missing": [1, 3, 1, 5], "Short": [5, 5, 1, 5], "Open": [1, 5, 1, 5], "Wrong value": [10, 10, 1, 5] },
+  "DIODE": { "Missing": [1, 3, 1, 5], "Short": [5, 5, 1, 5], "Open": [1, 5, 1, 5], "Wrong value": [10, 10, 5, 10], "Wrong polarity": [1, 10, 1, 5] },
+  "IC-LEADED": { "Missing": [1, 1, 1, 5], "Pin open": [1, 5, 1, 10], "Pin short": [1, 1, 1, 10], "Pin wrong functionality": [10, 10, 10, 10] },
+  "CONN-THT": { "Missing": [1, 1, 1, 10], "Pin open": [10, 3, 1, 10], "Pin short": [10, 1, 1, 10], "Wrong value": [1, 10, 1, 5], "Short": [1, 10, 1, 5], "Open": [10, 3, 1, 5] }
+};
+const C5_MODES = { "CONN-THT": ["Pin open", "Pin short", "Open"] };      /* AOI 10 only because solder joints are on BOTTOM */
+const MARKED = { R1: true, R2: true, R3: true, R4: true, R5: true, U1: true };   /* C7 */
+
+/* nets of every component (schematic of the MCP2551 module, LED1/R5 added) */
+const PIN_NETS = {
+  U1: { 1: "TXD", 2: "GND", 3: "VDD", 4: "RXD", 5: null, 6: "CANL", 7: "CANH", 8: "RS" },
+  J1: { 1: "VDD", 2: "TXD", 3: "RXD", 4: "GND" },
+  J2: { 1: "CANH", 2: "CANL", 3: "GND" }
+};
+const TWO_TERM = {
+  C3: ["VDD", "GND"], R3: ["RS", "GND"], R4: ["CANH", "N_TERM"], JP1: ["N_TERM", "CANL"],
+  R1: ["CANH", "N_F1"], C1: ["N_F1", "GND"], R2: ["CANL", "N_F2"], C2: ["N_F2", "GND"],
+  LED1: ["VDD", "N_LED"], R5: ["N_LED", "GND"]
+};
+const NETS = ["VDD", "GND", "TXD", "RXD", "CANH", "CANL", "RS", "N_TERM", "N_F1", "N_F2", "N_LED", "VREF"];
+
+const SEVERITY = [
+  ["E9", 9, { ro: "Neconformitate cu reglementările: afectează conformitatea EMC (emisii sau imunitate)", en: "Regulatory non-compliance: affects EMC compliance (emissions or immunity)" }],
+  ["E8", 8, { ro: "Pierderea funcției principale: fără comunicație CAN sau fără funcționare", en: "Loss of primary function: no CAN communication or no operation" }],
+  ["E7", 7, { ro: "Degradarea funcției principale: comunicație coruptă sau intermitentă", en: "Degraded primary function: corrupted or intermittent communication" }],
+  ["E6", 6, { ro: "Pierderea unei funcții secundare: indicatorul LED nu funcționează", en: "Loss of a secondary function: the LED indicator does not work" }],
+  ["E5", 5, { ro: "Degradarea unei funcții secundare: indicație LED greșită", en: "Degraded secondary function: wrong LED indication" }],
+  ["E2", 2, { ro: "Efect minor, fără efect funcțional și fără efect EMC", en: "Minor effect, no functional and no EMC effect" }],
+  ["E1", 1, { ro: "Fără efect", en: "No effect" }]
+];
+const OCC = [
+  ["10", { ro: "Tehnologie sau proces nou, fără experiență", en: "New technology or process, no experience" }],
+  ["8–9", { ro: "Tehnologie nouă pentru firmă sau aplicație nouă", en: "Technology new to the company or new application" }],
+  ["6–7", { ro: "Tehnologie similară, folosită în condiții noi", en: "Similar technology used under new conditions" }],
+  ["4–5", { ro: "Tehnologie cunoscută, cu modificări de proces", en: "Known technology with process changes" }],
+  ["2–3", { ro: "Tehnologie matură, proces SMT / THT standard, istoric bun", en: "Mature technology, standard SMT / THT process, good history" }],
+  ["1", { ro: "Defectul este eliminat prin prevenție (design sau proces)", en: "Failure eliminated by prevention (design or process)" }]
+];
+const FT_TESTS = [
+  ["FT1", { ro: "Consum de curent (IDD recesiv ≤ 10 mA, dominant ≤ 75 mA)", en: "Supply current (IDD recessive ≤ 10 mA, dominant ≤ 75 mA)" }],
+  ["FT2", { ro: "Indicator alimentare: LED1 aprins", en: "Power indicator: LED1 on" }],
+  ["FT3", { ro: "Tensiuni bus recesiv: VCANH, VCANL 2,0–3,0 V", en: "Recessive bus voltages: VCANH, VCANL 2.0–3.0 V" }],
+  ["FT4", { ro: "Tensiune diferențială dominant 1,5–3,0 V (sarcină 40–60 Ω)", en: "Dominant differential voltage 1.5–3.0 V (40–60 Ω load)" }],
+  ["FT5", { ro: "Loopback TXD → RXD", en: "Loopback TXD → RXD" }],
+  ["FT6", { ro: "Rezistența de terminație pe J2 (≈ 120 Ω cu JP1, ≥ 20 kΩ fără)", en: "Termination resistance on J2 (≈ 120 Ω with JP1, ≥ 20 kΩ without)" }],
+  ["FT7", { ro: "Transmisie CAN prin conectori (J1 → J2), 125 kbit/s și 1 Mbit/s", en: "CAN transmission through the connectors (J1 → J2), 125 kbit/s and 1 Mbit/s" }],
+  ["FT8", { ro: "Recepție CAN prin conectori (J2 → J1), 125 kbit/s și 1 Mbit/s", en: "CAN reception through the connectors (J2 → J1), 125 kbit/s and 1 Mbit/s" }]
+];
+/* AIAG-VDA Action Priority: [S band][O band] -> [D 7-10, D 5-6, D 2-4, D 1] */
+const AP = {
+  "9-10": { "8-10": "HHHH", "6-7": "HHHH", "4-5": "HHHM", "2-3": "HMLL", "1": "LLLL" },
+  "7-8":  { "8-10": "HHHH", "6-7": "HHHM", "4-5": "HMMM", "2-3": "MMLL", "1": "LLLL" },
+  "4-6":  { "8-10": "HHMM", "6-7": "MMML", "4-5": "MLLL", "2-3": "LLLL", "1": "LLLL" },
+  "2-3":  { "8-10": "MMLL", "6-7": "LLLL", "4-5": "LLLL", "2-3": "LLLL", "1": "LLLL" },
+  "1":    { "8-10": "LLLL", "6-7": "LLLL", "4-5": "LLLL", "2-3": "LLLL", "1": "LLLL" }
+};
+function apOf(s, o, d) {
+  const sb = s >= 9 ? "9-10" : s >= 7 ? "7-8" : s >= 4 ? "4-6" : s >= 2 ? "2-3" : "1";
+  const ob = o >= 8 ? "8-10" : o >= 6 ? "6-7" : o >= 4 ? "4-5" : o >= 2 ? "2-3" : "1";
+  const di = d >= 7 ? 0 : d >= 5 ? 1 : d >= 2 ? 2 : 3;
+  return AP[sb][ob][di];
+}
+
+/* ---------------------------------------------------------------- i18n */
+const I18N = {
+  ro: {
+    subtitle: "Analiza acoperirii testelor de producție · modulul CAN cu MCP2551 al radarului frontal",
+    name: "Nume și prenume", group: "Grupa", variant: "Varianta", load: "Încarcă varianta",
+    tabStart: "Start", tabAnalysis: "Analiză", tabReport: "Raport",
+    badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu H2).",
+    variantLoaded: "Varianta {v} a fost încărcată.",
+    introTitle: "Analiza acoperirii testelor de producție (HW TCA)",
+    introP1: "Analizezi cât de bine detectează testele de producție defectele de fabricație ale modulului CAN (MCP2551) folosit de radarul frontal. Primești o listă de moduri de defectare, fiecare cu efectul ei.",
+    introP2: "Pentru fiecare mod alegi severitatea (S) și ocurența (O) din tabele. Aplicația prezice detecția (D) pentru AOI, AXI și ICT din regulile de detecție; detecția la testul funcțional (FT) o stabilești tu. Din S, O și D minim rezultă prioritatea de acțiune (AP), după tabelul AIAG-VDA.",
+    introP3: "La final propui îmbunătățiri (test point-uri, AOI pe fața BOTTOM, teste FT) și verifici cât scade riscul rezidual. Raportul se descarcă din tab-ul Raport.",
+    introP4: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
+    stepsTitle: "Pașii",
+    s1: "S: alege clasa de efect. Efectul e dat; severitatea rezultă din clasă.",
+    s2: "O: alege ocurența din scala AIAG-VDA (rezumatul e mai jos).",
+    s3: "D: citește predicția pentru AOI, AXI, ICT și stabilește D pentru FT după criteriul C9.",
+    s4: "Îmbunătățiri: adaugă test point-uri pe net-uri sau AOI pe BOTTOM și urmărește AP.",
+    s5: "Raport: descarcă fișa de evaluare a riscului.",
+    board: "Placa (vedere simplificată)", top: "TOP", bottom: "BOTTOM",
+    tpTitle: "Test point-uri (ICT)", tpHint: "Bifează net-urile pe care adaugi un test point. ICT poate măsura doar ce poate atinge cu acele de pe fixture.",
+    aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
+    nc: "neconectat",
+    sheet: "Fișa de analiză", colComp: "Componentă", colMode: "Mod de defectare", colEffect: "Efect", colClass: "Clasă efect", colS: "S", colO: "O",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "D FT", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
+    choose: "–",
+    summary: "Rezumat", mDone: "Moduri completate", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Risc rezidual (H + M)", mCov: "Acoperirea riscului",
+    before: "fără îmbunătățiri",
+    refTables: "Tabele de referință",
+    sevTitle: "Clase de severitate (S)", occTitle: "Scala de ocurență (O), rezumat orientativ", occNote: "Pentru valoarea exactă folosește tabelul de ocurență AIAG-VDA.",
+    ftTitle: "Teste funcționale (FT)", c9Title: "Criteriul C9 pentru D FT",
+    c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
+    apTitle: "Tabelul AP (AIAG-VDA)",
+    whyRule: "regula", whyC7: "C7 marcaj", whyC5: "C5 THT pe BOTTOM", whyAOIb: "AOI BOTTOM", whyTP: "TP", whyNoTP: "fără TP", whyNoNet: "pin neconectat",
+    conclusion: "Propuneri de îmbunătățire și concluzie (apar în raport)",
+    reportTitle: "Fișa de evaluare a riscului · HW TCA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
+    copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
+    reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.",
+    student: "Student", generated: "Generat", improvements: "Îmbunătățiri aplicate", tpOn: "Test point-uri", none: "niciuna", yes: "da", no: "nu",
+    incomplete: "incomplet"
+  },
+  en: {
+    subtitle: "Production test coverage analysis · MCP2551 CAN module of the front radar",
+    name: "Full name", group: "Group", variant: "Variant", load: "Load variant",
+    tabStart: "Start", tabAnalysis: "Analysis", tabReport: "Report",
+    badVariant: "This variant code does not exist. Use the code you received in the lab (for example H2).",
+    variantLoaded: "Variant {v} loaded.",
+    introTitle: "Production test coverage analysis (HW TCA)",
+    introP1: "You analyse how well the production tests detect the manufacturing defects of the CAN module (MCP2551) used by the front radar. You receive a list of failure modes, each with its effect.",
+    introP2: "For every mode you choose the severity (S) and occurrence (O) from the tables. The app predicts the detection (D) for AOI, AXI and ICT from the detection rules; you set the detection of the functional test (FT). S, O and the minimum D give the action priority (AP) from the AIAG-VDA table.",
+    introP3: "Finally you propose improvements (test points, AOI on the BOTTOM side, FT tests) and check how much the residual risk drops. Download the report from the Report tab.",
+    introP4: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
+    stepsTitle: "Steps",
+    s1: "S: choose the effect class. The effect is given; the severity follows from the class.",
+    s2: "O: choose the occurrence from the AIAG-VDA scale (summary below).",
+    s3: "D: read the prediction for AOI, AXI, ICT and set D for FT using criterion C9.",
+    s4: "Improvements: add test points on nets or AOI on BOTTOM and watch the AP.",
+    s5: "Report: download the risk assessment sheet.",
+    board: "Board (simplified view)", top: "TOP", bottom: "BOTTOM",
+    tpTitle: "Test points (ICT)", tpHint: "Tick the nets where you add a test point. ICT can only measure what the fixture needles can reach.",
+    aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
+    nc: "not connected",
+    sheet: "Analysis sheet", colComp: "Component", colMode: "Failure mode", colEffect: "Effect", colClass: "Effect class", colS: "S", colO: "O",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "D FT", colD: "D", colAP: "AP", colAP0: "AP no impr.",
+    choose: "–",
+    summary: "Summary", mDone: "Modes completed", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Residual risk (H + M)", mCov: "Risk coverage",
+    before: "without improvements",
+    refTables: "Reference tables",
+    sevTitle: "Severity classes (S)", occTitle: "Occurrence scale (O), indicative summary", occNote: "Use the AIAG-VDA occurrence table for the exact value.",
+    ftTitle: "Functional tests (FT)", c9Title: "Criterion C9 for D FT",
+    c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
+    apTitle: "AP table (AIAG-VDA)",
+    whyRule: "rule", whyC7: "C7 marking", whyC5: "C5 THT on BOTTOM", whyAOIb: "AOI BOTTOM", whyTP: "TP", whyNoTP: "no TP", whyNoNet: "pin not connected",
+    conclusion: "Proposed improvements and conclusion (included in the report)",
+    reportTitle: "Risk assessment sheet · HW TCA", download: "Download report (.html)", copy: "Copy report text",
+    copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
+    reportHint: "Download the report and hand it in as instructed in the lab.",
+    student: "Student", generated: "Generated", improvements: "Improvements applied", tpOn: "Test points", none: "none", yes: "yes", no: "no",
+    incomplete: "incomplete"
+  }
+};
+let LANG = "ro";
+const t = (k) => (I18N[LANG][k] !== undefined ? I18N[LANG][k] : k);
+const tr = (o) => o[LANG];
+
+/* ---------------------------------------------------------------- state */
+const STORE_KEY = "hwtca-lab-v1";
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", sel: "" };
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
+function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
+const V = () => VARIANTS[S.variant];
+
+/* ---------------------------------------------------------------- detection engine */
+function pinNumbers(pin) { const m = pin.match(/\d+/g); return m ? m.map(Number) : []; }
+function netsFor(m) {
+  if (TWO_TERM[m.ref]) return TWO_TERM[m.ref].slice();
+  const map = PIN_NETS[m.ref];
+  if (m.mode === "Missing") return Object.values(map).filter(Boolean);
+  return pinNumbers(m.pin).map((p) => map[p]);
+}
+function detection(m, env) {
+  const cat = CATEGORY[m.type];
+  const r = RULES[cat][m.mode];
+  let aoi = r[0]; const axi = r[1];
+  const aoiWhy = [cat + " · " + m.mode];
+  if (m.mode === "Wrong value" && MARKED[m.ref] && aoi === 10) { aoi = 5; aoiWhy.push(t("whyC7")); }
+  if ((C5_MODES[cat] || []).includes(m.mode) && aoi === 10) {
+    if (env.aoiBottom) { aoi = 1; aoiWhy.push(t("whyAOIb")); } else aoiWhy.push(t("whyC5"));
+  }
+  const nets = netsFor(m);
+  const noNet = nets.some((n) => n === null);
+  const access = !noNet && nets.length > 0 && nets.every((n) => env.tps[n]);
+  const ict = access ? r[2] : r[3];
+  const ictWhy = noNet ? t("whyNoNet") : (access ? t("whyTP") : t("whyNoTP")) + ": " + nets.join(", ");
+  return { aoi: aoi, axi: axi, ict: ict, aoiWhy: aoiWhy.join(" · "), axiWhy: cat + " · " + m.mode, ictWhy: ictWhy };
+}
+function evalRow(idx, env) {
+  const m = MODES[idx]; const u = S.rows[idx] || {};
+  const det = detection(m, env);
+  const sev = SEVERITY.find((x) => x[0] === u.cls);
+  const s = sev ? sev[1] : null;
+  const o = u.o ? +u.o : null;
+  const ft = u.ft ? +u.ft : null;
+  const d = ft ? Math.min(det.aoi, det.axi, det.ict, ft) : null;
+  const ap = (s && o && d) ? apOf(s, o, d) : null;
+  return { m: m, det: det, s: s, o: o, ft: ft, d: d, ap: ap };
+}
+const ENV_NOW = () => ({ tps: S.tps, aoiBottom: S.aoiBottom });
+const ENV_BASE = { tps: {}, aoiBottom: false };
+function summary(env) {
+  const idxs = V(); let h = 0, mm = 0, l = 0, done = 0;
+  idxs.forEach((i) => { const r = evalRow(i, env); if (r.ap) { done++; if (r.ap === "H") h++; else if (r.ap === "M") mm++; else l++; } });
+  return { n: idxs.length, done: done, H: h, M: mm, L: l, res: h + mm, cov: done ? Math.round(100 * l / done) : 0 };
+}
+
+/* ---------------------------------------------------------------- board drawing (units: 1 = 1 mm) */
+const PARTS = {
+  J1:   { x: 4,  y: 15, w: 5.4, h: 21.4, tht: true, pins: 4, vertical: true },
+  LED1: { x: 15, y: 6,  w: 4,   h: 2.2 },
+  R5:   { x: 31, y: 6,  w: 4,   h: 2.2 },
+  C3:   { x: 24, y: 17, w: 4,   h: 2.2 },
+  U1:   { x: 37, y: 19, w: 10,  h: 12, soic: true },
+  R3:   { x: 51, y: 10, w: 4,   h: 2.2 },
+  R1:   { x: 51, y: 20, w: 4,   h: 2.2 },
+  C1:   { x: 51, y: 26, w: 4,   h: 2.2 },
+  R2:   { x: 51, y: 32, w: 4,   h: 2.2 },
+  C2:   { x: 51, y: 38, w: 4,   h: 2.2 },
+  R4:   { x: 71, y: 21, w: 4,   h: 2.2 },
+  JP1:  { x: 70, y: 6,  w: 7.9, h: 3.4, tht: true, pins: 2, vertical: false },
+  J2:   { x: 84, y: 17, w: 5.4, h: 16.3, tht: true, pins: 3, vertical: true }
+};
+const TP_POS = { VDD: [17, 14], GND: [20, 43], TXD: [31, 24], RXD: [31, 31], RS: [65, 10], CANH: [65, 20], N_F1: [65, 26], CANL: [65, 32], N_F2: [65, 38],
+  N_TERM: [79, 14], N_LED: [24, 11] };
+function boardSVG(sideTop, selRef, refsInVariant) {
+  const W = 94, H = 50;
+  let g = '<rect class="pcb" x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="2"/>';
+  g += '<text class="silk" text-anchor="' + (sideTop ? "end" : "start") + '" x="' + (sideTop ? W - 3 : 3) + '" y="' + (H - 3) + '">MCP2551 CAN · ' + (sideTop ? "TOP" : "BOTTOM") + "</text>";
+  Object.keys(PARTS).forEach((ref) => {
+    const p = PARTS[ref];
+    const x = sideTop ? p.x : W - p.x - p.w;
+    const cls = "comp" + (ref === selRef ? " sel" : "") + (refsInVariant.has(ref) ? "" : " dim");
+    let inner = "";
+    if (p.tht) {
+      const n = p.pins; const step = 2.54;
+      for (let i = 0; i < n; i++) {
+        const cx = p.vertical ? x + p.w / 2 : x + 1.7 + i * step * 1.4;
+        const cy = p.vertical ? p.y + 2 + i * (p.h - 4) / Math.max(1, n - 1) : p.y + p.h / 2;
+        inner += '<circle class="tht" cx="' + cx + '" cy="' + cy + '" r="1.05"/><circle class="hole" cx="' + cx + '" cy="' + cy + '" r="0.45"/>';
+      }
+      if (sideTop) inner = '<rect class="body" x="' + x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="0.6" opacity="0.92"/>' + inner;
+      inner += '<rect class="outline" x="' + (x - 0.6) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 1.2) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
+    } else if (sideTop) {
+      if (p.soic) {
+        for (let i = 0; i < 4; i++) {
+          const py = p.y + 1.5 + i * 3;
+          inner += '<rect class="pad" x="' + (x - 1.8) + '" y="' + py + '" width="2.2" height="0.9"/><rect class="pad" x="' + (x + p.w - 0.4) + '" y="' + py + '" width="2.2" height="0.9"/>';
+        }
+        inner += '<rect class="body" x="' + x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="0.4"/><circle cx="' + (x + 1.3) + '" cy="' + (p.y + 1.3) + '" r="0.5" fill="var(--silk)"/>';
+      } else {
+        inner += '<rect class="pad" x="' + x + '" y="' + p.y + '" width="1.1" height="' + p.h + '"/><rect class="pad" x="' + (x + p.w - 1.1) + '" y="' + p.y + '" width="1.1" height="' + p.h + '"/>' +
+          '<rect class="body" x="' + (x + 1.1) + '" y="' + p.y + '" width="' + (p.w - 2.2) + '" height="' + p.h + '"/>';
+      }
+      inner += '<rect class="outline" x="' + (x - 2) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 4) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
+    } else {
+      return;
+    }
+    /* label: above THT parts, centred in the IC, to the right of small SMD parts */
+    let lx, ly, anchor = "start";
+    if (p.soic) { lx = x + p.w / 2; ly = p.y + p.h / 2 + 1; anchor = "middle"; }
+    else if (p.tht) { lx = x + p.w / 2; ly = p.y - 1.4; anchor = "middle"; }
+    else { lx = x + p.w + 0.8; ly = p.y + p.h / 2 + 1.05; }
+    g += '<g class="' + cls + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + inner +
+      '<text class="silk" text-anchor="' + anchor + '" x="' + lx + '" y="' + ly + '">' + ref + "</text></g>";
+  });
+  Object.keys(TP_POS).forEach((n) => {
+    if (!S.tps[n]) return;
+    const pt = TP_POS[n]; const x = sideTop ? pt[0] : W - pt[0];
+    g += '<g class="tpm"><circle cx="' + x + '" cy="' + pt[1] + '" r="1.2"/><text text-anchor="middle" x="' + x + '" y="' + (pt[1] + 3.6) + '">' + n + "</text></g>";
+  });
+  return '<svg class="board" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + t("board") + '">' + g + "</svg>";
+}
+
+/* ---------------------------------------------------------------- rendering */
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function toast(msg) { const e = document.getElementById("toast"); e.textContent = msg; e.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { e.hidden = true; }, 2600); }
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach((n) => { n.textContent = t(n.dataset.i18n); });
+  document.getElementById("langRo").setAttribute("aria-pressed", String(LANG === "ro"));
+  document.getElementById("langEn").setAttribute("aria-pressed", String(LANG === "en"));
+}
+function renderTabs() {
+  const box = document.getElementById("tabs");
+  const items = [["start", t("tabStart")], ["analysis", t("tabAnalysis")], ["report", t("tabReport")]];
+  box.innerHTML = items.map((it) => '<button role="tab" data-tab="' + it[0] + '" aria-selected="' + (S.tab === it[0]) + '"' + (it[0] !== "start" && !V() ? " disabled" : "") + ">" + esc(it[1]) + "</button>").join("");
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.tab; save(); render(); }));
+}
+function render() {
+  applyI18n(); renderTabs();
+  const view = document.getElementById("view");
+  if (S.tab === "start" || !V()) { view.innerHTML = renderStart(); return; }
+  if (S.tab === "report") { renderReport(view); return; }
+  renderAnalysis(view);
+}
+function renderStart() {
+  return '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p><p>" + esc(t("introP3")) + "</p>" +
+    '<p class="notice">' + esc(V() ? t("variantLoaded").replace("{v}", S.variant) : t("introP4")) + "</p></section>" +
+    '<section class="stack"><span class="label">' + esc(t("stepsTitle")) + '</span><div class="steps">' +
+    ["s1", "s2", "s3", "s4", "s5"].map((k, i) => '<div class="step"><h3>' + (i + 1) + '</h3><p class="muted">' + esc(t(k)) + "</p></div>").join("") + "</div></section>";
+}
+function dCell(v, why) {
+  const cls = v === 1 ? "d1" : v === 10 ? "d10" : "dm";
+  return '<td class="num"><span class="dv ' + cls + '">' + v + '</span><span class="why">' + esc(why) + "</span></td>";
+}
+function apCell(ap) { return '<td class="num"><span class="ap ' + (ap || "na") + '">' + (ap || "–") + "</span></td>"; }
+function refTables() {
+  const sev = '<table class="mini"><tr><th>' + t("colClass") + "</th><th>S</th><th></th></tr>" + SEVERITY.map((x) => '<tr><td class="c">' + x[0] + '</td><td class="c">' + x[1] + "</td><td>" + esc(tr(x[2])) + "</td></tr>").join("") + "</table>";
+  const occ = '<table class="mini"><tr><th>O</th><th></th></tr>' + OCC.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + '</table><p class="muted" style="margin-top:6px;font-size:0.85rem">' + esc(t("occNote")) + "</p>";
+  const ft = '<table class="mini">' + FT_TESTS.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + "</table>";
+  const c9 = '<ul style="margin:0;padding-left:1.1em;font-size:0.9rem">' + t("c9").map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>";
+  const apRows = ["9-10", "7-8", "4-6", "2-3", "1"].map((sb) => ["8-10", "6-7", "4-5", "2-3", "1"].map((ob) => "<tr><td class=\"c\">S " + sb + '</td><td class="c">O ' + ob + "</td>" +
+    AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("")).join("");
+  const ap = '<table class="mini"><tr><th>S</th><th>O</th><th>D 7–10</th><th>D 5–6</th><th>D 2–4</th><th>D 1</th></tr>' + apRows + "</table>";
+  return [["sevTitle", sev, true], ["occTitle", occ, false], ["c9Title", c9, true], ["ftTitle", ft, false], ["apTitle", ap, false]]
+    .map((x) => '<details class="ref"' + (x[2] ? " open" : "") + "><summary>" + esc(t(x[0])) + "</summary><div>" + x[1] + "</div></details>").join("");
+}
+function renderAnalysis(view) {
+  const idxs = V(); const env = ENV_NOW();
+  const refs = new Set(idxs.map((i) => MODES[i].ref));
+  const now = summary(env), base = summary(ENV_BASE);
+  const nets = '<div class="nets">' + NETS.map((n) => {
+    const na = n === "VREF";
+    return '<label class="' + (S.tps[n] ? "on" : "") + (na ? " na" : "") + '"><input type="checkbox" data-tp="' + n + '"' + (S.tps[n] ? " checked" : "") + (na ? " disabled" : "") + "> " + n + (na ? " (" + t("nc") + ")" : "") + "</label>";
+  }).join("") + "</div>";
+  const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>" + t("colS") + "</th><th>" + t("colO") +
+    "</th><th>" + t("colAOI") + "</th><th>" + t("colAXI") + "</th><th>" + t("colICT") + "</th><th>" + t("colFTtest") + "</th><th>" + t("colFT") + "</th><th>" + t("colD") + "</th><th>" + t("colAP") + "</th><th>" + t("colAP0") + "</th></tr>";
+  const body = idxs.map((i, k) => {
+    const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
+    const sel = (name, opts, val) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + name + '"><option value="">' + t("choose") + "</option>" + opts.map((o) => '<option value="' + o + '"' + (String(val) === String(o) ? " selected" : "") + ">" + o + "</option>").join("") + "</select>";
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    return '<tr class="' + (S.sel === r.m.ref ? "sel" : "") + '"><td class="num">' + (k + 1) + '</td><td class="ref" data-sel="' + r.m.ref + '">' + esc(r.m.ref) + '<span class="why">' + esc(r.m.pin === "–" ? "" : r.m.pin) + "</span></td>" +
+      "<td>" + esc(r.m.mode) + '</td><td class="eff">' + esc(r.m.effect) + "</td>" +
+      "<td>" + sel("cls", SEVERITY.map((x) => x[0]), u.cls) + '</td><td class="num">' + (r.s || "–") + "</td><td>" + sel("o", nums, u.o) + "</td>" +
+      dCell(r.det.aoi, r.det.aoiWhy) + dCell(r.det.axi, r.det.axiWhy) + dCell(r.det.ict, r.det.ictWhy) +
+      "<td>" + sel("fttest", FT_TESTS.map((x) => x[0]).concat(["–"]), u.fttest) + "</td><td>" + sel("ft", nums, u.ft) + '</td><td class="num">' + (r.d || "–") + "</td>" + apCell(r.ap) + apCell(r0.ap) + "</tr>";
+  }).join("");
+  const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
+  view.innerHTML =
+    '<div class="row" style="justify-content:space-between"><h2>' + t("sheet") + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
+    '<div class="grid2"><div class="panel stack"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side !== "top") + '">' + t("bottom") + "</button></div></div>" +
+      '<div id="boardBox">' + boardSVG(S.side === "top", S.sel, refs) + "</div>" +
+      '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
+      '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div></div>" +
+      '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" +
+    '<div class="panel stack"><h3>' + t("summary") + '</h3><div class="meters">' +
+      meter(t("mDone"), now.done + " / " + now.n, base.done + " / " + base.n) +
+      meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
+      meter(t("mRes"), now.res, base.res, now.done && !now.res ? "good" : now.res ? "risk" : "") + meter(t("mCov"), now.cov + "%", base.cov + "%", now.done && now.cov === 100 ? "good" : "") +
+    "</div></div>" +
+    '<div class="panel stack"><div class="tablewrap"><table class="sheet"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>" +
+    '<div class="panel stack"><label class="label" for="conclusion">' + t("conclusion") + '</label><textarea id="conclusion">' + esc(S.conclusion) + "</textarea></div>";
+
+  view.querySelectorAll("select[data-row]").forEach((n) => n.addEventListener("change", () => {
+    const i = n.dataset.row; S.rows[i] = S.rows[i] || {}; S.rows[i][n.dataset.k] = n.value; save(); render();
+  }));
+  view.querySelectorAll("input[data-tp]").forEach((n) => n.addEventListener("change", () => { S.tps[n.dataset.tp] = n.checked; save(); render(); }));
+  view.querySelector("#aoiBottom").addEventListener("change", (e) => { S.aoiBottom = e.target.checked; save(); render(); });
+  view.querySelector("#sideTop").addEventListener("click", () => { S.side = "top"; save(); render(); });
+  view.querySelector("#sideBot").addEventListener("click", () => { S.side = "bottom"; save(); render(); });
+  const pick = (ref) => { S.sel = S.sel === ref ? "" : ref; save(); render(); };
+  view.querySelectorAll("[data-sel]").forEach((n) => n.addEventListener("click", () => pick(n.dataset.sel)));
+  view.querySelectorAll(".board .comp").forEach((n) => {
+    n.addEventListener("click", () => pick(n.dataset.ref));
+    n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(n.dataset.ref); } });
+  });
+  view.querySelector("#conclusion").addEventListener("input", (e) => { S.conclusion = e.target.value; save(); });
+}
+
+/* ---------------------------------------------------------------- report */
+function buildReport() {
+  const idxs = V(); const env = ENV_NOW(); const now = summary(env), base = summary(ENV_BASE); const date = new Date();
+  const tpList = Object.keys(S.tps).filter((n) => S.tps[n]);
+  const parts = [], text = [];
+  parts.push("<h1>" + esc(t("reportTitle")) + "</h1>");
+  parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("group") + ":</strong> " + esc(S.group || "–") + " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) +
+    " · <strong>" + t("generated") + ":</strong> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>");
+  text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString(), "");
+  parts.push("<h2>" + t("improvements") + "</h2><ul><li>" + t("tpOn") + ": " + (tpList.length ? tpList.join(", ") : t("none")) + "</li><li>" + esc(t("aoiBottom")) + ": " + (S.aoiBottom ? t("yes") : t("no")) + "</li></ul>");
+  text.push(t("improvements") + ": " + t("tpOn") + " = " + (tpList.length ? tpList.join(", ") : t("none")) + "; AOI BOTTOM = " + (S.aoiBottom ? t("yes") : t("no")), "");
+  const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>S</th><th>O</th><th>AOI</th><th>AXI</th><th>ICT</th><th>" + t("colFTtest") + "</th><th>FT</th><th>D</th><th>AP</th><th>" + t("colAP0") + "</th></tr>";
+  const rows = idxs.map((i, k) => {
+    const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
+    text.push((k + 1) + ". " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " | " + r.m.mode + " | " + r.m.effect + " | " + (u.cls || "–") + " S=" + (r.s || "–") + " O=" + (r.o || "–") +
+      " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft || "–") + " (" + (u.fttest || "–") + ") | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")");
+    return "<tr><td>" + (k + 1) + "</td><td>" + esc(r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin)) + "</td><td>" + esc(r.m.mode) + "</td><td>" + esc(r.m.effect) + "</td><td>" + esc(u.cls || "–") + "</td><td>" + (r.s || "–") +
+      "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(u.fttest || "–") + "</td><td>" + (r.ft || "–") + "</td><td>" + (r.d || "–") +
+      '</td><td class="ap-' + (r.ap || "na") + '">' + (r.ap || "–") + "</td><td>" + (r0.ap || "–") + "</td></tr>";
+  }).join("");
+  parts.push("<h2>" + t("sheet") + '</h2><table class="r">' + head + rows + "</table>");
+  const sum = (x) => t("mDone") + ": " + x.done + "/" + x.n + " · H: " + x.H + " · M: " + x.M + " · L: " + x.L + " · " + t("mRes") + ": " + x.res + " · " + t("mCov") + ": " + x.cov + "%";
+  parts.push("<h2>" + t("summary") + "</h2><ul><li><strong>" + esc(sum(now)) + "</strong></li><li>" + esc(t("before")) + ": " + esc(sum(base)) + "</li></ul>");
+  text.push("", t("summary") + ": " + sum(now), t("before") + ": " + sum(base));
+  parts.push("<h2>" + esc(t("conclusion")) + "</h2><p>" + esc(S.conclusion || "–").replace(/\n/g, "<br>") + "</p>");
+  text.push("", t("conclusion") + ": " + (S.conclusion || "–"));
+  const css = "body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#17202D;max-width:1200px;margin:24px auto;padding:0 16px}h1{font-size:21px}h2{font-size:16px;margin-top:20px;border-bottom:1px solid #D9DEE7;padding-bottom:4px}" +
+    "table.r{border-collapse:collapse;font-size:12px}table.r th,table.r td{border:1px solid #D9DEE7;padding:3px 6px;text-align:left;vertical-align:top}table.r th{background:#F3F5F8}.ap-H{background:#FBE6E6;font-weight:bold}.ap-M{background:#FAEFD8;font-weight:bold}.ap-L{background:#DFF2E8}";
+  const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>HW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
+  return { html: html, body: parts.join("\n"), text: text.join("\n") };
+}
+function renderReport(view) {
+  const r = buildReport();
+  view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + t("download") +
+    '</button><button class="btn" id="cp" type="button">' + t("copy") + '</button></div></div><p class="muted">' + t("reportHint") + '</p><div class="report-frame">' + r.body + '</div><textarea id="reportText" readonly hidden></textarea>';
+  view.querySelector("#dl").addEventListener("click", () => {
+    const b = new Blob([buildReport().html], { type: "text/html" }); const a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = "HW-TCA_" + S.variant + "_" + (S.name || "student").replace(/[^\w\-]+/g, "_") + ".html";
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  view.querySelector("#cp").addEventListener("click", () => {
+    const txt = buildReport().text; const ta = view.querySelector("#reportText");
+    const fallback = () => { ta.hidden = false; ta.value = txt; ta.focus(); ta.select(); toast(t("copyFail")); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast(t("copied")), fallback); else fallback();
+  });
+}
+
+/* ---------------------------------------------------------------- boot */
+load(); LANG = S.lang || "ro";
+document.getElementById("stName").value = S.name; document.getElementById("stGroup").value = S.group; document.getElementById("stVariant").value = S.variant;
+document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
+document.getElementById("stGroup").addEventListener("input", (e) => { S.group = e.target.value; save(); });
+document.getElementById("studentForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const code = document.getElementById("stVariant").value.trim().toUpperCase();
+  if (!VARIANTS[code]) { toast(t("badVariant")); return; }
+  S.variant = code; document.getElementById("stVariant").value = code;
+  if (S.tab === "start") S.tab = "analysis";
+  save(); render(); toast(t("variantLoaded").replace("{v}", code));
+});
+document.getElementById("langRo").addEventListener("click", () => { LANG = "ro"; S.lang = "ro"; save(); render(); });
+document.getElementById("langEn").addEventListener("click", () => { LANG = "en"; S.lang = "en"; save(); render(); });
+render();
+</script>
+</body>
+</html>

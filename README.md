@@ -27,14 +27,17 @@ gcovr**, which report statement, branch and condition (MC/DC) coverage.
 
 ## Lab app
 
-The exercises run in the browser: **https://madalinatolontan1-ai.github.io/sw-tca-lab/** (source: `docs/index.html`). Enter your name, group and the variant code you received in the lab.
+The exercises run in the browser. Enter your name, group and the variant code you received in the lab.
+
+- SW TCA (code coverage): **https://madalinatolontan1-ai.github.io/sw-tca-lab/sw/** (source: `docs/sw/index.html`)
+- HW TCA (production test coverage): **https://madalinatolontan1-ai.github.io/sw-tca-lab/hw/** (source: `docs/hw/index.html`)
 
 ## Files
 
 - `src/can_node.h`, `src/can_node.c` – code under test
 - `test/test_demo.c` – demo test sets
 - `Makefile` – build with coverage, run the tests, generate the report
-- `docs/index.html` – the lab app (GitHub Pages)
+- `docs/sw/index.html`, `docs/hw/index.html` – the lab apps (GitHub Pages); `docs/index.html` links both
 
 ---
 
@@ -44,3 +47,5 @@ Demo pentru laboratorul de *Analiza acoperirii testelor software*. Deschide un
 Codespace (**Code → Codespaces → Create codespace on main**), rulează în terminal
 una dintre comenzile din tabel, apoi `make serve` și apasă **Open in Browser**. Fiecare student
 lucrează în propriul Codespace; modificările tale nu afectează repository-ul.
+
+Aplicațiile de laborator: SW TCA la `/sw/`, HW TCA la `/hw/` (linkurile de mai sus).
