@@ -101,6 +101,13 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .board .comp.sel .body, .board .comp.sel .outline { stroke: var(--tp); stroke-width: 0.9; }
 .board .outline { fill: none; stroke: transparent; }
 .board .comp.dim { opacity: 0.35; }
+.board .hit { fill: transparent; stroke: none; pointer-events: all; }
+.board .ghost { fill: none; stroke: var(--silk); stroke-width: 0.3; stroke-dasharray: 0.8 0.6; opacity: 0.45; }
+.board .comp:hover .outline, .board .comp:focus .outline { stroke: var(--silk); stroke-width: 0.35; }
+.pickbtn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.compchip { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; background: var(--surface); cursor: pointer; color: var(--ink); }
+.compchip.on { border-color: var(--tp); background: var(--warn-bg); font-weight: 700; }
+.compchip.out { opacity: 0.55; }
 .board .rat, .board .pin-on, .board .netlbl, .sch .nethl { pointer-events: none; }
 .board .rat { stroke-width: 0.5; stroke-linecap: round; fill: none; opacity: 0.95; }
 .board .rat.sh { stroke: var(--part); stroke-width: 1.1; opacity: 0.55; }
@@ -386,7 +393,8 @@ const I18N = {
     s4: "Îmbunătățiri: test point-uri, AOI pe BOTTOM sau teste FT noi. Unde AP rămâne H sau M, documentează riscul rezidual.",
     s5: "Raport: descarcă fișa de evaluare a riscului.",
     board: "Placa (vedere simplificată)", top: "TOP", bottom: "BOTTOM",
-    connTitle: "Conexiuni", connHint: "Apasă pe o componentă (pe placă, în schemă sau în tabel) sau pe un net de mai jos ca să vezi unde merge semnalul: liniile colorate leagă pinii de pe același net.",
+    connTitle: "Conexiuni", connHint: "Apasă pe o componentă direct pe placă (TOP sau BOTTOM), în schemă, în tabel sau în lista de mai jos, ori pe un net, ca să vezi unde merge semnalul: liniile colorate leagă pinii de pe același net.",
+    connParts: "Componente", connNets: "Net-uri",
     connPin: "pin", connNone: "nicio altă componentă", connConn: "ajunge la conector", connNoConn: "nu ajunge la niciun conector", tpYes: "test point: da", tpNo: "test point: nu", connClear: "Șterge selecția", anode: "anod", cathode: "catod",
     tpTitle: "Test point-uri (ICT)", tpHint: "Bifează net-urile pe care adaugi un test point. ICT poate măsura doar ce poate atinge cu acele de pe fixture.",
     aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
@@ -434,7 +442,8 @@ const I18N = {
     s4: "Improvements: test points, AOI on BOTTOM or new FT tests. Where the AP stays H or M, document the residual risk.",
     s5: "Report: download the risk assessment sheet.",
     board: "Board (simplified view)", top: "TOP", bottom: "BOTTOM",
-    connTitle: "Connections", connHint: "Click a component (on the board, in the schematic or in the table) or a net below to see where the signal goes: the coloured lines join the pins on the same net.",
+    connTitle: "Connections", connHint: "Click a component directly on the board (TOP or BOTTOM), in the schematic, in the table or in the list below, or a net, to see where the signal goes: the coloured lines join the pins on the same net.",
+    connParts: "Components", connNets: "Nets",
     connPin: "pin", connNone: "no other component", connConn: "reaches connector", connNoConn: "does not reach any connector", tpYes: "test point: yes", tpNo: "test point: no", connClear: "Clear selection", anode: "anode", cathode: "cathode",
     tpTitle: "Test points (ICT)", tpHint: "Tick the nets where you add a test point. ICT can only measure what the fixture needles can reach.",
     aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
@@ -623,14 +632,19 @@ function boardSVG(sideTop, selRef, refsInVariant) {
       }
       inner += '<rect class="outline" x="' + (x - 2) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 4) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
     } else {
-      return;
+      /* SMD part seen from BOTTOM: it sits on the other side, show its place so it can still be clicked */
+      inner += '<rect class="ghost" x="' + x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="0.4"/>' +
+        '<rect class="outline" x="' + (x - 2) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 4) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
     }
     /* label: above THT parts, centred in the IC, to the right of small SMD parts */
     let lx, ly, anchor = "start";
     if (p.soic) { lx = x + p.w / 2; ly = p.y + p.h / 2 + 1; anchor = "middle"; }
     else if (p.tht) { lx = x + p.w / 2; ly = p.y - 1.4; anchor = "middle"; }
     else { lx = x + p.w + 0.8; ly = p.y + p.h / 2 + 1.05; }
-    g += '<g class="' + cls + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + inner +
+    const hx = p.soic ? x - 2.5 : x - 2.2, hw = p.soic ? p.w + 5 : p.w + (p.tht ? 4.4 : 9);
+    const hy = p.tht ? p.y - 4.4 : p.y - 1.2, hh = p.tht ? p.h + 5.6 : p.h + 2.4;
+    const hit = '<rect class="hit" x="' + hx + '" y="' + hy + '" width="' + hw + '" height="' + hh + '"/>';
+    g += '<g class="' + cls + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + hit + inner +
       '<text class="silk" text-anchor="' + anchor + '" x="' + lx + '" y="' + ly + '">' + ref + "</text></g>";
   });
   Object.keys(TP_POS).forEach((n) => {
@@ -779,9 +793,11 @@ function ftPanel() {
     '<div class="notice"><b>' + t("ftHowTitle") + "</b><ol>" + t("ftHow").map((x) => "<li>" + esc(x) + "</li>").join("") + "</ol></div>" +
     '<div class="tablewrap"><table class="sheet ptst"><thead><tr><th>' + t("ftColId") + "</th><th>" + t("ftColName") + "</th><th>" + t("ftColMeas") + "</th><th>" + t("ftColLim") + "</th><th>" + t("ftColCatch") + "</th></tr></thead><tbody>" + rows + "</tbody></table></div></div></details>";
 }
+let CUR_REFS = new Set();
 function connPanel() {
   const chip = (net) => '<button type="button" class="netchip' + (S.net === net ? " on" : "") + '" data-net="' + net + '"><i style="background:' + NET_COLOR[net] + '"></i>' + net + "</button>";
   const pinTxt = (q) => q.ref + " · " + (PIN_NAMES[q.ref] ? t("connPin") + " " + q.pin + " " + PIN_NAMES[q.ref][q.pin] : q.ref === "LED1" ? (q.pin === "A" ? t("anode") : t("cathode")) : t("connPin") + " " + q.pin);
+  const pinBtn = (o) => '<button type="button" class="pickbtn" data-pick="' + o.ref + '">' + esc(pinTxt(o)) + "</button>";
   const meta = (net) => {
     const con = pinsOn(net).filter((q) => CONNECTORS[q.ref]).map((q) => q.ref + " " + t("connPin") + " " + q.pin);
     return '<span class="meta">' + (con.length ? t("connConn") + ": " + con.join(", ") : t("connNoConn")) + " · " + (S.tps[net] ? t("tpYes") : t("tpNo")) + "</span>";
@@ -790,18 +806,20 @@ function connPanel() {
   if (S.sel && PARTS[S.sel]) {
     body = '<div class="conn">' + netsOf(S.sel).map((q) => {
       const others = pinsOn(q.net).filter((o) => !(o.ref === q.ref && o.pin === q.pin));
-      return '<div class="cr"><span class="pinl2">' + esc(pinTxt(q)) + "</span>" + chip(q.net) + '<div><div class="to">→ ' + (others.length ? others.map((o) => esc(pinTxt(o))).join(", ") : t("connNone")) + "</div>" + meta(q.net) + "</div></div>";
+      return '<div class="cr"><span class="pinl2">' + esc(pinTxt(q)) + "</span>" + chip(q.net) + '<div><div class="to">→ ' + (others.length ? others.map(pinBtn).join(", ") : t("connNone")) + "</div>" + meta(q.net) + "</div></div>";
     }).join("") + (S.sel === "U1" ? '<div class="cr"><span class="pinl2">U1 · ' + t("connPin") + ' 5 VREF</span><span class="meta">' + t("nc") + "</span><span></span></div>" : "") + "</div>";
   } else if (S.net) {
-    body = '<div class="conn"><div class="cr">' + chip(S.net) + '<span></span><div><div class="to">' + pinsOn(S.net).map((o) => esc(pinTxt(o))).join(", ") + "</div>" + meta(S.net) + "</div></div></div>";
+    body = '<div class="conn"><div class="cr">' + chip(S.net) + '<span></span><div><div class="to">' + pinsOn(S.net).map(pinBtn).join(", ") + "</div>" + meta(S.net) + "</div></div></div>";
   } else body = '<p class="muted" style="font-size:0.9rem;margin:0">' + t("connHint") + "</p>";
   return '<div class="stack" id="connBox"><div class="row" style="justify-content:space-between"><h3>' + t("connTitle") + (S.sel ? " · " + esc(S.sel) : "") + "</h3>" +
     (S.sel || S.net ? '<button type="button" class="btn" id="connClear">' + t("connClear") + "</button>" : "") + "</div>" + body +
-    '<div class="netchips">' + Object.keys(NET_COLOR).map(chip).join("") + "</div></div>";
+    '<div class="label">' + t("connParts") + '</div><div class="netchips">' + Object.keys(PARTS).map((r) => '<button type="button" class="compchip' + (S.sel === r ? " on" : "") + (CUR_REFS.has(r) ? "" : " out") + '" data-pick="' + r + '">' + r + "</button>").join("") + "</div>" +
+    '<div class="label">' + t("connNets") + '</div><div class="netchips">' + Object.keys(NET_COLOR).map(chip).join("") + "</div></div>";
 }
 function renderAnalysis(view) {
   const idxs = V(); const env = ENV_NOW();
   const refs = new Set(idxs.map((i) => MODES[i].ref));
+  CUR_REFS = refs;
   const now = summary(env), base = summary(ENV_BASE);
   const hasNew = (S.newTests || []).length > 0;
   const nets = '<div class="nets">' + NETS.map((n) => {
@@ -881,6 +899,7 @@ function renderAnalysis(view) {
   view.querySelectorAll("[data-net]").forEach((n) => n.addEventListener("click", () => { S.net = S.net === n.dataset.net ? "" : n.dataset.net; S.sel = ""; save(); render(); }));
   const cc = view.querySelector("#connClear"); if (cc) cc.addEventListener("click", () => { S.sel = ""; S.net = ""; save(); render(); });
   view.querySelectorAll("[data-sel]").forEach((n) => n.addEventListener("click", () => pick(n.dataset.sel)));
+  view.querySelectorAll("[data-pick]").forEach((n) => n.addEventListener("click", () => { S.sel = n.dataset.pick; S.net = ""; save(); render(); }));
   view.querySelectorAll(".board .comp, .sch .comp").forEach((n) => {
     n.addEventListener("click", () => pick(n.dataset.ref));
     n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(n.dataset.ref); } });
