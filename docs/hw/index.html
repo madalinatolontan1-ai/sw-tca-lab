@@ -101,6 +101,27 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .board .comp.sel .body, .board .comp.sel .outline { stroke: var(--tp); stroke-width: 0.9; }
 .board .outline { fill: none; stroke: transparent; }
 .board .comp.dim { opacity: 0.35; }
+.board .rat, .board .pin-on, .board .netlbl, .sch .nethl { pointer-events: none; }
+.board .rat { stroke-width: 0.5; stroke-linecap: round; fill: none; opacity: 0.95; }
+.board .rat.sh { stroke: var(--part); stroke-width: 1.1; opacity: 0.55; }
+.board .pin-on { stroke: var(--part); stroke-width: 0.35; }
+.board .comp.linked .outline { stroke: var(--silk); stroke-width: 0.45; stroke-dasharray: 1 0.7; }
+.board .netlbl { font-family: var(--font-mono); font-size: 2.3px; font-weight: 700; paint-order: stroke; stroke: var(--part); stroke-width: 0.5px; }
+.sch.hl .wire line, .sch.hl .gnd line { opacity: 0.25; }
+.sch .wire line.on, .sch .gnd.on line { opacity: 1; stroke-width: 3.2; }
+.sch .gnd.on line { stroke: var(--ink); }
+.sch .nethl { stroke-width: 3; fill: none; }
+.sch .comp.linked .body { stroke-dasharray: 4 2; }
+.conn { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+.conn .cr { display: grid; grid-template-columns: minmax(70px, auto) auto 1fr; gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.conn .cr:last-child { border-bottom: 0; }
+.conn .pinl2 { font-family: var(--font-mono); font-size: 0.82rem; }
+.conn .to { color: var(--ink); }
+.conn .meta { color: var(--muted); font-size: 0.82rem; }
+.netchip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; background: var(--surface); cursor: pointer; color: var(--ink); }
+.netchip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.netchip.on { border-color: var(--ink); font-weight: 700; }
+.netchips { display: flex; flex-wrap: wrap; gap: 6px; }
 .board .tpm circle { fill: var(--tp); stroke: var(--part); stroke-width: 0.4; }
 .board .tpm text { fill: var(--tp); font-family: var(--font-mono); font-size: 2.2px; font-weight: 600; }
 .nets { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
@@ -365,6 +386,8 @@ const I18N = {
     s4: "Îmbunătățiri: test point-uri, AOI pe BOTTOM sau teste FT noi. Unde AP rămâne H sau M, documentează riscul rezidual.",
     s5: "Raport: descarcă fișa de evaluare a riscului.",
     board: "Placa (vedere simplificată)", top: "TOP", bottom: "BOTTOM",
+    connTitle: "Conexiuni", connHint: "Apasă pe o componentă (pe placă, în schemă sau în tabel) sau pe un net de mai jos ca să vezi unde merge semnalul: liniile colorate leagă pinii de pe același net.",
+    connPin: "pin", connNone: "nicio altă componentă", connConn: "ajunge la conector", connNoConn: "nu ajunge la niciun conector", tpYes: "test point: da", tpNo: "test point: nu", connClear: "Șterge selecția", anode: "anod", cathode: "catod",
     tpTitle: "Test point-uri (ICT)", tpHint: "Bifează net-urile pe care adaugi un test point. ICT poate măsura doar ce poate atinge cu acele de pe fixture.",
     aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
     nc: "neconectat",
@@ -411,6 +434,8 @@ const I18N = {
     s4: "Improvements: test points, AOI on BOTTOM or new FT tests. Where the AP stays H or M, document the residual risk.",
     s5: "Report: download the risk assessment sheet.",
     board: "Board (simplified view)", top: "TOP", bottom: "BOTTOM",
+    connTitle: "Connections", connHint: "Click a component (on the board, in the schematic or in the table) or a net below to see where the signal goes: the coloured lines join the pins on the same net.",
+    connPin: "pin", connNone: "no other component", connConn: "reaches connector", connNoConn: "does not reach any connector", tpYes: "test point: yes", tpNo: "test point: no", connClear: "Clear selection", anode: "anode", cathode: "cathode",
     tpTitle: "Test points (ICT)", tpHint: "Tick the nets where you add a test point. ICT can only measure what the fixture needles can reach.",
     aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
     nc: "not connected",
@@ -447,7 +472,7 @@ const tr = (o) => (o && typeof o === "object" ? o[LANG] : o);
 
 /* ---------------------------------------------------------------- state */
 const STORE_KEY = "hwtca-lab-v1";
-let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", sel: "" };
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", sel: "", net: "" };
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
 const V = () => VARIANTS[S.variant];
@@ -518,14 +543,63 @@ const PARTS = {
 };
 const TP_POS = { VDD: [17, 14], GND: [20, 43], TXD: [31, 24], RXD: [31, 31], RS: [65, 10], CANH: [65, 20], N_F1: [65, 26], CANL: [65, 32], N_F2: [65, 38],
   N_TERM: [79, 14], N_LED: [24, 11] };
+/* ---------------------------------------------------------------- connectivity (which pins share a net) */
+const NET_COLOR = { VDD: "#FF6B5A", GND: "#C9D1D9", TXD: "#FFD23F", RXD: "#3EC1D3", RS: "#FF9F1C", CANH: "#F15BB5", CANL: "#4D96FF", N_TERM: "#B983FF", N_F1: "#9BE564", N_F2: "#2EC4B6", N_LED: "#FFE66D" };
+const PIN_NAMES = { U1: { 1: "TXD", 2: "VSS", 3: "VDD", 4: "RXD", 5: "VREF", 6: "CANL", 7: "CANH", 8: "RS" }, J1: { 1: "VDD", 2: "TXD", 3: "RXD", 4: "GND" }, J2: { 1: "CAN_H", 2: "CAN_L", 3: "GND" } };
+/* every pin of the module: { ref, pin, net } (two-terminal parts: pin 1 = first net, pin 2 = second net; LED1: A / K) */
+const PINS = (() => {
+  const out = [];
+  Object.keys(PIN_NETS).forEach((ref) => Object.keys(PIN_NETS[ref]).forEach((pin) => { if (PIN_NETS[ref][pin]) out.push({ ref: ref, pin: pin, net: PIN_NETS[ref][pin] }); }));
+  Object.keys(TWO_TERM).forEach((ref) => TWO_TERM[ref].forEach((net, i) => out.push({ ref: ref, pin: ref === "LED1" ? (i ? "K" : "A") : String(i + 1), net: net })));
+  return out;
+})();
+const pinsOn = (net) => PINS.filter((x) => x.net === net);
+const netsOf = (ref) => PINS.filter((x) => x.ref === ref);
+const CONNECTORS = { J1: true, J2: true };
+/* pad centre in board coordinates (TOP view, mm) */
+function padXY(ref, pin) {
+  const p = PARTS[ref];
+  if (p.tht) {
+    const n = p.pins, i = (ref === "JP1" ? (pin === "1" ? 0 : 1) : +pin - 1), step = 2.54;
+    return p.vertical ? [p.x + p.w / 2, p.y + 2 + i * (p.h - 4) / Math.max(1, n - 1)] : [p.x + 1.7 + i * step * 1.4, p.y + p.h / 2];
+  }
+  if (p.soic) {
+    const k = +pin;
+    return k <= 4 ? [p.x - 0.7, p.y + 1.95 + (k - 1) * 3] : [p.x + p.w + 0.7, p.y + 1.95 + (8 - k) * 3];
+  }
+  const first = pin === "1" || pin === "A";
+  return [first ? p.x + 0.55 : p.x + p.w - 0.55, p.y + p.h / 2];
+}
+/* nets to highlight: those of the selected part, or the selected net */
+function hlNets() {
+  if (S.net) return [S.net];
+  if (S.sel && PARTS[S.sel]) return Array.from(new Set(netsOf(S.sel).map((x) => x.net)));
+  return [];
+}
+/* minimum spanning tree over the points of one net, so the airwires read like a ratsnest */
+function mst(pts) {
+  const inT = [0], edges = [];
+  while (inT.length < pts.length) {
+    let best = null;
+    inT.forEach((a) => pts.forEach((b, j) => {
+      if (inT.includes(j)) return;
+      const d = Math.hypot(pts[a][0] - b[0], pts[a][1] - b[1]);
+      if (!best || d < best[2]) best = [a, j, d];
+    }));
+    edges.push([pts[best[0]], pts[best[1]]]); inT.push(best[1]);
+  }
+  return edges;
+}
 function boardSVG(sideTop, selRef, refsInVariant) {
   const W = 94, H = 50;
+  const HL = hlNets();
   let g = '<rect class="pcb" x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="2"/>';
   g += '<text class="silk" text-anchor="' + (sideTop ? "end" : "start") + '" x="' + (sideTop ? W - 3 : 3) + '" y="' + (H - 3) + '">MCP2551 CAN · ' + (sideTop ? "TOP" : "BOTTOM") + "</text>";
   Object.keys(PARTS).forEach((ref) => {
     const p = PARTS[ref];
     const x = sideTop ? p.x : W - p.x - p.w;
-    const cls = "comp" + (ref === selRef ? " sel" : "") + (refsInVariant.has(ref) ? "" : " dim");
+    const linked = HL.length && ref !== selRef && PINS.some((q) => q.ref === ref && HL.includes(q.net));
+    const cls = "comp" + (ref === selRef ? " sel" : "") + (linked ? " linked" : "") + (refsInVariant.has(ref) || linked || ref === selRef ? "" : " dim");
     let inner = "";
     if (p.tht) {
       const n = p.pins; const step = 2.54;
@@ -564,6 +638,25 @@ function boardSVG(sideTop, selRef, refsInVariant) {
     const pt = TP_POS[n]; const x = sideTop ? pt[0] : W - pt[0];
     g += '<g class="tpm"><circle cx="' + x + '" cy="' + pt[1] + '" r="1.2"/><text text-anchor="middle" x="' + x + '" y="' + (pt[1] + 3.6) + '">' + n + "</text></g>";
   });
+  const X = (x) => (sideTop ? x : W - x);
+  HL.forEach((net) => {
+    const col = NET_COLOR[net] || "#fff";
+    const pts = pinsOn(net).map((q) => padXY(q.ref, q.pin));
+    if (S.tps[net] && TP_POS[net]) pts.push(TP_POS[net]);
+    const lines = mst(pts).map((e) => '<line x1="' + X(e[0][0]) + '" y1="' + e[0][1] + '" x2="' + X(e[1][0]) + '" y2="' + e[1][1] + '"/>').join("");
+    g += '<g class="rat sh">' + lines + '</g><g class="rat" stroke="' + col + '">' + lines + "</g>";
+    g += pts.map((pt) => '<circle class="pin-on" cx="' + X(pt[0]) + '" cy="' + pt[1] + '" r="0.85" fill="' + col + '"/>').join("");
+    if (selRef) {
+      const own = PINS.find((q) => q.ref === selRef && q.net === net);
+      if (own) {
+        const pt = padXY(own.ref, own.pin), pp = PARTS[own.ref];
+        /* pins on the left half of the part get their label on the left, the others on the right (mirrored on BOTTOM) */
+        let left = pt[0] < pp.x + pp.w / 2; if (!sideTop) left = !left;
+        const dy = pp.tht && pp.vertical ? 0.8 : (pp.soic ? 0.8 : -1.3);
+        g += '<text class="netlbl" fill="' + col + '" text-anchor="' + (left ? "end" : "start") + '" x="' + (X(pt[0]) + (left ? -1.3 : 1.3)) + '" y="' + (pt[1] + dy) + '">' + net + "</text>";
+      }
+    }
+  });
   return '<svg class="board" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + t("board") + '">' + g + "</svg>";
 }
 
@@ -574,7 +667,8 @@ function schSVG(selRef, refsInVariant) {
   const dot = (x, y) => '<circle class="jn" cx="' + x + '" cy="' + y + '" r="3"/>';
   const txt = (x, y, s, cls, anchor) => '<text class="' + (cls || "lbl") + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : "") + ">" + s + "</text>";
   const gnd = (x, y) => '<g class="gnd">' + ln(x, y, x, y + 8) + ln(x - 9, y + 8, x + 9, y + 8) + ln(x - 6, y + 12, x + 6, y + 12) + ln(x - 3, y + 16, x + 3, y + 16) + "</g>";
-  const comp = (ref, inner) => '<g class="comp' + (ref === selRef ? " sel" : "") + (refsInVariant.has(ref) ? "" : " dim") + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + inner + "</g>";
+  const comp = (ref, inner) => { const lk = hlNets().length && ref !== selRef && PINS.some((q) => q.ref === ref && hlNets().includes(q.net));
+    return '<g class="comp' + (ref === selRef ? " sel" : "") + (lk ? " linked" : "") + (refsInVariant.has(ref) || lk || ref === selRef ? "" : " dim") + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + inner + "</g>"; };
   /* vertical resistor between y1 and y2 at x */
   const res = (ref, val, x, y1, y2) => comp(ref, ln(x, y1, x, y1 + 10) + '<rect class="body" x="' + (x - 6) + '" y="' + (y1 + 10) + '" width="12" height="' + (y2 - y1 - 20) + '"/>' + ln(x, y2 - 10, x, y2) +
     txt(x + 11, (y1 + y2) / 2 - 2, ref, "ref") + txt(x + 11, (y1 + y2) / 2 + 11, val, "val"));
@@ -582,17 +676,25 @@ function schSVG(selRef, refsInVariant) {
   const cap = (ref, val, x, y1, y2) => { const m = (y1 + y2) / 2; return comp(ref, ln(x, y1, x, m - 4) + '<line class="plate" x1="' + (x - 10) + '" y1="' + (m - 4) + '" x2="' + (x + 10) + '" y2="' + (m - 4) + '"/><line class="plate" x1="' + (x - 10) + '" y1="' + (m + 4) + '" x2="' + (x + 10) + '" y2="' + (m + 4) + '"/>' + ln(x, m + 4, x, y2) +
     txt(x + 13, m - 2, ref, "ref") + txt(x + 13, m + 11, val, "val")); };
   /* power rail and nets */
+  const HL = hlNets();
+  const WIRES = {
+    VDD: [[70, 130, 95, 130], [95, 130, 95, 40], [95, 40, 320, 40], [320, 40, 320, 120], [140, 40, 140, 52], [200, 40, 200, 56]],
+    TXD: [[70, 170, 260, 170]], RXD: [[70, 210, 260, 210]], RS: [[225, 250, 260, 250]],
+    GND: [[70, 250, 82, 250], [82, 250, 82, 262], [300, 300, 300, 318], [640, 315, 652, 315], [652, 315, 652, 330]],
+    CANH: [[380, 170, 640, 170], [430, 170, 430, 180], [560, 170, 560, 180]], CANL: [[380, 280, 640, 280], [480, 280, 480, 290], [560, 256, 560, 280]]
+  };
+  /* short nets that only exist between two parts: drawn as a marker when highlighted */
+  const SPOTS = { N_F1: [430, 215], N_F2: [480, 325], N_TERM: [560, 222], N_LED: [140, 84] };
   g += '<g class="wire">';
-  g += ln(70, 130, 95, 130) + ln(95, 130, 95, 40) + ln(95, 40, 320, 40) + ln(320, 40, 320, 120);       /* VDD */
-  g += ln(70, 170, 260, 170) + ln(70, 210, 260, 210);                                                    /* TXD, RXD */
-  g += ln(70, 250, 82, 250) + ln(82, 250, 82, 262);                                                      /* J1 GND */
-  g += ln(225, 250, 260, 250);                                                                           /* RS */
-  g += ln(380, 170, 640, 170) + ln(380, 280, 640, 280);                                                  /* CANH, CANL */
-  g += ln(300, 300, 300, 318) + ln(640, 315, 652, 315) + ln(652, 315, 652, 330);                         /* VSS, J2 GND */
-  g += ln(140, 40, 140, 52) + ln(200, 40, 200, 56) + ln(430, 170, 430, 180) + ln(480, 280, 480, 290) + ln(560, 170, 560, 180);
+  Object.keys(WIRES).forEach((net) => {
+    const on = HL.includes(net);
+    g += WIRES[net].map((w) => '<line' + (on ? ' class="on" style="stroke:' + (net === "GND" ? "var(--ink)" : NET_COLOR[net]) + '"' : "") + ' x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>').join("");
+  });
   g += "</g>";
   g += dot(140, 40) + dot(200, 40) + dot(430, 170) + dot(560, 170) + dot(480, 280) + dot(560, 280);
-  g += gnd(82, 262) + gnd(300, 318) + gnd(652, 330);
+  const gOn = HL.includes("GND");
+  const gndH = (x, y) => gnd(x, y).replace('<g class="gnd">', '<g class="gnd' + (gOn ? " on" : "") + '">');
+  g += gndH(82, 262) + gndH(300, 318) + gndH(652, 330);
   /* J1, J2 connectors */
   g += comp("J1", '<rect class="body" x="20" y="110" width="50" height="160" rx="3"/>' + txt(45, 102, "J1", "ref", "middle") +
     [["1", "VDD", 130], ["2", "TXD", 170], ["3", "RXD", 210], ["4", "GND", 250]].map((p) => txt(28, p[2] + 4, p[0], "pin") + txt(64, p[2] + 4, p[1], "pinr", "end")).join(""));
@@ -607,20 +709,21 @@ function schSVG(selRef, refsInVariant) {
   g += comp("LED1", ln(140, 52, 140, 60) + '<path class="body" d="M131,60 h18 l-9,14 z"/>' + ln(131, 74, 149, 74) + ln(140, 74, 140, 84) +
     '<path class="arrow" d="M151,62 l9,-6 M155,56 l5,0 l0,5 M153,70 l9,-6 M157,64 l5,0 l0,5"/>' + txt(112, 70, "LED1", "ref", "end") + txt(112, 82, "verde", "val", "end"));
   g += res("R5", "1 kΩ", 140, 84, 140);
-  g += gnd(140, 140);
-  g += cap("C3", "100 nF", 200, 56, 104) + gnd(200, 104);
-  g += res("R3", "4,7 kΩ", 225, 250, 300) + gnd(225, 300);
-  g += res("R1", "100 Ω", 430, 180, 215) + cap("C1", "560 pF", 430, 215, 237) + gnd(430, 237);
-  g += res("R2", "100 Ω", 480, 290, 325) + cap("C2", "560 pF", 480, 325, 347) + gnd(480, 347);
+  g += gndH(140, 140);
+  g += cap("C3", "100 nF", 200, 56, 104) + gndH(200, 104);
+  g += res("R3", "4,7 kΩ", 225, 250, 300) + gndH(225, 300);
+  g += res("R1", "100 Ω", 430, 180, 215) + cap("C1", "560 pF", 430, 215, 237) + gndH(430, 237);
+  g += res("R2", "100 Ω", 480, 290, 325) + cap("C2", "560 pF", 480, 325, 347) + gndH(480, 347);
   g += res("R4", "120 Ω", 560, 180, 222);
   g += comp("JP1", ln(560, 222, 560, 230) + '<circle class="pinc" cx="560" cy="234" r="4"/><circle class="pinc" cx="560" cy="252" r="4"/><rect class="jbar" x="553" y="229" width="14" height="28" rx="3"/>' + ln(560, 256, 560, 280) + txt(574, 247, "JP1", "ref"));
   /* net labels */
   g += txt(210, 34, "VDD", "net") + txt(160, 165, "TXD", "net") + txt(160, 205, "RXD", "net") + txt(232, 245, "RS", "net") +
     txt(600, 165, "CANH", "net") + txt(600, 275, "CANL", "net") + txt(422, 219, "N_F1", "netsm", "end") + txt(472, 329, "N_F2", "netsm", "end") + txt(552, 226, "N_TERM", "netsm", "end") + txt(146, 90, "N_LED", "netsm");
   /* test points chosen by the student */
+  Object.keys(SPOTS).forEach((net) => { if (!HL.includes(net)) return; const p = SPOTS[net]; g += '<circle class="nethl" cx="' + p[0] + '" cy="' + p[1] + '" r="7" style="stroke:' + NET_COLOR[net] + '"/>'; });
   const TP_SCH = { VDD: [260, 40], TXD: [120, 170], RXD: [120, 210], RS: [245, 250], CANH: [520, 170], CANL: [520, 280], GND: [300, 318], N_F1: [430, 215], N_F2: [480, 325], N_TERM: [560, 222], N_LED: [140, 84] };
   Object.keys(TP_SCH).forEach((n) => { if (!S.tps[n]) return; const p = TP_SCH[n]; g += '<g class="tps"><circle cx="' + p[0] + '" cy="' + p[1] + '" r="5"/><text x="' + (p[0] + 7) + '" y="' + (p[1] - 6) + '">TP</text></g>'; });
-  return '<svg class="sch" viewBox="0 0 700 372" role="img" aria-label="' + t("schematic") + '">' + g + "</svg>";
+  return '<svg class="sch' + (HL.length ? " hl" : "") + '" viewBox="0 0 700 372" role="img" aria-label="' + t("schematic") + '">' + g + "</svg>";
 }
 
 /* ---------------------------------------------------------------- rendering */
@@ -676,6 +779,26 @@ function ftPanel() {
     '<div class="notice"><b>' + t("ftHowTitle") + "</b><ol>" + t("ftHow").map((x) => "<li>" + esc(x) + "</li>").join("") + "</ol></div>" +
     '<div class="tablewrap"><table class="sheet ptst"><thead><tr><th>' + t("ftColId") + "</th><th>" + t("ftColName") + "</th><th>" + t("ftColMeas") + "</th><th>" + t("ftColLim") + "</th><th>" + t("ftColCatch") + "</th></tr></thead><tbody>" + rows + "</tbody></table></div></div></details>";
 }
+function connPanel() {
+  const chip = (net) => '<button type="button" class="netchip' + (S.net === net ? " on" : "") + '" data-net="' + net + '"><i style="background:' + NET_COLOR[net] + '"></i>' + net + "</button>";
+  const pinTxt = (q) => q.ref + " · " + (PIN_NAMES[q.ref] ? t("connPin") + " " + q.pin + " " + PIN_NAMES[q.ref][q.pin] : q.ref === "LED1" ? (q.pin === "A" ? t("anode") : t("cathode")) : t("connPin") + " " + q.pin);
+  const meta = (net) => {
+    const con = pinsOn(net).filter((q) => CONNECTORS[q.ref]).map((q) => q.ref + " " + t("connPin") + " " + q.pin);
+    return '<span class="meta">' + (con.length ? t("connConn") + ": " + con.join(", ") : t("connNoConn")) + " · " + (S.tps[net] ? t("tpYes") : t("tpNo")) + "</span>";
+  };
+  let body;
+  if (S.sel && PARTS[S.sel]) {
+    body = '<div class="conn">' + netsOf(S.sel).map((q) => {
+      const others = pinsOn(q.net).filter((o) => !(o.ref === q.ref && o.pin === q.pin));
+      return '<div class="cr"><span class="pinl2">' + esc(pinTxt(q)) + "</span>" + chip(q.net) + '<div><div class="to">→ ' + (others.length ? others.map((o) => esc(pinTxt(o))).join(", ") : t("connNone")) + "</div>" + meta(q.net) + "</div></div>";
+    }).join("") + (S.sel === "U1" ? '<div class="cr"><span class="pinl2">U1 · ' + t("connPin") + ' 5 VREF</span><span class="meta">' + t("nc") + "</span><span></span></div>" : "") + "</div>";
+  } else if (S.net) {
+    body = '<div class="conn"><div class="cr">' + chip(S.net) + '<span></span><div><div class="to">' + pinsOn(S.net).map((o) => esc(pinTxt(o))).join(", ") + "</div>" + meta(S.net) + "</div></div></div>";
+  } else body = '<p class="muted" style="font-size:0.9rem;margin:0">' + t("connHint") + "</p>";
+  return '<div class="stack" id="connBox"><div class="row" style="justify-content:space-between"><h3>' + t("connTitle") + (S.sel ? " · " + esc(S.sel) : "") + "</h3>" +
+    (S.sel || S.net ? '<button type="button" class="btn" id="connClear">' + t("connClear") + "</button>" : "") + "</div>" + body +
+    '<div class="netchips">' + Object.keys(NET_COLOR).map(chip).join("") + "</div></div>";
+}
 function renderAnalysis(view) {
   const idxs = V(); const env = ENV_NOW();
   const refs = new Set(idxs.map((i) => MODES[i].ref));
@@ -717,6 +840,7 @@ function renderAnalysis(view) {
     '<div class="row" style="justify-content:space-between"><h2>' + t("sheet") + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
     '<div class="grid2"><div class="panel stack"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side === "bottom") + '">' + t("bottom") + '</button><button type="button" id="sideSch" aria-pressed="' + (S.side === "sch") + '">' + t("schematic") + "</button></div></div>" +
       '<div id="boardBox">' + (S.side === "sch" ? schSVG(S.sel, refs) : boardSVG(S.side === "top", S.sel, refs)) + "</div>" +
+      connPanel() +
       '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
       '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel + "</div>" +
       '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" + ftPanel() +
@@ -753,7 +877,9 @@ function renderAnalysis(view) {
   view.querySelector("#sideTop").addEventListener("click", () => { S.side = "top"; save(); render(); });
   view.querySelector("#sideBot").addEventListener("click", () => { S.side = "bottom"; save(); render(); });
   view.querySelector("#sideSch").addEventListener("click", () => { S.side = "sch"; save(); render(); });
-  const pick = (ref) => { S.sel = S.sel === ref ? "" : ref; save(); render(); };
+  const pick = (ref) => { S.sel = S.sel === ref ? "" : ref; S.net = ""; save(); render(); };
+  view.querySelectorAll("[data-net]").forEach((n) => n.addEventListener("click", () => { S.net = S.net === n.dataset.net ? "" : n.dataset.net; S.sel = ""; save(); render(); }));
+  const cc = view.querySelector("#connClear"); if (cc) cc.addEventListener("click", () => { S.sel = ""; S.net = ""; save(); render(); });
   view.querySelectorAll("[data-sel]").forEach((n) => n.addEventListener("click", () => pick(n.dataset.sel)));
   view.querySelectorAll(".board .comp, .sch .comp").forEach((n) => {
     n.addEventListener("click", () => pick(n.dataset.ref));
