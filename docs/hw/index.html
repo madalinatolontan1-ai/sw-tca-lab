@@ -101,6 +101,17 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .board .comp.sel .body, .board .comp.sel .outline { stroke: var(--tp); stroke-width: 0.9; }
 .board .outline { fill: none; stroke: transparent; }
 .board .comp.dim { opacity: 0.35; }
+.board .padhit { fill: transparent; stroke: none; cursor: pointer; pointer-events: all; }
+.board .padhit.own { stroke: var(--silk); stroke-width: 0.3; }
+.board .padhit.on { stroke: var(--tp); stroke-width: 0.55; }
+.board .pinno { fill: var(--silk); font-family: var(--font-mono); font-size: 2px; font-weight: 700; pointer-events: none; paint-order: stroke; stroke: var(--part); stroke-width: 0.45px; }
+.sch .pinhit { fill: transparent; stroke: none; cursor: pointer; pointer-events: all; }
+.sch .pinhit.own { stroke: var(--accent); stroke-width: 1.2; }
+.sch .pinhit.on { stroke: var(--tp); stroke-width: 2.4; }
+.conn .pinrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.pinchip { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; background: var(--surface); cursor: pointer; color: var(--ink); display: inline-flex; gap: 6px; align-items: center; }
+.pinchip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.pinchip.on { border-color: var(--tp); background: var(--warn-bg); font-weight: 700; }
 .board .hit { fill: transparent; stroke: none; pointer-events: all; }
 .board .ghost { fill: none; stroke: var(--silk); stroke-width: 0.3; stroke-dasharray: 0.8 0.6; opacity: 0.45; }
 .board .comp:hover .outline, .board .comp:focus .outline { stroke: var(--silk); stroke-width: 0.35; }
@@ -393,8 +404,8 @@ const I18N = {
     s4: "Îmbunătățiri: test point-uri, AOI pe BOTTOM sau teste FT noi. Unde AP rămâne H sau M, documentează riscul rezidual.",
     s5: "Raport: descarcă fișa de evaluare a riscului.",
     board: "Placa (vedere simplificată)", top: "TOP", bottom: "BOTTOM",
-    connTitle: "Conexiuni", connHint: "Apasă pe o componentă direct pe placă (TOP sau BOTTOM), în schemă, în tabel sau în lista de mai jos, ori pe un net, ca să vezi unde merge semnalul: liniile colorate leagă pinii de pe același net.",
-    connParts: "Componente", connNets: "Net-uri",
+    connTitle: "Conexiuni", connHint: "Apasă pe un pin (pad) al unei componente, pe placă sau în schemă, ca să vezi unde merge semnalul lui: linia colorată leagă toți pinii de pe același net. Poți alege întâi componenta (pe placă, în schemă, în tabel sau în lista de mai jos) și apoi pinul.",
+    connParts: "Componente", connNets: "Net-uri", connPickPin: "Alege un pin (aici sau direct pe pad, pe placă sau în schemă) ca să vezi unde merge semnalul lui:",
     connPin: "pin", connNone: "nicio altă componentă", connConn: "ajunge la conector", connNoConn: "nu ajunge la niciun conector", tpYes: "test point: da", tpNo: "test point: nu", connClear: "Șterge selecția", anode: "anod", cathode: "catod",
     tpTitle: "Test point-uri (ICT)", tpHint: "Bifează net-urile pe care adaugi un test point. ICT poate măsura doar ce poate atinge cu acele de pe fixture.",
     aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
@@ -442,8 +453,8 @@ const I18N = {
     s4: "Improvements: test points, AOI on BOTTOM or new FT tests. Where the AP stays H or M, document the residual risk.",
     s5: "Report: download the risk assessment sheet.",
     board: "Board (simplified view)", top: "TOP", bottom: "BOTTOM",
-    connTitle: "Connections", connHint: "Click a component directly on the board (TOP or BOTTOM), in the schematic, in the table or in the list below, or a net, to see where the signal goes: the coloured lines join the pins on the same net.",
-    connParts: "Components", connNets: "Nets",
+    connTitle: "Connections", connHint: "Click a pin (pad) of a component, on the board or in the schematic, to see where its signal goes: the coloured line joins all the pins on the same net. You can also pick the component first (on the board, in the schematic, in the table or in the list below) and then the pin.",
+    connParts: "Components", connNets: "Nets", connPickPin: "Choose a pin (here, or directly on its pad on the board or in the schematic) to see where its signal goes:",
     connPin: "pin", connNone: "no other component", connConn: "reaches connector", connNoConn: "does not reach any connector", tpYes: "test point: yes", tpNo: "test point: no", connClear: "Clear selection", anode: "anode", cathode: "cathode",
     tpTitle: "Test points (ICT)", tpHint: "Tick the nets where you add a test point. ICT can only measure what the fixture needles can reach.",
     aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
@@ -481,7 +492,7 @@ const tr = (o) => (o && typeof o === "object" ? o[LANG] : o);
 
 /* ---------------------------------------------------------------- state */
 const STORE_KEY = "hwtca-lab-v1";
-let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", sel: "", net: "" };
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", sel: "", net: "", pin: "" };
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
 const V = () => VARIANTS[S.variant];
@@ -580,10 +591,11 @@ function padXY(ref, pin) {
   return [first ? p.x + 0.55 : p.x + p.w - 0.55, p.y + p.h / 2];
 }
 /* nets to highlight: those of the selected part, or the selected net */
+const selPin = () => { if (!S.pin) return null; const k = S.pin.split(":"); return PINS.find((q) => q.ref === k[0] && q.pin === k[1]) || null; };
 function hlNets() {
   if (S.net) return [S.net];
-  if (S.sel && PARTS[S.sel]) return Array.from(new Set(netsOf(S.sel).map((x) => x.net)));
-  return [];
+  const sp = selPin();
+  return sp ? [sp.net] : [];
 }
 /* minimum spanning tree over the points of one net, so the airwires read like a ratsnest */
 function mst(pts) {
@@ -661,14 +673,29 @@ function boardSVG(sideTop, selRef, refsInVariant) {
     g += '<g class="rat sh">' + lines + '</g><g class="rat" stroke="' + col + '">' + lines + "</g>";
     g += pts.map((pt) => '<circle class="pin-on" cx="' + X(pt[0]) + '" cy="' + pt[1] + '" r="0.85" fill="' + col + '"/>').join("");
     if (selRef) {
-      const own = PINS.find((q) => q.ref === selRef && q.net === net);
-      if (own) {
+      const own = selPin();
+      if (own && own.net === net) {
         const pt = padXY(own.ref, own.pin), pp = PARTS[own.ref];
         /* pins on the left half of the part get their label on the left, the others on the right (mirrored on BOTTOM) */
         let left = pt[0] < pp.x + pp.w / 2; if (!sideTop) left = !left;
         const dy = pp.tht && pp.vertical ? 0.8 : (pp.soic ? 0.8 : -1.3);
-        g += '<text class="netlbl" fill="' + col + '" text-anchor="' + (left ? "end" : "start") + '" x="' + (X(pt[0]) + (left ? -1.3 : 1.3)) + '" y="' + (pt[1] + dy) + '">' + net + "</text>";
+        const off = pp.soic || (pp.tht && pp.vertical) ? 4.3 : 1.3;
+        /* keep the label on the board: near an edge it goes to the other side */
+        if (left && X(pt[0]) - off < 9) left = false; else if (!left && X(pt[0]) + off > W - 9) left = true;
+        g += '<text class="netlbl" fill="' + col + '" text-anchor="' + (left ? "end" : "start") + '" x="' + (X(pt[0]) + (left ? -off : off)) + '" y="' + (pt[1] + dy) + '">' + net + "</text>";
       }
+    }
+  });
+  /* pads of every part are clickable; the selected part shows its pin numbers */
+  PINS.forEach((q) => {
+    const pt = padXY(q.ref, q.pin), pp = PARTS[q.ref];
+    if (!sideTop && !pp.tht) return;  /* SMD pads are on the other side */
+    const on = S.pin === q.ref + ":" + q.pin;
+    g += '<circle class="padhit' + (on ? " on" : "") + (q.ref === selRef ? " own" : "") + '" data-pin="' + q.ref + ":" + q.pin + '" cx="' + X(pt[0]) + '" cy="' + pt[1] + '" r="1.25"><title>' + q.ref + " " + q.pin + " · " + q.net + "</title></circle>";
+    if (q.ref === selRef) {
+      let left = pt[0] < pp.x + pp.w / 2; if (!sideTop) left = !left;
+      const vert = pp.tht && pp.vertical;
+      g += '<text class="pinno" text-anchor="middle" x="' + (X(pt[0]) + (vert ? (left ? -2.6 : 2.6) : 0)) + '" y="' + (pt[1] + (vert ? 0.8 : (pp.soic ? 0.8 : 3.4))) + '"' + (pp.soic ? ' dx="' + (left ? -2.4 : 2.4) + '"' : "") + ">" + q.pin + "</text>";
     }
   });
   return '<svg class="board" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + t("board") + '">' + g + "</svg>";
@@ -735,6 +762,18 @@ function schSVG(selRef, refsInVariant) {
     txt(600, 165, "CANH", "net") + txt(600, 275, "CANL", "net") + txt(422, 219, "N_F1", "netsm", "end") + txt(472, 329, "N_F2", "netsm", "end") + txt(552, 226, "N_TERM", "netsm", "end") + txt(146, 90, "N_LED", "netsm");
   /* test points chosen by the student */
   Object.keys(SPOTS).forEach((net) => { if (!HL.includes(net)) return; const p = SPOTS[net]; g += '<circle class="nethl" cx="' + p[0] + '" cy="' + p[1] + '" r="7" style="stroke:' + NET_COLOR[net] + '"/>'; });
+  const SCH_PIN = {
+    "J1:1": [70, 130], "J1:2": [70, 170], "J1:3": [70, 210], "J1:4": [70, 250], "J2:1": [640, 170], "J2:2": [640, 280], "J2:3": [640, 315],
+    "U1:1": [260, 170], "U1:4": [260, 210], "U1:8": [260, 250], "U1:3": [320, 120], "U1:7": [380, 170], "U1:6": [380, 280], "U1:2": [300, 300],
+    "LED1:A": [140, 52], "LED1:K": [140, 84], "R5:1": [140, 84], "R5:2": [140, 140], "C3:1": [200, 56], "C3:2": [200, 104], "R3:1": [225, 250], "R3:2": [225, 300],
+    "R1:1": [430, 180], "R1:2": [430, 215], "C1:1": [430, 215], "C1:2": [430, 237], "R2:1": [480, 290], "R2:2": [480, 325], "C2:1": [480, 325], "C2:2": [480, 347],
+    "R4:1": [560, 180], "R4:2": [560, 222], "JP1:1": [560, 222], "JP1:2": [560, 280]
+  };
+  /* two pins at the same point (R5/LED1, R1/C1...): the selected part's pin wins, so draw the others first */
+  Object.keys(SCH_PIN).sort((a, b) => (a.split(":")[0] === selRef) - (b.split(":")[0] === selRef)).forEach((k) => {
+    const pt = SCH_PIN[k], ref = k.split(":")[0];
+    g += '<circle class="pinhit' + (S.pin === k ? " on" : "") + (ref === selRef ? " own" : "") + '" data-pin="' + k + '" cx="' + pt[0] + '" cy="' + pt[1] + '" r="6"><title>' + k.replace(":", " ") + "</title></circle>";
+  });
   const TP_SCH = { VDD: [260, 40], TXD: [120, 170], RXD: [120, 210], RS: [245, 250], CANH: [520, 170], CANL: [520, 280], GND: [300, 318], N_F1: [430, 215], N_F2: [480, 325], N_TERM: [560, 222], N_LED: [140, 84] };
   Object.keys(TP_SCH).forEach((n) => { if (!S.tps[n]) return; const p = TP_SCH[n]; g += '<g class="tps"><circle cx="' + p[0] + '" cy="' + p[1] + '" r="5"/><text x="' + (p[0] + 7) + '" y="' + (p[1] - 6) + '">TP</text></g>'; });
   return '<svg class="sch' + (HL.length ? " hl" : "") + '" viewBox="0 0 700 372" role="img" aria-label="' + t("schematic") + '">' + g + "</svg>";
@@ -797,17 +836,23 @@ let CUR_REFS = new Set();
 function connPanel() {
   const chip = (net) => '<button type="button" class="netchip' + (S.net === net ? " on" : "") + '" data-net="' + net + '"><i style="background:' + NET_COLOR[net] + '"></i>' + net + "</button>";
   const pinTxt = (q) => q.ref + " · " + (PIN_NAMES[q.ref] ? t("connPin") + " " + q.pin + " " + PIN_NAMES[q.ref][q.pin] : q.ref === "LED1" ? (q.pin === "A" ? t("anode") : t("cathode")) : t("connPin") + " " + q.pin);
-  const pinBtn = (o) => '<button type="button" class="pickbtn" data-pick="' + o.ref + '">' + esc(pinTxt(o)) + "</button>";
+  const pinBtn = (o) => '<button type="button" class="pickbtn" data-pinsel="' + o.ref + ":" + o.pin + '">' + esc(pinTxt(o)) + "</button>";
   const meta = (net) => {
     const con = pinsOn(net).filter((q) => CONNECTORS[q.ref]).map((q) => q.ref + " " + t("connPin") + " " + q.pin);
     return '<span class="meta">' + (con.length ? t("connConn") + ": " + con.join(", ") : t("connNoConn")) + " · " + (S.tps[net] ? t("tpYes") : t("tpNo")) + "</span>";
   };
   let body;
   if (S.sel && PARTS[S.sel]) {
-    body = '<div class="conn">' + netsOf(S.sel).map((q) => {
-      const others = pinsOn(q.net).filter((o) => !(o.ref === q.ref && o.pin === q.pin));
-      return '<div class="cr"><span class="pinl2">' + esc(pinTxt(q)) + "</span>" + chip(q.net) + '<div><div class="to">→ ' + (others.length ? others.map(pinBtn).join(", ") : t("connNone")) + "</div>" + meta(q.net) + "</div></div>";
-    }).join("") + (S.sel === "U1" ? '<div class="cr"><span class="pinl2">U1 · ' + t("connPin") + ' 5 VREF</span><span class="meta">' + t("nc") + "</span><span></span></div>" : "") + "</div>";
+    const sp = selPin();
+    const pins = netsOf(S.sel).slice().sort((a, b) => String(a.pin).localeCompare(String(b.pin), undefined, { numeric: true }));
+    body = '<div class="conn"><span class="meta">' + t("connPickPin") + '</span><div class="pinrow">' + pins.map((q) => '<button type="button" class="pinchip' + (sp && sp.ref === q.ref && sp.pin === q.pin ? " on" : "") + '" data-pinsel="' + q.ref + ":" + q.pin + '"><i style="background:' + NET_COLOR[q.net] + '"></i>' +
+      esc((PIN_NAMES[q.ref] ? q.pin + " " + PIN_NAMES[q.ref][q.pin] : q.ref === "LED1" ? (q.pin === "A" ? t("anode") : t("cathode")) : t("connPin") + " " + q.pin)) + "</button>").join("") +
+      (S.sel === "U1" ? '<span class="pinchip" style="opacity:0.5;cursor:default">5 VREF · ' + t("nc") + "</span>" : "") + "</div>";
+    if (sp && sp.ref === S.sel) {
+      const others = pinsOn(sp.net).filter((o) => !(o.ref === sp.ref && o.pin === sp.pin));
+      body += '<div class="cr"><span class="pinl2">' + esc(pinTxt(sp)) + "</span>" + chip(sp.net) + '<div><div class="to">→ ' + (others.length ? others.map(pinBtn).join(", ") : t("connNone")) + "</div>" + meta(sp.net) + "</div></div>";
+    }
+    body += "</div>";
   } else if (S.net) {
     body = '<div class="conn"><div class="cr">' + chip(S.net) + '<span></span><div><div class="to">' + pinsOn(S.net).map(pinBtn).join(", ") + "</div>" + meta(S.net) + "</div></div></div>";
   } else body = '<p class="muted" style="font-size:0.9rem;margin:0">' + t("connHint") + "</p>";
@@ -895,11 +940,14 @@ function renderAnalysis(view) {
   view.querySelector("#sideTop").addEventListener("click", () => { S.side = "top"; save(); render(); });
   view.querySelector("#sideBot").addEventListener("click", () => { S.side = "bottom"; save(); render(); });
   view.querySelector("#sideSch").addEventListener("click", () => { S.side = "sch"; save(); render(); });
-  const pick = (ref) => { S.sel = S.sel === ref ? "" : ref; S.net = ""; save(); render(); };
-  view.querySelectorAll("[data-net]").forEach((n) => n.addEventListener("click", () => { S.net = S.net === n.dataset.net ? "" : n.dataset.net; S.sel = ""; save(); render(); }));
-  const cc = view.querySelector("#connClear"); if (cc) cc.addEventListener("click", () => { S.sel = ""; S.net = ""; save(); render(); });
+  const pick = (ref) => { const same = S.sel === ref; S.sel = same ? "" : ref; S.pin = ""; S.net = ""; save(); render(); };
+  const pickPin = (k) => { if (S.pin === k) { S.pin = ""; } else { S.pin = k; S.sel = k.split(":")[0]; } S.net = ""; save(); render(); };
+  view.querySelectorAll("[data-pinsel]").forEach((n) => n.addEventListener("click", () => pickPin(n.dataset.pinsel)));
+  view.querySelectorAll(".padhit, .pinhit").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); pickPin(n.dataset.pin); }));
+  view.querySelectorAll("[data-net]").forEach((n) => n.addEventListener("click", () => { S.net = S.net === n.dataset.net ? "" : n.dataset.net; S.sel = ""; S.pin = ""; save(); render(); }));
+  const cc = view.querySelector("#connClear"); if (cc) cc.addEventListener("click", () => { S.sel = ""; S.net = ""; S.pin = ""; save(); render(); });
   view.querySelectorAll("[data-sel]").forEach((n) => n.addEventListener("click", () => pick(n.dataset.sel)));
-  view.querySelectorAll("[data-pick]").forEach((n) => n.addEventListener("click", () => { S.sel = n.dataset.pick; S.net = ""; save(); render(); }));
+  view.querySelectorAll("[data-pick]").forEach((n) => n.addEventListener("click", () => { S.sel = n.dataset.pick; S.pin = ""; S.net = ""; save(); render(); }));
   view.querySelectorAll(".board .comp, .sch .comp").forEach((n) => {
     n.addEventListener("click", () => pick(n.dataset.ref));
     n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(n.dataset.ref); } });
