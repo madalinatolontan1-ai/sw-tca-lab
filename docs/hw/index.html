@@ -147,7 +147,7 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .nets label.on { border-color: var(--tp); background: var(--warn-bg); }
 .nets label.na { opacity: 0.55; cursor: not-allowed; }
 .toggle { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
-.ftc { display: flex; flex-direction: column; gap: 4px; width: 200px; }
+.ftc { display: flex; flex-direction: column; gap: 4px; width: 230px; }
 textarea.ftj { width: 100%; min-height: 48px; font-size: 0.8rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); resize: vertical; }
 .ftd { display: flex; gap: 6px; align-items: flex-start; }
 .ftd .why { max-width: 150px; margin-top: 0; }
@@ -339,18 +339,18 @@ const OCC = [
   ["2", { ro: "Design matur, aproape identic, cu expunere lungă în teren", en: "Almost identical mature design with long field exposure" }],
   ["1", { ro: "Cauza e eliminată prin prevenție; nu e posibilă prin design", en: "Cause eliminated by prevention; not possible by design" }]
 ];
-/* AIAG-VDA detection scale, short paraphrase of the PFMEA table: it rates detection controls in production, which is what production tests are */
+/* AIAG-VDA detection scale, short paraphrase of the DFMEA table (same as in the FMEA lab: the analysis is done on the design) */
 const DET_SCALE = [
-  ["10", { ro: "Nu există o metodă de test sau inspecție stabilită sau cunoscută", en: "No test or inspection method has been established or is known" }],
-  ["9", { ro: "Este puțin probabil ca metoda de test sau inspecție să detecteze modul de defectare", en: "The test or inspection method is unlikely to detect the failure mode" }],
-  ["8", { ro: "Metodă de test sau inspecție nedovedită ca eficientă și fiabilă (experiență redusă, MSA la limită)", en: "Test or inspection method not proven effective and reliable (little experience, marginal gauge R&R)" }],
-  ["7", { ro: "Detecție automată sau semiautomată (cu alarmă) ori echipament de inspecție, nedovedite ca eficiente", en: "Machine-based detection (automated or semi-automated, with notification) or inspection equipment, not proven effective" }],
-  ["6", { ro: "Metodă dovedită: inspecție umană (vizuală, tactilă) sau calibre manuale care detectează defectul", en: "Proven method: human inspection (visual, touch) or manual gauging that will detect the failure" }],
-  ["5", { ro: "Metodă dovedită: detecție semiautomată (cu alarmă) sau echipament de inspecție care detectează defectul", en: "Proven method: semi-automated detection (with notification) or inspection equipment that will detect the failure" }],
-  ["4", { ro: "Sistem dovedit: detecție automată în aval; produsul neconform e marcat și nu poate pleca din fabrică", en: "Proven system: automated detection downstream; the nonconforming product is flagged and cannot leave the plant" }],
-  ["3", { ro: "Detecție automată în aceeași stație; produsul neconform e oprit și nu merge mai departe", en: "Automated detection in-station; the nonconforming product is stopped and does not move on" }],
-  ["2", { ro: "Detecție automată a cauzei; se previne producerea produsului neconform", en: "Automated detection of the cause; the nonconforming product is prevented from being made" }],
-  ["1", { ro: "Defectul nu poate fi produs fizic, sau metoda de detecție îl detectează întotdeauna", en: "The failure cannot be physically produced, or the detection method always detects it" }]
+  ["10", { ro: "Procedura de test nu e încă dezvoltată; metodă nedefinită", en: "Test procedure not yet developed; method not defined" }],
+  ["9", { ro: "Metoda de test nu e concepută special pentru acest mod sau această cauză", en: "Test method not designed specifically for this mode or cause" }],
+  ["8", { ro: "Metodă de test nouă, nedovedită", en: "New, unproven test method" }],
+  ["7", { ro: "Metodă dovedită, planificată târziu (pass / fail)", en: "Proven method, planned late (pass / fail)" }],
+  ["6", { ro: "Metodă dovedită, planificată târziu (test până la defectare)", en: "Proven method, planned late (test-to-failure)" }],
+  ["5", { ro: "Metodă dovedită, planificată târziu (test de degradare)", en: "Proven method, planned late (degradation testing)" }],
+  ["4", { ro: "Metodă dovedită, la timp înainte de lansare (pass / fail)", en: "Proven method, in time before release (pass / fail)" }],
+  ["3", { ro: "Metodă dovedită, la timp înainte de lansare (test până la defectare)", en: "Proven method, in time before release (test-to-failure)" }],
+  ["2", { ro: "Metodă dovedită, la timp înainte de lansare (test de degradare)", en: "Proven method, in time before release (degradation testing)" }],
+  ["1", { ro: "Testele anterioare confirmă că defectul nu poate apărea, sau metoda îl detectează mereu", en: "Prior testing confirms the failure cannot occur, or the method always detects it" }]
 ];
 /* criterion C9: what the functional test can see */
 const C9 = [["1", { ro: "1", en: "1" }], ["5", { ro: "5", en: "5" }], ["10", { ro: "10", en: "10" }]];
@@ -430,7 +430,7 @@ const I18N = {
     summary: "Rezumat", mDone: "Moduri completate", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Risc rezidual (H + M)", mCov: "Acoperirea riscului",
     before: "fără îmbunătățiri",
     refTables: "Tabele de referință",
-    detTitle: "Scala de detecție AIAG-VDA (D), rezumat", detNote: "Rezumat orientativ al scalei PFMEA, care evaluează controalele de detecție din producție (testele de producție). Tabelul complet este în curs și în manualul AIAG-VDA.",
+    detTitle: "Scala de detecție AIAG-VDA (D), rezumat", detNote: "Rezumat orientativ al scalei DFMEA (analiza se face pe design, ca la laboratorul de FMEA). Tabelul complet este în curs și în manualul AIAG-VDA.",
     sevTitle: "Clase de severitate (S)", occTitle: "Scala de ocurență AIAG-VDA (O), rezumat", occNote: "Rezumat orientativ; tabelele complete sunt în curs și în manualul AIAG-VDA.",
     ftTitle: "Teste funcționale (FT)", c9Title: "Criteriul C9 pentru D FT",
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
@@ -446,7 +446,7 @@ const I18N = {
     newTestsTitle: "Teste FT noi (îmbunătățire)", newTestsHint: "Propune un test funcțional nou (ce măsori, unde, ce limită), apoi alege-l în coloana „Test FT nou” la modurile pe care le prinde, cu valoarea D. Testul contează doar în varianta cu îmbunătățiri.",
     newTestPh: "ex.: Măsurarea tensiunii pe RS cu nodul activ (< 0,3 · VDD)", addTest: "Adaugă testul", testAdded: "Testul {id} a fost adăugat.", del: "Șterge", newTag: "nou",
     ftListTitle: "Lista testelor funcționale (FT1–FT8) · cum alegi D FT", ftHowTitle: "Cum alegi testul și D FT",
-    ftHow: ["Citește efectul și tipul modului de defectare (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Caută în listă, la „Ce poate prinde”, un test care se potrivește cu componenta și cu tipul defectului.", "Apasă pe pinul componentei (pe placă sau în SCHEMĂ) și urmărește netul în panoul Conexiuni: dacă ajunge la un pin de conector (J1, J2), testul funcțional îl poate vedea; compară cu semnalul pe care îl măsoară testul.", "Alege testul cel mai potrivit sau NONE dacă niciunul nu se potrivește.", "Alege valoarea D de la 1 la 10 din scala de detecție (tabelele de referință) și scrie de ce. Orientativ: 1 – testul prinde sigur defectul; valori intermediare – îl prinde doar parțial (pentru anumite valori, în anumite condiții sau intermitent), cu atât mai mare cu cât detecția e mai nesigură; 10 – niciun test nu îl prinde (NONE)."],
+    ftHow: ["Citește efectul și tipul modului de defectare (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Caută în listă, la „Ce poate prinde”, un test care se potrivește cu componenta și cu tipul defectului.", "Apasă pe pinul componentei (pe placă sau în SCHEMĂ) și urmărește netul în panoul Conexiuni: dacă ajunge la un pin de conector (J1, J2), testul funcțional îl poate vedea; compară cu semnalul pe care îl măsoară testul.", "Alege testul cel mai potrivit sau NONE dacă niciunul nu se potrivește.", "Alege valoarea D (1–10) din listă: fiecare valoare are descrierea din scala de detecție AIAG-VDA (o găsești și în tabelele de referință). Scrie de ce ai ales-o. NONE înseamnă D = 10."],
     ftColId: "Test", ftColName: "Denumire", ftColMeas: "Ce se măsoară", ftColLim: "Limite", ftColCatch: "Ce poate prinde",
     mRA: "Risc rezidual documentat", sevScaleTitle: "Scala de severitate AIAG-VDA (rezumat)", newTests: "Teste FT noi", raCol: "Evaluarea riscului"
   },
@@ -480,7 +480,7 @@ const I18N = {
     summary: "Summary", mDone: "Modes completed", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Residual risk (H + M)", mCov: "Risk coverage",
     before: "without improvements",
     refTables: "Reference tables",
-    detTitle: "AIAG-VDA detection scale (D), summary", detNote: "Indicative summary of the PFMEA scale, which rates detection controls in production (production tests). The full table is in the course and in the AIAG-VDA handbook.",
+    detTitle: "AIAG-VDA detection scale (D), summary", detNote: "Indicative summary of the DFMEA scale (the analysis is done on the design, as in the FMEA lab). The full table is in the course and in the AIAG-VDA handbook.",
     sevTitle: "Severity classes (S)", occTitle: "AIAG-VDA occurrence scale (O), summary", occNote: "Indicative summary; the full tables are in the course and in the AIAG-VDA handbook.",
     ftTitle: "Functional tests (FT)", c9Title: "Criterion C9 for D FT",
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
@@ -496,7 +496,7 @@ const I18N = {
     newTestsTitle: "New FT tests (improvement)", newTestsHint: "Propose a new functional test (what you measure, where, which limit), then pick it in the “New FT test” column for the modes it catches, with the D value. The test counts only in the version with improvements.",
     newTestPh: "e.g.: Measure the RS voltage with the node active (< 0.3 · VDD)", addTest: "Add test", testAdded: "Test {id} added.", del: "Delete", newTag: "new",
     ftListTitle: "Functional test list (FT1–FT8) · how to choose D FT", ftHowTitle: "How to choose the test and D FT",
-    ftHow: ["Read the effect and the type of the failure mode (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Look in the list, under “What it can catch”, for a test that matches the component and the defect type.", "Click the pin of the component (on the board or in the SCHEMATIC) and follow its net in the Connections panel: if it reaches a connector pin (J1, J2), the functional test can see it; compare with the signal the test measures.", "Choose the most suitable test, or NONE if no test fits.", "Choose a D value from 1 to 10 from the detection scale (reference tables) and write why. As a guide: 1 – the test surely catches the defect; values in between – it catches it only partly (for some values, under some conditions or intermittently), the higher the less certain the detection; 10 – no test catches it (NONE)."],
+    ftHow: ["Read the effect and the type of the failure mode (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Look in the list, under “What it can catch”, for a test that matches the component and the defect type.", "Click the pin of the component (on the board or in the SCHEMATIC) and follow its net in the Connections panel: if it reaches a connector pin (J1, J2), the functional test can see it; compare with the signal the test measures.", "Choose the most suitable test, or NONE if no test fits.", "Choose the D value (1–10) from the list: each value carries its description from the AIAG-VDA detection scale (also in the reference tables). Write why you chose it. NONE means D = 10."],
     ftColId: "Test", ftColName: "Name", ftColMeas: "What is measured", ftColLim: "Limits", ftColCatch: "What it can catch",
     mRA: "Residual risk documented", sevScaleTitle: "AIAG-VDA severity scale (summary)", newTests: "New FT tests", raCol: "Risk assessment"
   }
@@ -896,7 +896,7 @@ function renderAnalysis(view) {
     const sel = (name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"><option value="">' + t("choose") + "</option>" +
       opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
     const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const dOpts = nums.map((n) => [String(n), String(n)]);
+    const dOpts = DET_SCALE.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[1])]);
     const c9opts = dOpts;
     const ftCell = '<td><div class="ftc">' + sel("fttest", FT_LIST.map((x) => [x.id, x.id + " · " + tr(x.name)]).concat([["none", t("ftNone")]]), u.fttest, t("colFTtest")) +
       (u.fttest && u.fttest !== "none" ? sel("ft", dOpts, u.ft, t("colFTd")) : "") +
