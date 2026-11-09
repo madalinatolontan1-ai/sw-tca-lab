@@ -279,16 +279,34 @@ const VARIANTS = {
   H6: [16, 25, 28, 43, 49, 53, 57, 61, 64, 68, 72, 76]
 };
 
-const CATEGORY = { "R-CHIP": "PAS-SMD", "C-MLCC": "PAS-SMD", "LED-SMD": "DIODE", "IC-SOIC": "IC-LEADED", "CON-HDR": "CONN-THT", "JMP": "CONN-THT" };
-/* [AOI, AXI, ICT with TP, ICT without TP] — sheet "Reguli detecție" */
+/* detection rules (her table, Nov 2026): AIAG-VDA scale combined with IPC-A-610 / IPC-2221 / IEEE 1149.1 practice.
+   [AOI without BOTTOM, AOI with BOTTOM active, AXI, ICT with direct TP, ICT without direct TP (cluster / indirect), allocation logic] */
+const CATEGORY = { "R-CHIP": "PAS-SMD-R", "C-MLCC": "PAS-SMD-C", "LED-SMD": "DIODE", "IC-SOIC": "IC-SOIC", "CON-HDR": "CONN-THT", "JMP": "JUMPER-THT" };
+const CAT_LABEL = { "PAS-SMD-R": "PAS-SMD (R1–R5)", "PAS-SMD-C": "PAS-SMD (C1–C3)", "DIODE": "DIODE (LED1)", "IC-SOIC": "IC-SOIC (U1)", "CONN-THT": "CONN-THT (J1, J2)", "JUMPER-THT": "JUMPER-THT (JP1)" };
+const L_MISS = { ro: "Vizibil optic direct de către AOI.", en: "Directly visible to AOI." };
+const L_SHORT = { ro: "Punțile de lipire pot fi ascunse sub corpul piesei.", en: "Solder bridges can be hidden under the part body." };
+const L_OPEN = { ro: "Menisc de lipire defect sau întrerupt.", en: "Defective or broken solder meniscus." };
+const L_THT_OPEN = { ro: "Pe fața TOP este invizibil; AOI BOTTOM activ oferă detecție maximă.", en: "Invisible from the TOP side; AOI with BOTTOM active gives full detection." };
+const L_THT_SHORT = { ro: "Scurtul se produce pe fața BOTTOM a plăcii.", en: "The short forms on the BOTTOM side of the board." };
+const L_THT_JOINT = { ro: "Lipsa de aliaj pe pinul THT se evaluează pe BOTTOM.", en: "Missing solder on the THT pin is judged from the BOTTOM side." };
 const RULES = {
-  "PAS-SMD": { "Missing": [1, 3, 1, 5], "Short": [5, 5, 1, 5], "Open": [1, 5, 1, 5], "Wrong value": [10, 10, 1, 5] },
-  "DIODE": { "Missing": [1, 3, 1, 5], "Short": [5, 5, 1, 5], "Open": [1, 5, 1, 5], "Wrong value": [10, 10, 5, 10], "Wrong polarity": [1, 10, 1, 5] },
-  "IC-LEADED": { "Missing": [1, 1, 1, 5], "Pin open": [1, 5, 1, 10], "Pin short": [1, 1, 1, 10], "Pin wrong functionality": [10, 10, 10, 10] },
-  "CONN-THT": { "Missing": [1, 1, 1, 10], "Pin open": [10, 3, 1, 10], "Pin short": [10, 1, 1, 10], "Wrong value": [1, 10, 1, 5], "Short": [1, 10, 1, 5], "Open": [10, 3, 1, 5] }
+  "PAS-SMD-R": { "Missing": [1, 1, 3, 1, 3, L_MISS], "Short": [5, 5, 5, 1, 2, L_SHORT], "Open": [1, 1, 5, 1, 4, L_OPEN],
+    "Wrong value": [5, 5, 10, 1, 5, { ro: "Textul de pe capsulă este citit parțial prin OCR; ICT cu TP direct măsoară valoarea.", en: "The marking is partly read by OCR; ICT with a direct TP measures the value." }] },
+  "PAS-SMD-C": { "Missing": [1, 1, 3, 1, 3, L_MISS], "Short": [5, 5, 5, 1, 2, L_SHORT], "Open": [1, 1, 5, 1, 4, L_OPEN],
+    "Wrong value": [10, 10, 10, 1, 5, { ro: "Condensatorul nu are marcaj: AOI nu poate citi valoarea; doar ICT o măsoară.", en: "The capacitor is unmarked: AOI cannot read the value; only ICT measures it." }] },
+  "DIODE": { "Missing": [1, 1, 3, 1, 3, L_MISS], "Short": [5, 5, 5, 1, 2, L_SHORT], "Open": [1, 1, 5, 1, 4, L_OPEN],
+    "Wrong polarity": [1, 1, 10, 1, 4, { ro: "AOI vede marcajul de polaritate; ICT verifică dioda în sens direct.", en: "AOI sees the polarity mark; ICT checks the diode in forward direction." }],
+    "Wrong value": [10, 10, 10, 5, 8, { ro: "Culoarea sau tensiunea directă greșită nu se văd optic; ICT compară parțial tensiunea directă.", en: "A wrong colour or forward voltage is not visible; ICT partly compares the forward voltage." }] },
+  "IC-SOIC": { "Missing": [1, 1, 1, 1, 2, { ro: "Capsula lipsă e vizibilă optic și la raze X; ICT o vede prin consum.", en: "A missing package is visible optically and in X-ray; ICT sees it through the supply current." }],
+    "Pin open": [2, 2, 3, 3, 6, { ro: "Pinul ridicat se vede parțial la AOI; ICT folosește teste vectorless (TestJet).", en: "A lifted lead is partly visible to AOI; ICT uses vectorless tests (TestJet)." }],
+    "Pin short": [1, 1, 1, 1, 3, { ro: "Punțile dintre pinii gull-wing sunt vizibile optic.", en: "Bridges between gull-wing leads are visible optically." }],
+    "Pin wrong functionality": [10, 10, 10, 10, 10, { ro: "Defect intern al cipului: nu se vede optic și nici prin măsurători ICT.", en: "Internal die defect: not visible optically nor through ICT measurements." }] },
+  "CONN-THT": { "Missing": [1, 1, 1, 1, 5, { ro: "Corpul conectorului e vizibil pe fața TOP.", en: "The connector body is visible from the TOP side." }],
+    "Pin open": [10, 1, 3, 1, 5, L_THT_OPEN], "Pin short": [10, 1, 1, 1, 3, L_THT_SHORT], "Open": [10, 1, 3, 1, 5, L_THT_JOINT] },
+  "JUMPER-THT": { "Missing": [1, 1, 1, 1, 5, { ro: "Jumperul lipsă e vizibil pe TOP; ICT îl vede prin terminația de 120 Ω.", en: "A missing jumper is visible from the TOP side; ICT sees it through the 120 Ω termination." }],
+    "Open": [10, 1, 3, 1, 5, L_THT_JOINT], "Short": [10, 1, 1, 1, 3, L_THT_SHORT],
+    "Wrong value": [1, 1, 10, 1, 5, { ro: "Tipul greșit de jumper e vizibil optic; AXI nu vede diferența.", en: "The wrong jumper type is visible optically; AXI cannot see the difference." }] }
 };
-const C5_MODES = { "CONN-THT": ["Pin open", "Pin short", "Open"] };      /* AOI 10 only because solder joints are on BOTTOM */
-const MARKED = { R1: true, R2: true, R3: true, R4: true, R5: true, U1: true };   /* C7 */
 
 /* nets of every component (schematic of the MCP2551 module, LED1/R5 added) */
 const PIN_NETS = {
@@ -306,12 +324,14 @@ const NETS = ["VDD", "GND", "TXD", "RXD", "CANH", "CANL", "RS", "N_TERM", "N_F1"
 /* effect classes of the TCA library, worded after the AIAG-VDA severity scale */
 const SEVERITY = [
   ["E10", 10, { ro: "Afectează siguranța vehiculului, a ocupanților sau a altor participanți la trafic", en: "Affects safe operation of the vehicle, occupants or other road users" }],
-  ["E9", 9, { ro: "Neconformitate cu reglementările (EMC: emisii sau imunitate)", en: "Noncompliance with regulations (EMC: emissions or immunity)" }],
+  ["E9", 9, { ro: "Neconformitate cu reglementările (EMC: emisii sau imunitate) sau cu alte reglementări legale", en: "Noncompliance with regulations (EMC: emissions or immunity) or other legal regulations" }],
   ["E8", 8, { ro: "Pierderea funcției principale (fără comunicație CAN sau fără funcționare)", en: "Loss of the primary function (no CAN communication or no operation)" }],
   ["E7", 7, { ro: "Degradarea funcției principale (comunicație coruptă sau intermitentă)", en: "Degradation of the primary function (corrupted or intermittent communication)" }],
   ["E6", 6, { ro: "Pierderea unei funcții secundare (indicatorul LED nu funcționează)", en: "Loss of a secondary function (the LED indicator does not work)" }],
   ["E5", 5, { ro: "Degradarea unei funcții secundare (indicație LED greșită)", en: "Degradation of a secondary function (wrong LED indication)" }],
-  ["E2", 2, { ro: "Efect ușor deranjant, fără efect funcțional sau EMC", en: "Slightly objectionable effect, no functional or EMC effect" }],
+  ["E4", 4, { ro: "Efect nedorit (foarte deranjant), care nu afectează funcționalitatea produsului", en: "Undesired (very objectionable) effect that does not affect the product's function" }],
+  ["E3", 3, { ro: "Efect mediu (moderat deranjant), care nu afectează funcționalitatea produsului", en: "Medium (moderately objectionable) effect that does not affect the product's function" }],
+  ["E2", 2, { ro: "Efect ușor, care nu afectează funcționalitatea produsului", en: "Slight effect that does not affect the product's function" }],
   ["E1", 1, { ro: "Niciun efect perceptibil", en: "No discernible effect" }]
 ];
 /* AIAG-VDA scales, short paraphrase (full tables in the course) */
@@ -435,7 +455,7 @@ const I18N = {
     ftTitle: "Teste funcționale (FT)", c9Title: "Criteriul C9 pentru D FT",
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
     apTitle: "Tabelul AP (AIAG-VDA)",
-    whyRule: "regula", whyC7: "C7 marcaj", whyC5: "C5 THT pe BOTTOM", whyAOIb: "AOI BOTTOM", whyTP: "TP", whyNoTP: "fără TP", whyNoNet: "pin neconectat",
+    whyRule: "regula", whyC7: "C7 marcaj", whyC5: "C5 THT pe BOTTOM", whyAOIb: "AOI cu BOTTOM activ", whyAOItop: "AOI fără BOTTOM", whyTP: "TP direct", whyNoTP: "fără TP direct (cluster / indirect)", whyNoNet: "pin neconectat",
     conclusion: "Propuneri de îmbunătățire și concluzie (apar în raport)",
     reportTitle: "Fișa de evaluare a riscului · HW TCA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
@@ -485,7 +505,7 @@ const I18N = {
     ftTitle: "Functional tests (FT)", c9Title: "Criterion C9 for D FT",
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
     apTitle: "AP table (AIAG-VDA)",
-    whyRule: "rule", whyC7: "C7 marking", whyC5: "C5 THT on BOTTOM", whyAOIb: "AOI BOTTOM", whyTP: "TP", whyNoTP: "no TP", whyNoNet: "pin not connected",
+    whyRule: "rule", whyC7: "C7 marking", whyC5: "C5 THT on BOTTOM", whyAOIb: "AOI with BOTTOM active", whyAOItop: "AOI without BOTTOM", whyTP: "direct TP", whyNoTP: "no direct TP (cluster / indirect)", whyNoNet: "pin not connected",
     conclusion: "Proposed improvements and conclusion (included in the report)",
     reportTitle: "Risk assessment sheet · HW TCA", download: "Download report (.html)", copy: "Copy report text",
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
@@ -524,18 +544,16 @@ function netsFor(m) {
 function detection(m, env) {
   const cat = CATEGORY[m.type];
   const r = RULES[cat][m.mode];
-  let aoi = r[0]; const axi = r[1];
-  const aoiWhy = [cat + " · " + m.mode];
-  if (m.mode === "Wrong value" && MARKED[m.ref] && aoi === 10) { aoi = 5; aoiWhy.push(t("whyC7")); }
-  if ((C5_MODES[cat] || []).includes(m.mode) && aoi === 10) {
-    if (env.aoiBottom) { aoi = 1; aoiWhy.push(t("whyAOIb")); } else aoiWhy.push(t("whyC5"));
-  }
+  const aoi = env.aoiBottom ? r[1] : r[0], axi = r[2];
+  const aoiWhy = [CAT_LABEL[cat] + " · " + m.mode];
+  if (r[0] !== r[1]) aoiWhy.push(env.aoiBottom ? t("whyAOIb") : t("whyAOItop"));
+  aoiWhy.push(tr(r[5]));
   const nets = netsFor(m);
   const noNet = nets.some((n) => n === null);
   const access = !noNet && nets.length > 0 && nets.every((n) => env.tps[n]);
-  const ict = access ? r[2] : r[3];
+  const ict = access ? r[3] : r[4];
   const ictWhy = noNet ? t("whyNoNet") : (access ? t("whyTP") : t("whyNoTP")) + ": " + nets.join(", ");
-  return { aoi: aoi, axi: axi, ict: ict, aoiWhy: aoiWhy.join(" · "), axiWhy: cat + " · " + m.mode, ictWhy: ictWhy };
+  return { aoi: aoi, axi: axi, ict: ict, aoiWhy: aoiWhy.join(" · "), axiWhy: CAT_LABEL[cat] + " · " + m.mode, ictWhy: ictWhy };
 }
 const newTest = (id) => (S.newTests || []).find((x) => x.id === id);
 function evalRow(idx, env) {
