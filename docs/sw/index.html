@@ -669,6 +669,7 @@ function load() {
   } catch (e) { /* storage unavailable */ }
 }
 const V = () => VARIANTS[S.variant];
+const bugTab = () => (V() && V().f1bug ? "f1" : "f3");  /* the tab that holds the planted bug */
 
 function nextId(exKey) {
   const prefix = { f1: "T", f2: "T", f3: "T", int: "I" }[exKey];
@@ -871,7 +872,7 @@ function renderExercise(view, exKey) {
       '<button class="btn" id="addTest" type="button">+ ' + t("addTest") + '</button><button class="btn primary" id="runTests" type="button">▶ ' + t("run") + "</button></div></div>" +
       renderTests(exKey, an) + "</div>" +
     '<div class="panel stack"><h3>' + t("results") + "</h3>" + renderResults(exKey, an) + "</div>" +
-    (exKey === "f3" ? bugBlock() : "") + (exKey === "int" ? justBlock() : "") +
+    (exKey === bugTab() ? bugBlock() : "") + (exKey === "int" ? justBlock() : "") +
     '<div class="panel stack"><label class="label" for="notes_' + exKey + '">' + t("notes") + '</label><textarea id="notes_' + exKey + '" data-notes="' + exKey + '">' + esc(S.notes[exKey]) + "</textarea></div>";
 
   /* events */
@@ -938,7 +939,7 @@ function buildReport() {
     text.push("  " + t("mStmt") + ": " + pct(an.stmt) + " | " + t("mDec") + ": " + pct(an.dec) + " | " + t("mMcdc") + ": " + pct(an.mcdc) + " | " + t("mReq") + ": " + pct(an.req));
     text.push("  " + t("uncoveredLines") + ": " + (unl.length ? unl.join(", ") : t("none")) + " | " + t("missingOutcomes") + ": " + (miss.length ? miss.join(", ") : t("none")));
     text.push("  MC/DC · " + t("notShown") + ": " + (condMiss.length ? condMiss.join("; ") : t("none")) + " | " + t("reqMissing") + ": " + (an.reqMissing.length ? an.reqMissing.join(", ") : t("none")));
-    if (k === "f3") {
+    if (k === bugTab()) {
       parts.push("<h3>" + t("bugTitle") + "</h3><ul><li>" + t("bugTest") + ": " + esc(S.bug.test || "–") + "</li><li>" + t("bugLine") + ": " + esc(S.bug.line || "–") + "</li><li>" + t("bugFix") + ": <code>" + esc(S.bug.fix || "–") + "</code></li></ul><p>" + esc(S.bug.desc || "–").replace(/\n/g, "<br>") + "</p>");
       text.push("  " + t("bugTitle") + ": " + t("bugTest") + "=" + (S.bug.test || "–") + "; " + t("bugLine") + "=" + (S.bug.line || "–") + "; " + t("bugFix") + "=" + (S.bug.fix || "–"), "  " + (S.bug.desc || "–"));
     }
