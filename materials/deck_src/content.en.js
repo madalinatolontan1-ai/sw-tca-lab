@@ -124,12 +124,12 @@ module.exports = {
       notes: "Risk and coverage analyses are not specific to automotive.\n\nIn aerospace, SAE ARP4761A, from 2023, describes the safety assessment process, DO-254 covers airborne electronic hardware, and AS13004 covers PFMEA and control plans. In medical, ISO 14971 is the risk management standard for medical devices. In rail, EN 50126 covers RAMS. For industry in general, IEC 61508 is the basic functional safety standard; ISO 26262 is derived from it.\n\nFor telecom, the question at the start was whether standards exist. Yes: TL 9000, version R6.3 from 2021, is the quality management system for the ICT sector, built on ISO 9001. Telcordia SR-332 covers reliability prediction for electronic equipment. ETSI has resilience specifications for virtualized networks, with failure modes, and ITU-T E.800 defines quality-of-service terms. But the public texts we checked contain no explicit FMEA requirement. In telecom, FMEA is good practice, not an obligation from the standard." },
 
     { type: "case", title: "The case study: the front radar's CAN module",
-      cards: [["The radar", "ARS 408-21: 0.20–250 m, ~72 ms cycle, CAN at 500 kbit/s [31]. ASIL B is a lab assumption."],
+      cards: [["The radar", "Generic automotive front radar: 0.20–250 m, ~72 ms cycle, CAN at 500 kbit/s (typical values). ASIL B is a lab assumption."],
         ["The MCP2551 transceiver", "VDD 4.5–5.5 V; IDD ≤ 75 mA dominant, ≤ 10 mA recessive; recessive 2.0–3.0 V; dominant differential 1.5–3.0 V [30]."],
         ["The module", "J1, U1, C3, R3 (RS), R4 + JP1 (termination), R1/C1 and R2/C2 (RC filters), J2, LED1 + R5. No test points: you add them."]],
       image: "Image placeholder:\nmodule schematic / board photo",
-      refs: "Sources: [30] Microchip DS21667F; ISO 11898-2:2024 · [31] Continental ARS 408-21",
-      notes: "The case study is the same in all the labs. A front radar sends its list of detected objects over CAN. The radar values come from the Continental ARS 408-21 datasheet: range from 0.2 to 250 metres, a cycle of about 72 milliseconds, CAN at 500 kbit/s. Treating it as ASIL B is a lab assumption, not information from the datasheet.\n\nThe CAN node uses a module with the MCP2551 transceiver. From the Microchip datasheet we take the limits: supply 4.5–5.5 V, maximum current 75 mA dominant and 10 mA recessive, bus voltages of 2–3 V recessive and 1.5–3 V differential dominant. The physical layer is described by ISO 11898-2, 2024 edition.\n\nThe module has 13 components and, importantly, no test points. You will add them as an improvement." },
+      refs: "Sources: [30] Microchip DS21667F; ISO 11898-2:2024",
+      notes: "The case study is the same in all the labs. A front radar sends its list of detected objects over CAN. The radar is a generic one, with values typical of a long-range automotive radar: range from 0.2 to 250 metres, a cycle of about 72 milliseconds, CAN at 500 kbit/s. Treating it as ASIL B is a lab assumption, not information about a specific product.\n\nThe CAN node uses a module with the MCP2551 transceiver. From the Microchip datasheet we take the limits: supply 4.5–5.5 V, maximum current 75 mA dominant and 10 mA recessive, bus voltages of 2–3 V recessive and 1.5–3 V differential dominant. The physical layer is described by ISO 11898-2, 2024 edition.\n\nThe module has 13 components and, importantly, no test points. You will add them as an improvement." },
 
     { type: "method", title: "What you do in today's lab",
       steps: [["Severity", "choose the effect class (E1–E10); S follows from it"], ["Occurrence", "from the AIAG-VDA table (mature SMT technology)"], ["AOI, AXI, ICT", "D comes from the detection rules, with the reason shown"],
@@ -142,7 +142,7 @@ module.exports = {
       cards: [["Test engineer (ICT / FCT)", "develops production test programs and fixtures.", ""], ["DfT / coverage engineer", "analyses testability and coverage from the design phase.", "sky"], ["Quality engineer", "FMEA, control plan, IATF 16949.", ""],
         ["Reliability engineer", "prediction, endurance tests, failure analysis.", "sky"], ["Functional safety engineer", "ISO 26262, ASIL, hardware metrics.", ""], ["Technical risk analyst", "FMEA, TCA, risk assessment and documentation.", "amber"]],
       image: [0.5, 3.82, 9.0, 1.05, "Image placeholder: certifications (IPC CIS/CIT, ASQ CRE/CQE, functional safety engineer) or employer logos"],
-      refs: "Sources: [32] ASQ (CRE, CQE); IPC (CIS, CIT)",
+      refs: "Sources: [31] ASQ (CRE, CQE); IPC (CIS, CIT)",
       notes: "Today's analyses appear in automotive, aerospace, medical, rail, industrial and telecommunications, wherever a failure is costly.\n\nAs graduates you will meet them in several roles: test engineer, who writes the ICT and FCT programs; DfT or coverage engineer, who works with the designers so the board is testable; quality engineer, who owns the FMEA and the control plan; reliability engineer; functional safety engineer on ISO 26262; technical risk analyst.\n\nThere are also recognized certifications: IPC CIS and CIT for the assembly standards, ASQ for reliability and quality engineer, and functional safety engineer programmes at certification bodies.\n\nYou can add examples of regional employers here, with links to their careers pages." },
 
     { type: "refs", title: "References (1/2)",
@@ -179,8 +179,7 @@ module.exports = {
         "[28] TL 9000 R6.3 (2021), tl9000.org; Telcordia SR-332 Issue 4 (2016); ETSI GS NFV-REL 001 V1.1.1 (2015); ITU-T E.800 (09/2008).",
         "[29] SAE ARP4761A (2023); RTCA DO-254; SAE AS13004; ISO 14971:2019; EN 50126; IEC 61508:2010; MIL-STD-1629A (1980).",
         "[30] Microchip, MCP2551 High-Speed CAN Transceiver, DS21667F, 2010; ISO 11898-2:2024, iso.org/standard/85120.html.",
-        "[31] Continental, ARS 408-21 Long Range Radar Sensor 77 GHz, datasheet.",
-        "[32] ASQ, CRE and CQE certifications, asq.org; IPC, CIS and CIT certifications, electronics.org."],
+        "[31] ASQ, CRE and CQE certifications, asq.org; IPC, CIS and CIT certifications, electronics.org."],
       notes: "The second part of the reference list. The NHTSA cases have free public documents on static.nhtsa.gov; EU acts are on EUR-Lex." }
   ]
 };

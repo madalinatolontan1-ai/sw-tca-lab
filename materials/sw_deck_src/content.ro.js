@@ -148,7 +148,7 @@ module.exports = {
         "[2] Vector, Following the ISO 26262-6:2018 Guidelines with VectorCAST (whitepaper).", "[3] LDRA, Implementing ISO 26262 second edition (whitepaper).",
         "[4] VDA QMC, Automotive SPICE Process Assessment Model 4.0 (2023).", "[5] K. J. Hayhurst et al., A Practical Tutorial on Modified Condition/Decision Coverage, NASA/TM-2001-210876 (2001).",
         "[6] RTCA DO-178C, Software Considerations in Airborne Systems and Equipment Certification (2011).", "[7] GCC, Instrumentation Options: -fcondition-coverage (GCC 14).",
-        "[8] ISO 11898-1, Road vehicles — Controller area network (CAN) — Part 1.", "[9] Continental, ARS 408-21 Long Range Radar Sensor 77 GHz, fișă tehnică.",
+        "[8] ISO 11898-1, Road vehicles — Controller area network (CAN) — Part 1.",
         "[10] P. Koopman, A Case Study of Toyota Unintended Acceleration and Software Safety (2014); M. Barr, mărturie de expert, Bookout v. Toyota (2013).",
         "[11] ZVEI, Best Practice Guideline: Software for Safety-Related Automotive Systems (2025)."],
       notes: "Sursele sunt și în îndrumar, cu linkuri. Standardele ISO și DO-178C sunt cu plată; le găsiți prin biblioteca universității. Restul sunt gratuite, iar tutorialul NASA despre MC/DC e cea mai bună lectură de pornire." }

@@ -9,7 +9,6 @@ REFS_RO = [
     "ISO 26262:2018, Road vehicles — Functional safety; IATF 16949:2016.",
     "IPC-A-610J și IPC J-STD-001J (2024).",
     "Microchip, MCP2551 High-Speed CAN Transceiver, DS21667F, 2010; ISO 11898-2:2024.",
-    "Continental, ARS 408-21 Long Range Radar Sensor 77 GHz, fișă tehnică.",
 ]
 REFS_EN = [r.replace("„", "“").replace("IPC-A-610J și", "IPC-A-610J and").replace("ed. 1", "1st ed.").replace("fișă tehnică", "datasheet") for r in REFS_RO]
 
@@ -53,7 +52,7 @@ T = {
         ("p", "Evaluarea riscului înseamnă identificare, analiză și evaluare [5]. Unde AP este H sau M, căutăm întâi o îmbunătățire. Ce rămâne după îmbunătățiri este riscul rezidual: trebuie documentat, cu motivul pentru care rămâne și cu decizia luată (acceptat sau acțiune propusă)."),
 
         ("h2", "3. Studiul de caz: modulul CAN al radarului frontal"),
-        ("p", "Un radar frontal (ARS 408-21, ipoteza laboratorului: ASIL B) trimite lista de obiecte detectate pe CAN, la 500 kbit/s [9]. Interfața CAN folosește un modul cu transceiverul MCP2551 [8]. Placa are 13 componente și <b>nu are test point-uri</b>: le adăugați voi, ca îmbunătățire. Componentele THT (J1, J2, JP1) au lipiturile pe fața BOTTOM, iar AOI inspectează inițial doar fața TOP."),
+        ("p", "Un radar frontal auto generic (ipoteza laboratorului: ASIL B) trimite lista de obiecte detectate pe CAN, la 500 kbit/s. Interfața CAN folosește un modul cu transceiverul MCP2551 [8]. Placa are 13 componente și <b>nu are test point-uri</b>: le adăugați voi, ca îmbunătățire. Componentele THT (J1, J2, JP1) au lipiturile pe fața BOTTOM, iar AOI inspectează inițial doar fața TOP."),
         ("components",),
         ("img", "h0_schematic", 480, "Figura 1. Schema modulului, așa cum apare în aplicație (butonul SCHEMĂ)."),
 
@@ -185,7 +184,7 @@ T = {
         ("p", "Risk assessment means identification, analysis and evaluation [5]. Where AP is H or M, we first look for an improvement. What remains after the improvements is the residual risk: it must be documented, with the reason it remains and the decision taken (accepted or action proposed)."),
 
         ("h2", "3. The case study: the front radar's CAN module"),
-        ("p", "A front radar (ARS 408-21, lab assumption: ASIL B) sends its list of detected objects over CAN at 500 kbit/s [9]. The CAN interface uses a module with the MCP2551 transceiver [8]. The board has 13 components and <b>no test points</b>: you add them as an improvement. The THT components (J1, J2, JP1) are soldered on the BOTTOM side, and AOI initially inspects only the TOP side."),
+        ("p", "A generic automotive front radar (lab assumption: ASIL B) sends its list of detected objects over CAN at 500 kbit/s. The CAN interface uses a module with the MCP2551 transceiver [8]. The board has 13 components and <b>no test points</b>: you add them as an improvement. The THT components (J1, J2, JP1) are soldered on the BOTTOM side, and AOI initially inspects only the TOP side."),
         ("components",),
         ("img", "h0_schematic", 480, "Figure 1. The module schematic as shown in the app (SCHEMATIC button)."),
 

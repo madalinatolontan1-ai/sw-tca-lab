@@ -124,12 +124,12 @@ module.exports = {
       notes: "Analizele de risc și de acoperire nu sunt specifice auto.\n\nÎn aeronautică, SAE ARP4761A, din 2023, descrie procesul de evaluare a siguranței, DO-254 acoperă hardware-ul electronic de bord, iar AS13004 tratează PFMEA și planurile de control. În medical, ISO 14971 este standardul de management al riscului pentru dispozitive medicale. În feroviar, EN 50126 tratează RAMS. Pentru industrie în general, IEC 61508 este standardul de bază pentru siguranța funcțională; din el derivă și ISO 26262.\n\nPentru telecom, întrebarea de la început a fost dacă există standarde. Da: TL 9000, versiunea R6.3 din 2021, este sistemul de management al calității pentru sectorul ICT, construit pe ISO 9001. Telcordia SR-332 tratează predicția fiabilității echipamentelor electronice. ETSI are specificații de reziliență pentru rețele virtualizate, cu moduri de defectare, iar ITU-T E.800 definește termenii de calitate a serviciului. Dar în textele publice verificate nu am găsit o cerință explicită de FMEA. În telecom, FMEA este o bună practică, nu o obligație din standard." },
 
     { type: "case", title: "Studiul de caz: modulul CAN al radarului frontal",
-      cards: [["Radarul", "ARS 408-21: 0,20–250 m, ciclu de ~72 ms, CAN la 500 kbit/s [31]. ASIL B este o ipoteză de laborator."],
+      cards: [["Radarul", "Radar frontal auto generic: 0,20–250 m, ciclu de ~72 ms, CAN la 500 kbit/s (valori tipice). ASIL B este o ipoteză de laborator."],
         ["Transceiverul MCP2551", "VDD 4,5–5,5 V; IDD ≤ 75 mA dominant, ≤ 10 mA recesiv; recesiv 2,0–3,0 V; diferențial dominant 1,5–3,0 V [30]."],
         ["Modulul", "J1, U1, C3, R3 (RS), R4 + JP1 (terminație), R1/C1 și R2/C2 (filtre RC), J2, LED1 + R5. Fără test point-uri: le adăugați voi."]],
       image: "Loc pentru imagine:\nschema modulului / fotografia plăcii",
-      refs: "Surse: [30] Microchip DS21667F; ISO 11898-2:2024 · [31] Continental ARS 408-21",
-      notes: "Studiul de caz este același în toate laboratoarele. Un radar frontal trimite lista de obiecte detectate pe CAN. Valorile radarului vin din fișa tehnică Continental ARS 408-21: distanță de la 0,2 la 250 de metri, ciclu de aproximativ 72 de milisecunde, CAN la 500 kbit/s. Faptul că îl tratăm ca ASIL B este o ipoteză a laboratorului, nu o informație din fișa tehnică.\n\nNodul CAN folosește un modul cu transceiverul MCP2551. Din fișa tehnică Microchip folosim limitele: alimentare 4,5–5,5 V, curent maxim 75 mA în dominant și 10 mA în recesiv, tensiuni pe bus de 2–3 V în recesiv și 1,5–3 V diferențial în dominant. Stratul fizic e descris de ISO 11898-2, ediția 2024.\n\nModulul are 13 componente și, important, nu are test point-uri. Le veți adăuga voi ca îmbunătățire." },
+      refs: "Surse: [30] Microchip DS21667F; ISO 11898-2:2024",
+      notes: "Studiul de caz este același în toate laboratoarele. Un radar frontal trimite lista de obiecte detectate pe CAN. Radarul este unul generic, iar valorile lui sunt tipice pentru un radar auto de lungă distanță: distanță de la 0,2 la 250 de metri, ciclu de aproximativ 72 de milisecunde, CAN la 500 kbit/s. Faptul că îl tratăm ca ASIL B este o ipoteză a laboratorului, nu o informație despre un produs anume.\n\nNodul CAN folosește un modul cu transceiverul MCP2551. Din fișa tehnică Microchip folosim limitele: alimentare 4,5–5,5 V, curent maxim 75 mA în dominant și 10 mA în recesiv, tensiuni pe bus de 2–3 V în recesiv și 1,5–3 V diferențial în dominant. Stratul fizic e descris de ISO 11898-2, ediția 2024.\n\nModulul are 13 componente și, important, nu are test point-uri. Le veți adăuga voi ca îmbunătățire." },
 
     { type: "method", title: "Ce faceți azi în laborator",
       steps: [["Severitate", "alegeți clasa de efect (E1–E10), S rezultă din ea"], ["Ocurență", "din tabelul AIAG-VDA (tehnologie SMT matură)"], ["AOI, AXI, ICT", "D vine din regulile de detecție, cu motivul afișat"],
@@ -142,7 +142,7 @@ module.exports = {
       cards: [["Inginer de test (ICT / FCT)", "dezvoltă programe și fixture-uri de test pentru producție.", ""], ["Inginer DfT / acoperire", "analizează testabilitatea și acoperirea încă din design.", "sky"], ["Inginer de calitate", "FMEA, plan de control, IATF 16949.", ""],
         ["Inginer de fiabilitate", "predicție, teste de anduranță, analiza defectărilor.", "sky"], ["Inginer de siguranță funcțională", "ISO 26262, ASIL, metrici hardware.", ""], ["Analist de risc tehnic", "FMEA, TCA, evaluarea și documentarea riscului.", "amber"]],
       image: [0.5, 3.82, 9.0, 1.05, "Loc pentru imagine: certificări (IPC CIS/CIT, ASQ CRE/CQE, inginer de siguranță funcțională) sau logo-uri de angajatori"],
-      refs: "Surse: [32] ASQ (CRE, CQE); IPC (CIS, CIT)",
+      refs: "Surse: [31] ASQ (CRE, CQE); IPC (CIS, CIT)",
       notes: "Analizele de azi apar în industria auto, aeronautică, medicală, feroviară, industrială și de telecomunicații, oriunde o defectare costă mult.\n\nCa absolvenți, le veți întâlni în mai multe roluri: inginer de test, care scrie programele ICT și FCT; inginer DfT sau de acoperire, care lucrează cu designerii ca placa să fie testabilă; inginer de calitate, care ține FMEA și planul de control; inginer de fiabilitate; inginer de siguranță funcțională pe ISO 26262; analist de risc tehnic.\n\nExistă și certificări recunoscute: IPC CIS și CIT pentru standardele de asamblare, ASQ pentru inginer de fiabilitate și de calitate, programe de inginer de siguranță funcțională la organisme de certificare.\n\nPoți adăuga aici exemple de angajatori din regiune, cu link spre paginile lor de cariere." },
 
     { type: "refs", title: "Bibliografie (1/2)",
@@ -179,8 +179,7 @@ module.exports = {
         "[28] TL 9000 R6.3 (2021), tl9000.org; Telcordia SR-332 Issue 4 (2016); ETSI GS NFV-REL 001 V1.1.1 (2015); ITU-T E.800 (09/2008).",
         "[29] SAE ARP4761A (2023); RTCA DO-254; SAE AS13004; ISO 14971:2019; EN 50126; IEC 61508:2010; MIL-STD-1629A (1980).",
         "[30] Microchip, MCP2551 High-Speed CAN Transceiver, DS21667F, 2010; ISO 11898-2:2024, iso.org/standard/85120.html.",
-        "[31] Continental, ARS 408-21 Long Range Radar Sensor 77 GHz, fișă tehnică.",
-        "[32] ASQ, certificările CRE și CQE, asq.org; IPC, certificările CIS și CIT, electronics.org."],
+        "[31] ASQ, certificările CRE și CQE, asq.org; IPC, certificările CIS și CIT, electronics.org."],
       notes: "Partea a doua a bibliografiei. Cazurile NHTSA au documente publice gratuite pe static.nhtsa.gov; actele UE sunt pe EUR-Lex." }
   ]
 };

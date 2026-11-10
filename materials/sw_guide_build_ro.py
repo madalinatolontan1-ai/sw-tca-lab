@@ -62,7 +62,7 @@ p("Dacă acoperirea nu este suficientă, standardul cere teste suplimentare sau 
 ex(2, "verbal", "Radarul din laborator este ASIL B. Ce metrici sunt ++ la ASIL B? Dar la ASIL A și la ASIL D? De ce scade statement coverage la + la ASIL C și D? Ce se întâmplă dacă, la ASIL D, MC/DC nu ajunge la 100%?")
 
 h("Studiul de caz: firmware-ul nodului CAN al radarului frontal")
-p("Lucrăm pe același radar ca la HW TCA: ARS 408-21 (ipoteza laboratorului: ASIL B), care trimite lista de obiecte detectate pe CAN, la 500 kbit/s, la fiecare ciclu de măsurare (aproximativ 72 ms). Firmware-ul nodului CAN are patru funcții C. Codul a fost scris pentru laborator, după regulile reale: limitele CAN vin din standardul ISO 11898-1, iar domeniile senzorului din fișa tehnică a radarului. În aplicație vedeți, pentru fiecare valoare, de unde vine.")
+p("Lucrăm pe același radar frontal auto generic ca la HW TCA (ipoteza laboratorului: ASIL B), care trimite lista de obiecte detectate pe CAN, la 500 kbit/s, la fiecare ciclu de măsurare (aproximativ 72 ms). Firmware-ul nodului CAN are patru funcții C. Codul a fost scris pentru laborator, după regulile reale: limitele CAN vin din standardul ISO 11898-1, iar domeniile senzorului sunt valori tipice pentru un radar auto de lungă distanță. În aplicație vedeți, pentru fiecare valoare, de unde vine.")
 table(["Funcție", "Ce face", "Intrări", "Ieșire", "Cerințe"], [
     ["F1 can_frame_is_valid", "Verifică dacă un cadru CAN este valid: DLC cel mult 8 și identificatorul în domeniul de 11 biți (standard) sau 29 de biți (extins).", "id, dlc, extended", "true / false", "SWR-F1-01…04"],
     ["F2 sensor_value_plausible", "Verifică dacă valoarea radarului este în domeniu și nu sare prea mult față de ciclul anterior.", "value, previous, first_sample", "true / false", "SWR-F2-01…04"],
@@ -121,8 +121,7 @@ ol(["în aplicație apăsați „Începe de la zero”, apoi încărcați varian
 h("Resurse")
 for t, u in [("Aplicația SW TCA Lab", APP), ("Repository-ul laboratorului (codul, demonstrația cu gcov în Codespaces)", REPO),
              ("K. J. Hayhurst, D. S. Veerhusen, J. J. Chilenski, L. K. Rierson, „A Practical Tutorial on Modified Condition/Decision Coverage”, NASA/TM-2001-210876, 2001", "https://shemesh.larc.nasa.gov/fm/papers/Hayhurst-2001-tm210876-MCDC.pdf"),
-             ("ISO 26262-6:2018, Road vehicles — Functional safety — Part 6: Product development at the software level (prin biblioteca universității)", "https://www.iso.org/standard/68388.html"),
-             ("Continental, ARS 408-21 Long Range Radar Sensor 77 GHz (fișă tehnică)", "https://platformselect.autonomoustuff.com/product/continental-ars-408-21")]:
+             ("ISO 26262-6:2018, Road vehicles — Functional safety — Part 6: Product development at the software level (prin biblioteca universității)", "https://www.iso.org/standard/68388.html")]:
     p('<a href="%s">%s</a>' % (u, E(t)), raw=True)
 out.append("</body></html>")
 open(OUT, "w").write("\n".join(out))

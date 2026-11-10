@@ -38,7 +38,7 @@ ro: {
     { t: "ex", n: 2, x: ["Încadrați fiecare defect din exercițiul 1 într-una dintre literele PCOLA, SOQ sau FAM."] },
 
     { t: "h", x: "Studiul de caz: modulul CAN al radarului frontal" },
-    { t: "p", x: "Un radar frontal (ARS 408-21; ipoteza laboratorului: ASIL B) trimite lista de obiecte detectate pe CAN, la 500 kbit/s. Interfața CAN folosește un modul cu transceiverul MCP2551. Placa are 13 componente și nu are test point-uri. Componentele THT (J1, J2, JP1) au lipiturile pe fața BOTTOM, iar AOI inspectează inițial doar fața TOP." },
+    { t: "p", x: "Un radar frontal auto generic (ipoteza laboratorului: ASIL B) trimite lista de obiecte detectate pe CAN, la 500 kbit/s. Interfața CAN folosește un modul cu transceiverul MCP2551. Placa are 13 componente și nu are test point-uri. Componentele THT (J1, J2, JP1) au lipiturile pe fața BOTTOM, iar AOI inspectează inițial doar fața TOP." },
     { t: "table", w: [1500, 3500, 4600], head: ["Componentă", "Net-uri", "Rol"], rows: [
       ["J1", "VDD, TXD, RXD, GND", "conector spre senzor (alimentare și date de la microcontroler)"], ["U1", "TXD, GND, VDD, RXD, VREF (neconectat), CANL, CANH, RS", "transceiver CAN MCP2551 (SOIC-8)"],
       ["C3", "VDD – GND", "decuplarea alimentării"], ["R3", "RS – GND", "alege modul de lucru al lui U1"], ["R4 + JP1", "CANH – N_TERM – CANL", "terminația de 120 Ω, activată cu jumperul JP1"],
@@ -138,7 +138,7 @@ en: {
     { t: "ex", n: 2, x: ["Assign each defect from exercise 1 to one of the PCOLA, SOQ or FAM letters."] },
 
     { t: "h", x: "The case study: the front radar's CAN module" },
-    { t: "p", x: "A front radar (ARS 408-21; lab assumption: ASIL B) sends its list of detected objects over CAN at 500 kbit/s. The CAN interface uses a module with the MCP2551 transceiver. The board has 13 components and no test points. The THT components (J1, J2, JP1) are soldered on the BOTTOM side, and AOI initially inspects only the TOP side." },
+    { t: "p", x: "A generic automotive front radar (lab assumption: ASIL B) sends its list of detected objects over CAN at 500 kbit/s. The CAN interface uses a module with the MCP2551 transceiver. The board has 13 components and no test points. The THT components (J1, J2, JP1) are soldered on the BOTTOM side, and AOI initially inspects only the TOP side." },
     { t: "table", w: [1500, 3500, 4600], head: ["Component", "Nets", "Role"], rows: [
       ["J1", "VDD, TXD, RXD, GND", "connector to the sensor (supply and data from the microcontroller)"], ["U1", "TXD, GND, VDD, RXD, VREF (not connected), CANL, CANH, RS", "MCP2551 CAN transceiver (SOIC-8)"],
       ["C3", "VDD – GND", "supply decoupling"], ["R3", "RS – GND", "selects the operating mode of U1"], ["R4 + JP1", "CANH – N_TERM – CANL", "120 Ω termination, enabled with jumper JP1"],
