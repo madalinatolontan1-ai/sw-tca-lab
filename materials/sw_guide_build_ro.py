@@ -122,7 +122,7 @@ h("Resurse")
 for t, u in [("Aplicația SW TCA Lab", APP), ("Repository-ul laboratorului (codul, demonstrația cu gcov în Codespaces)", REPO),
              ("K. J. Hayhurst, D. S. Veerhusen, J. J. Chilenski, L. K. Rierson, „A Practical Tutorial on Modified Condition/Decision Coverage”, NASA/TM-2001-210876, 2001", "https://shemesh.larc.nasa.gov/fm/papers/Hayhurst-2001-tm210876-MCDC.pdf"),
              ("ISO 26262-6:2018, Road vehicles — Functional safety — Part 6: Product development at the software level (prin biblioteca universității)", "https://www.iso.org/standard/68388.html"),
-             ("Continental / Aumovio, ARS 408-21 Long Range Radar (fișă tehnică)", "https://engineering-solutions.aumovio.com/wp-content/uploads/2025/10/121118_FS_ARS-408-21_EN_HS.pdf")]:
+             ("Continental, ARS 408-21 Long Range Radar Sensor 77 GHz (fișă tehnică)", "https://platformselect.autonomoustuff.com/product/continental-ars-408-21")]:
     p('<a href="%s">%s</a>' % (u, E(t)), raw=True)
 out.append("</body></html>")
 open(OUT, "w").write("\n".join(out))

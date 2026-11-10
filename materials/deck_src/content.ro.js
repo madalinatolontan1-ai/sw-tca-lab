@@ -128,8 +128,8 @@ module.exports = {
         ["Transceiverul MCP2551", "VDD 4,5–5,5 V; IDD ≤ 75 mA dominant, ≤ 10 mA recesiv; recesiv 2,0–3,0 V; diferențial dominant 1,5–3,0 V [30]."],
         ["Modulul", "J1, U1, C3, R3 (RS), R4 + JP1 (terminație), R1/C1 și R2/C2 (filtre RC), J2, LED1 + R5. Fără test point-uri: le adăugați voi."]],
       image: "Loc pentru imagine:\nschema modulului / fotografia plăcii",
-      refs: "Surse: [30] Microchip DS21667F; ISO 11898-2:2024 · [31] AUMOVIO ARS 408-21",
-      notes: "Studiul de caz este același în toate laboratoarele. Un radar frontal trimite lista de obiecte detectate pe CAN. Valorile radarului vin din fișa tehnică ARS 408-21, astăzi sub marca AUMOVIO: distanță de la 0,2 la 250 de metri, ciclu de aproximativ 72 de milisecunde, CAN la 500 kbit/s. Faptul că îl tratăm ca ASIL B este o ipoteză a laboratorului, nu o informație din fișa tehnică.\n\nNodul CAN folosește un modul cu transceiverul MCP2551. Din fișa tehnică Microchip folosim limitele: alimentare 4,5–5,5 V, curent maxim 75 mA în dominant și 10 mA în recesiv, tensiuni pe bus de 2–3 V în recesiv și 1,5–3 V diferențial în dominant. Stratul fizic e descris de ISO 11898-2, ediția 2024.\n\nModulul are 13 componente și, important, nu are test point-uri. Le veți adăuga voi ca îmbunătățire." },
+      refs: "Surse: [30] Microchip DS21667F; ISO 11898-2:2024 · [31] Continental ARS 408-21",
+      notes: "Studiul de caz este același în toate laboratoarele. Un radar frontal trimite lista de obiecte detectate pe CAN. Valorile radarului vin din fișa tehnică Continental ARS 408-21: distanță de la 0,2 la 250 de metri, ciclu de aproximativ 72 de milisecunde, CAN la 500 kbit/s. Faptul că îl tratăm ca ASIL B este o ipoteză a laboratorului, nu o informație din fișa tehnică.\n\nNodul CAN folosește un modul cu transceiverul MCP2551. Din fișa tehnică Microchip folosim limitele: alimentare 4,5–5,5 V, curent maxim 75 mA în dominant și 10 mA în recesiv, tensiuni pe bus de 2–3 V în recesiv și 1,5–3 V diferențial în dominant. Stratul fizic e descris de ISO 11898-2, ediția 2024.\n\nModulul are 13 componente și, important, nu are test point-uri. Le veți adăuga voi ca îmbunătățire." },
 
     { type: "method", title: "Ce faceți azi în laborator",
       steps: [["Severitate", "alegeți clasa de efect (E1–E10), S rezultă din ea"], ["Ocurență", "din tabelul AIAG-VDA (tehnologie SMT matură)"], ["AOI, AXI, ICT", "D vine din regulile de detecție, cu motivul afișat"],
@@ -179,7 +179,7 @@ module.exports = {
         "[28] TL 9000 R6.3 (2021), tl9000.org; Telcordia SR-332 Issue 4 (2016); ETSI GS NFV-REL 001 V1.1.1 (2015); ITU-T E.800 (09/2008).",
         "[29] SAE ARP4761A (2023); RTCA DO-254; SAE AS13004; ISO 14971:2019; EN 50126; IEC 61508:2010; MIL-STD-1629A (1980).",
         "[30] Microchip, MCP2551 High-Speed CAN Transceiver, DS21667F, 2010; ISO 11898-2:2024, iso.org/standard/85120.html.",
-        "[31] AUMOVIO, ARS 408-21 Long Range Radar, fișă tehnică, engineering-solutions.aumovio.com.",
+        "[31] Continental, ARS 408-21 Long Range Radar Sensor 77 GHz, fișă tehnică.",
         "[32] ASQ, certificările CRE și CQE, asq.org; IPC, certificările CIS și CIT, electronics.org."],
       notes: "Partea a doua a bibliografiei. Cazurile NHTSA au documente publice gratuite pe static.nhtsa.gov; actele UE sunt pe EUR-Lex." }
   ]

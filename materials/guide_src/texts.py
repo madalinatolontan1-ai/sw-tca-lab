@@ -9,7 +9,7 @@ REFS_RO = [
     "ISO 26262:2018, Road vehicles — Functional safety; IATF 16949:2016.",
     "IPC-A-610J și IPC J-STD-001J (2024).",
     "Microchip, MCP2551 High-Speed CAN Transceiver, DS21667F, 2010; ISO 11898-2:2024.",
-    "AUMOVIO, ARS 408-21 Long Range Radar, fișă tehnică.",
+    "Continental, ARS 408-21 Long Range Radar Sensor 77 GHz, fișă tehnică.",
 ]
 REFS_EN = [r.replace("„", "“").replace("IPC-A-610J și", "IPC-A-610J and").replace("ed. 1", "1st ed.").replace("fișă tehnică", "datasheet") for r in REFS_RO]
 
