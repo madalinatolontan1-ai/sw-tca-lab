@@ -344,6 +344,7 @@ const SIGNALS = {
           r4: "For every following measurement cycle, a lateral distance within the range shall be accepted only if |value - previous| <= 7 (0.7 m)." }
 };
 const VARIANTS = {
+  V0: { sig: "dist", bug: "none", f1bug: true },  /* demo variant done together in the lab */
   V1: { sig: "dist", bug: "A" }, V2: { sig: "dist", bug: "B" },
   V3: { sig: "vrel", bug: "C" }, V4: { sig: "vrel", bug: "A" },
   V5: { sig: "lat",  bug: "B" }, V6: { sig: "lat",  bug: "C" }
@@ -352,7 +353,8 @@ const fmtDef = (n) => (n < 0 ? "(" + n + ")" : String(n));
 const pad = (s, n) => (s + " ".repeat(Math.max(0, n - s.length)));
 
 /* ---------------------------------------------------------------- code listings */
-function codeF1() {
+function codeF1(v) {
+  const op = v && v.f1bug ? ">=" : ">";
   return {
     ctx: ["#define CAN_MAX_DLC        8u", "#define CAN_STD_ID_MAX     0x7FFu", "#define CAN_EXT_ID_MAX     0x1FFFFFFFu"],
     lines: [
@@ -360,7 +362,7 @@ function codeF1() {
       [6, "    uint32_t max_id = CAN_STD_ID_MAX;", 1], [7, ""],
       [8, "    if (extended) {", 1, "F1.8"], [9, "        max_id = CAN_EXT_ID_MAX;", 1], [10, "    }"],
       [11, "    if (dlc > CAN_MAX_DLC) {", 1, "F1.11"], [12, "        return false;", 1], [13, "    }"],
-      [14, "    if (id > max_id) {", 1, "F1.14"], [15, "        return false;", 1], [16, "    }"],
+      [14, "    if (id " + op + " max_id) {", 1, "F1.14"], [15, "        return false;", 1], [16, "    }"],
       [17, "    return true;", 1], [18, "}"]
     ]
   };
@@ -423,14 +425,14 @@ function codeInt() {
 function newTrace() { return { lines: new Set(), dec: [], funcs: new Set(), calls: new Set() }; }
 function rec(tr, id, vals, out) { tr.dec.push({ id: id, vals: vals, out: out }); }
 
-function F1(id, dlc, ext, tr) {
+function F1(id, dlc, ext, tr, v) {
   tr.funcs.add("can_frame_is_valid");
   tr.lines.add(6); let maxId = 0x7FF;
   tr.lines.add(8); rec(tr, "F1.8", [ext], ext);
   if (ext) { tr.lines.add(9); maxId = 0x1FFFFFFF; }
   tr.lines.add(11); const c2 = dlc > 8; rec(tr, "F1.11", [c2], c2);
   if (c2) { tr.lines.add(12); return false; }
-  tr.lines.add(14); const c3 = id > maxId; rec(tr, "F1.14", [c3], c3);
+  tr.lines.add(14); const c3 = v && v.f1bug ? id >= maxId : id > maxId; rec(tr, "F1.14", [c3], c3);
   if (c3) { tr.lines.add(15); return false; }
   tr.lines.add(17); return true;
 }
@@ -481,7 +483,7 @@ function HANDLER(inp, v, tr) {
     rec(own, "I.54", ["ACTIVE/PASSIVE"], "ACTIVE/PASSIVE");
     own.lines.add(57);
     const vals = [undefined, undefined]; let r;
-    tr.calls.add("C2"); vals[0] = F1(inp.id, inp.dlc, inp.extended, tr);
+    tr.calls.add("C2"); vals[0] = F1(inp.id, inp.dlc, inp.extended, tr, v);
     if (!vals[0]) r = false;
     else { tr.calls.add("C3"); vals[1] = F2(inp.value, inp.previous, inp.first_sample, v, tr); r = vals[1]; }
     rec(own, "I.57", vals, r);
@@ -503,7 +505,7 @@ function HANDLER(inp, v, tr) {
 const BOOL = ["true", "false"];
 const EX = {
   f1: {
-    tab: "tabF1", num: "1", fn: "can_frame_is_valid", task: "t1", code: () => codeF1(),
+    tab: "tabF1", num: "1", fn: "can_frame_is_valid", task: "t1", code: (v) => codeF1(v),
     inputs: [{ k: "id", type: "u32", hex: true }, { k: "dlc", type: "u8" }, { k: "extended", type: "bool" }],
     outputs: BOOL,
     reqs: () => [
@@ -511,8 +513,8 @@ const EX = {
       ["SWR-F1-02", "For a standard frame, the function shall reject an identifier greater than 0x7FF."],
       ["SWR-F1-03", "For an extended frame, the function shall reject an identifier greater than 0x1FFFFFFF."],
       ["SWR-F1-04", "The function shall accept every frame that is not rejected by SWR-F1-01 to SWR-F1-03."]],
-    decisions: { "F1.8": { line: 8, conds: ["extended"] }, "F1.11": { line: 11, conds: ["dlc > CAN_MAX_DLC"] }, "F1.14": { line: 14, conds: ["id > max_id"] } },
-    exec: (i, v, tr) => String(F1(i.id, i.dlc, i.extended, tr)),
+    decisions: (v) => ({ "F1.8": { line: 8, conds: ["extended"] }, "F1.11": { line: 11, conds: ["dlc > CAN_MAX_DLC"] }, "F1.14": { line: 14, conds: [(v && v.f1bug ? "id >= max_id" : "id > max_id")] } }),
+    exec: (i, v, tr) => String(F1(i.id, i.dlc, i.extended, tr, v)),
     example: { inputs: { id: "0x100", dlc: "9", extended: "true" }, expected: "false", req: "SWR-F1-01" }
   },
   f2: {
