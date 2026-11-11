@@ -14,6 +14,12 @@ const INDENT = 709; // first-line indent, as in the model
 const para = (text, opts = {}) => new Paragraph({ alignment: AlignmentType.JUSTIFIED, indent: { firstLine: INDENT }, spacing: { after: 120, line: 276 }, ...opts,
   children: [new TextRun({ text, font: BODY, size: 24 })] });
 const thin = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+/* shaded note with a bold question as its first sentence ("Which standard governs ...?") */
+const note = (text) => { const k = text.indexOf("? ") + 1;
+  return new Paragraph({ spacing: { before: 60, after: 160, line: 276 }, indent: { left: 180, right: 180 },
+    shading: { type: ShadingType.CLEAR, fill: "E8F4F2", color: "auto" },
+    border: { left: { style: BorderStyle.SINGLE, size: 18, color: "0F6E69", space: 8 } },
+    children: [new TextRun({ text: text.slice(0, k), bold: true, font: BODY, size: 24 }), new TextRun({ text: text.slice(k), font: BODY, size: 24 })] }); };
 const borders = { top: thin, bottom: thin, left: thin, right: thin };
 
 function table(b) {
@@ -56,6 +62,7 @@ const exWord = lang === "ro" ? "Exercițiul " : "Exercise ";
 for (const b of L.blocks) {
   if (b.t === "h") out.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: b.x })] }));
   else if (b.t === "p") out.push(para(b.x));
+  else if (b.t === "note") out.push(note(b.x));
   else if (b.t === "table") { out.push(table(b)); out.push(new Paragraph({ spacing: { after: 120 }, children: [] })); }
   else if (b.t === "box") { out.push(box(b.x)); out.push(new Paragraph({ spacing: { after: 120 }, children: [] })); }
   else if (b.t === "img") out.push(...image(b));
