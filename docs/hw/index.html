@@ -85,6 +85,7 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .intro { max-width: 72ch; display: flex; flex-direction: column; gap: 12px; }
+.stdbox { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 4px; font-size: 0.92rem; }
 .notice { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; }
 .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
 .step { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
@@ -430,6 +431,7 @@ const I18N = {
     introP1: "Analizezi cât de bine detectează testele de producție defectele de fabricație ale modulului CAN (MCP2551) folosit de radarul frontal. Primești o listă de moduri de defectare, fiecare cu efectul ei.",
     introP2: "Pentru fiecare mod alegi severitatea (S) și ocurența (O) din tabele. Aplicația prezice detecția (D) pentru AOI, AXI și ICT din regulile de detecție; detecția la testul funcțional (FT) o stabilești tu. Din S, O și D minim rezultă prioritatea de acțiune (AP), după tabelul AIAG-VDA.",
     introP3: "La final propui îmbunătățiri (test point-uri, AOI pe fața BOTTOM, teste FT) și verifici cât scade riscul rezidual. Raportul se descarcă din tab-ul Raport.",
+    introStd: "Ce standard guvernează analiza? Acoperirea testelor de producție nu este o metrică ISO 26262: ține de IATF 16949 (planul de control), de FMEA de proces (AIAG-VDA), de IPC-A-610 și de cerințele clientului. ISO 26262 atinge producția doar prin partea 7. Nu o confunda cu diagnostic coverage (ISO 26262-5), care măsoară cât detectează mecanismele de siguranță un defect apărut în funcționare.",
     introP4: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
     stepsTitle: "Pașii",
     s1: "S: alege clasa de efect. Efectul e dat; severitatea rezultă din clasă.",
@@ -480,6 +482,7 @@ const I18N = {
     introP1: "You analyse how well the production tests detect the manufacturing defects of the CAN module (MCP2551) used by the front radar. You receive a list of failure modes, each with its effect.",
     introP2: "For every mode you choose the severity (S) and occurrence (O) from the tables. The app predicts the detection (D) for AOI, AXI and ICT from the detection rules; you set the detection of the functional test (FT). S, O and the minimum D give the action priority (AP) from the AIAG-VDA table.",
     introP3: "Finally you propose improvements (test points, AOI on the BOTTOM side, FT tests) and check how much the residual risk drops. Download the report from the Report tab.",
+    introStd: "Which standard governs this analysis? Production test coverage is not an ISO 26262 metric: it belongs to IATF 16949 (control plan), process FMEA (AIAG-VDA), IPC-A-610 and customer-specific requirements. ISO 26262 reaches production only through Part 7. Do not confuse it with diagnostic coverage (ISO 26262-5), which measures how well safety mechanisms detect a fault that appears in operation.",
     introP4: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
     stepsTitle: "Steps",
     s1: "S: choose the effect class. The effect is given; the severity follows from the class.",
@@ -836,7 +839,7 @@ function render() {
   renderAnalysis(view);
 }
 function renderStart() {
-  return '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p><p>" + esc(t("introP3")) + "</p>" +
+  return '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p><p>" + esc(t("introP3")) + '</p><p class="stdbox">' + esc(t("introStd")) + "</p>" +
     '<p class="notice">' + esc(V() ? t("variantLoaded").replace("{v}", S.variant) : t("introP4")) + "</p></section>" +
     '<section class="stack"><span class="label">' + esc(t("stepsTitle")) + '</span><div class="steps">' +
     ["s1", "s2", "s3", "s4", "s5"].map((k, i) => '<div class="step"><h3>' + (i + 1) + '</h3><p class="muted">' + esc(t(k)) + "</p></div>").join("") + "</div></section>";
