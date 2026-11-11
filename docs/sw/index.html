@@ -155,6 +155,12 @@ table.tests input { width: 108px; }
 table.tests input.invalid { border-color: var(--bad); background: var(--bad-bg); }
 table.tests td.tid { font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
 table.tests td.act { font-family: var(--font-mono); white-space: nowrap; }
+table.tests th .thsub { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.7rem; margin-top: 2px; line-height: 1.3; }
+table.tests .hint { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); max-width: 140px; margin-top: 3px; line-height: 1.3; min-height: 0; }
+table.tests .hint:empty { display: none; }
+table.tests tr.haswarn td { border-bottom: 0; }
+table.tests tr.warnrow td { padding: 0 8px 10px; font-size: 0.82rem; color: var(--warn); }
+table.tests tr.warnrow td div { background: var(--warn-bg); border-radius: 4px; padding: 5px 8px; margin-top: 4px; }
 .xbtn { border: 0; background: transparent; cursor: pointer; color: var(--muted); font-size: 1.1rem; padding: 0 4px; }
 .xbtn:hover { color: var(--bad); }
 
@@ -247,7 +253,12 @@ const I18N = {
     mStmt: "Statement", mDec: "Decizii (branch)", mMcdc: "MC/DC (condiții)", mReq: "Cerințe testate",
     mFunc: "Funcții apelate", mCall: "Apeluri executate",
     uncoveredLines: "Instrucțiuni neexecutate", missingOutcomes: "Rezultate de decizie lipsă", mcdcTitle: "MC/DC: tabel de adevăr",
-    reqMissing: "Cerințe fără test", none: "niciuna",
+    reqMissing: "Cerințe fără test valid", none: "niciuna",
+    failTest: "FAIL · test greșit", failBug: "FAIL · posibil bug",
+    failTestTip: "Rezultatul așteptat contrazice cerințele: corectează testul, nu codul.",
+    failBugTip: "Rezultatul așteptat respectă cerințele, dar codul dă altceva: completează raportul de defect.",
+    warnTitle: "Avertismente", warnOne: "avertisment", warnMany: "avertismente",
+    stale: "Ai modificat testele. Apasă din nou „Rulează testele” ca să vezi rezultatele noi.",
     shown: "demonstrată prin perechea", notShown: "nedemonstrată",
     line: "linia", decision: "decizia", outcome: "rezultat",
     notes: "Observații (apar în raport)",
@@ -297,7 +308,12 @@ const I18N = {
     mStmt: "Statement", mDec: "Decision (branch)", mMcdc: "MC/DC (conditions)", mReq: "Requirements tested",
     mFunc: "Functions called", mCall: "Calls executed",
     uncoveredLines: "Statements not executed", missingOutcomes: "Missing decision outcomes", mcdcTitle: "MC/DC: truth table",
-    reqMissing: "Requirements without a test", none: "none",
+    reqMissing: "Requirements without a valid test", none: "none",
+    failTest: "FAIL · wrong test", failBug: "FAIL · possible bug",
+    failTestTip: "The expected result contradicts the requirements: fix the test, not the code.",
+    failBugTip: "The expected result follows the requirements, but the code returns something else: fill in the defect report.",
+    warnTitle: "Warnings", warnOne: "warning", warnMany: "warnings",
+    stale: "You changed the tests. Press “Run tests” again to see the new results.",
     shown: "shown by the pair", notShown: "not shown",
     line: "line", decision: "decision", outcome: "outcome",
     notes: "Notes (included in the report)",
@@ -327,17 +343,17 @@ const t = (k) => (I18N[LANG][k] !== undefined ? I18N[LANG][k] : k);
 
 /* ---------------------------------------------------------------- variants */
 const SIGNALS = {
-  dist: { comment: "/* Front radar, object longitudinal distance, unit 0.1 m */", min: 2, max: 2500, step: 80,
+  dist: { comment: "/* Front radar, object longitudinal distance, unit 0.1 m */", min: 2, max: 2500, step: 80, unit: "m",
           cMin: "/*   0.2 m */", cMax: "/* 250.0 m */", cStep: "/*   8.0 m per 72 ms cycle */",
           r1: "An object longitudinal distance lower than 2 (0.2 m) shall be rejected as implausible.",
           r2: "An object longitudinal distance greater than 2500 (250.0 m) shall be rejected as implausible.",
           r4: "For every following measurement cycle, a distance within the range shall be accepted only if |value - previous| <= 80 (8.0 m)." },
-  vrel: { comment: "/* Front radar, object relative velocity, unit 0.1 m/s */", min: -1111, max: 556, step: 14,
+  vrel: { comment: "/* Front radar, object relative velocity, unit 0.1 m/s */", min: -1111, max: 556, step: 14, unit: "m/s",
           cMin: "/* -111.1 m/s (-400 km/h) */", cMax: "/*   55.6 m/s (+200 km/h) */", cStep: "/*    1.4 m/s per 72 ms cycle */",
           r1: "An object relative velocity lower than -1111 (-111.1 m/s) shall be rejected as implausible.",
           r2: "An object relative velocity greater than 556 (55.6 m/s) shall be rejected as implausible.",
           r4: "For every following measurement cycle, a velocity within the range shall be accepted only if |value - previous| <= 14 (1.4 m/s)." },
-  lat:  { comment: "/* Front radar, object lateral distance, unit 0.1 m */", min: -700, max: 700, step: 7,
+  lat:  { comment: "/* Front radar, object lateral distance, unit 0.1 m */", min: -700, max: 700, step: 7, unit: "m",
           cMin: "/* -70.0 m */", cMax: "/*  70.0 m */", cStep: "/*   0.7 m per 72 ms cycle */",
           r1: "An object lateral distance lower than -700 (-70.0 m) shall be rejected as implausible.",
           r2: "An object lateral distance greater than 700 (70.0 m) shall be rejected as implausible.",
@@ -606,7 +622,10 @@ function analyse(exKey, v, tests) {
     tr.funcs.forEach((f) => funcs.add(f)); tr.calls.forEach((c) => calls.add(c));
     let verdict = "none";
     if (tst.expected) verdict = (tst.expected === actual) ? "pass" : "fail";
-    return { id: tst.id, actual: actual, verdict: verdict };
+    const chk = checkTest(exKey, v, tst, p.values);
+    /* a failing test is either a wrong test (expected contradicts the requirements) or a possible code defect */
+    const failKind = verdict === "fail" ? (chk.expOk ? "bug" : "test") : "";
+    return { id: tst.id, actual: actual, verdict: verdict, chk: chk, failKind: failKind, req: tst.req };
   });
   /* decisions */
   const decisions = Object.keys(decDefs).map((id) => {
@@ -629,10 +648,12 @@ function analyse(exKey, v, tests) {
   const condShown = decisions.reduce((a, d) => a + d.conds.filter((c) => c.shown).length, 0);
   const stmtCovered = stmtLines.filter((n) => hits[n] > 0).length;
   const reqIds = ex.reqs(v).map((r) => r[0]);
-  const traced = new Set(tests.map((x) => x.req).filter(Boolean));
+  /* a requirement counts as tested only when at least one test really exercises it and expects what it prescribes */
+  const traced = new Set(rows.filter((r) => r.chk && r.chk.valid).map((r) => r.req));
   const reqMissing = reqIds.filter((r) => !traced.has(r));
+  const warned = rows.filter((r) => r.chk && r.chk.warnings.length);
   return {
-    rows: rows, hits: hits, stmtLines: stmtLines, decisions: decisions,
+    rows: rows, hits: hits, stmtLines: stmtLines, decisions: decisions, warned: warned,
     stmt: [stmtCovered, stmtLines.length], dec: [decCovered, decTotal], mcdc: [condShown, condTotal],
     req: [reqIds.length - reqMissing.length, reqIds.length], reqMissing: reqMissing,
     funcs: funcs, calls: calls
@@ -654,6 +675,138 @@ function findPair(rs, i) {
     }
   }
   return null;
+}
+
+/* ---------------------------------------------------------------- requirement checks
+   Every test is checked against the requirements, not against the code under test:
+   - spec: the output the requirements prescribe for these inputs (reference model = the
+     same functions without the planted bugs);
+   - atoms: for every requirement, the conditions a test must meet to really exercise it.
+   A test is "valid" for its requirement when all atoms hold and its expected result equals spec. */
+const L = (ro, en) => (LANG === "ro" ? ro : en);
+const hx = (n) => "0x" + n.toString(16).toUpperCase();
+const dec = (n) => n.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB");
+const phys = (n, sig) => (n / 10).toFixed(1).replace(".", LANG === "ro" ? "," : ".") + " " + SIGNALS[sig].unit;
+const CLEAN = (v) => ({ sig: v.sig, bug: "none" });
+const here = (s) => L("aici ", "here ") + s;
+const ORACLE = {
+  f1: {
+    spec: (i) => String(F1(i.id, i.dlc, i.extended, newTrace(), null)),
+    atoms: (i) => {
+      const lim = i.extended ? 0x1FFFFFFF : 0x7FF;
+      const dlcNow = here("DLC = " + i.dlc), extNow = here("extended = " + i.extended);
+      const idNow = here("ID = " + hx(i.id)), limNow = here("ID = " + hx(i.id) + L(", limita formatului = ", ", format limit = ") + hx(lim));
+      const dlcOk = [i.dlc <= 8, "DLC ≤ 8", dlcNow];
+      return {
+        "SWR-F1-01": [[i.dlc > 8, "DLC > 8", dlcNow],
+                      [i.id <= lim, L("ID-ul să fie în limita formatului, altfel cadrul e respins oricum de regula de ID și testul nu arată că regula de DLC funcționează",
+                                      "the ID within its format limit, otherwise the ID rule rejects the frame anyway and the test does not show that the DLC rule works"), limNow]],
+        "SWR-F1-02": [[!i.extended, L("cadru standard (extended = false)", "a standard frame (extended = false)"), extNow], dlcOk, [i.id > 0x7FF, "ID > 0x7FF", idNow]],
+        "SWR-F1-03": [[i.extended, L("cadru extins (extended = true)", "an extended frame (extended = true)"), extNow], dlcOk, [i.id > 0x1FFFFFFF, "ID > 0x1FFFFFFF", idNow]],
+        "SWR-F1-04": [dlcOk, [i.id <= lim, L("ID ≤ limita formatului (0x7FF standard, 0x1FFFFFFF extins)", "ID ≤ its format limit (0x7FF standard, 0x1FFFFFFF extended)"), limNow]]
+      };
+    },
+    /* boundary tests: exactly at the limit of a rejection rule (the rule must not fire yet) */
+    bounds: (i) => ({
+      "SWR-F1-01": [[i.dlc === 8, "DLC = 8"], [i.id <= (i.extended ? 0x1FFFFFFF : 0x7FF), L("ID în limită", "ID within its limit")]],
+      "SWR-F1-02": [[!i.extended, "extended = false"], [i.dlc <= 8, "DLC ≤ 8"], [i.id === 0x7FF, "ID = 0x7FF"]],
+      "SWR-F1-03": [[i.extended, "extended = true"], [i.dlc <= 8, "DLC ≤ 8"], [i.id === 0x1FFFFFFF, "ID = 0x1FFFFFFF"]]
+    }),
+    meaning: () => L(" Amintește-ți: true = cadru acceptat, false = cadru respins.", " Remember: true = frame accepted, false = frame rejected.")
+  },
+  f2: {
+    spec: (i, v) => String(F2(i.value, i.previous, i.first_sample, v, newTrace())),
+    atoms: (i, v) => {
+      const s = SIGNALS[v.sig];
+      const inR = i.value >= s.min && i.value <= s.max;
+      const valNow = here("value = " + i.value), firstNow = here("first_sample = " + i.first_sample);
+      const range = [inR, s.min + " ≤ value ≤ " + s.max, valNow];
+      return {
+        "SWR-F2-01": [[i.value < s.min, "value < " + s.min, valNow]],
+        "SWR-F2-02": [[i.value > s.max, "value > " + s.max, valNow]],
+        "SWR-F2-03": [range, [i.first_sample, L("prima detecție (first_sample = true)", "the first detection (first_sample = true)"), firstNow]],
+        "SWR-F2-04": [range, [!i.first_sample, L("un ciclu următor (first_sample = false)", "a following cycle (first_sample = false)"), firstNow]]
+      };
+    },
+    bounds: (i, v) => {
+      const s = SIGNALS[v.sig];
+      return { "SWR-F2-01": [[i.value === s.min, "value = " + s.min]], "SWR-F2-02": [[i.value === s.max, "value = " + s.max]] };
+    },
+    meaning: () => L(" Amintește-ți: true = valoare acceptată (plauzibilă), false = valoare respinsă.", " Remember: true = value accepted (plausible), false = value rejected.")
+  },
+  f3: {
+    spec: (i) => F3(i.tec, i.rec, { bug: "none" }, newTrace()),
+    atoms: (i) => {
+      const tecNow = here("TEC = " + i.tec), bothNow = here("TEC = " + i.tec + ", REC = " + i.rec);
+      return {
+        "SWR-F3-01": [[i.tec > 255, "TEC > 255", tecNow]],
+        "SWR-F3-02": [[i.tec <= 255, L("TEC ≤ 255 (cerința începe cu „dacă SWR-F3-01 nu se aplică”)", "TEC ≤ 255 (the requirement starts with “if SWR-F3-01 does not apply”)"), tecNow],
+                      [i.tec > 127 || i.rec > 127, L("TEC > 127 sau REC > 127", "TEC > 127 or REC > 127"), bothNow]],
+        "SWR-F3-03": [[i.tec <= 127, "TEC ≤ 127", tecNow], [i.rec <= 127, "REC ≤ 127", here("REC = " + i.rec)]]
+      };
+    },
+    bounds: (i) => ({
+      "SWR-F3-01": [[i.tec === 255, "TEC = 255"]],
+      "SWR-F3-02": [[i.tec <= 127 && i.rec <= 127 && (i.tec === 127 || i.rec === 127), L("TEC = 127 sau REC = 127, celălalt ≤ 127", "TEC = 127 or REC = 127, the other ≤ 127")]]
+    }),
+    meaning: () => L(" Recitește cerința care decide pentru aceste valori ale contoarelor.", " Re-read the requirement that decides for these counter values.")
+  },
+  int: {
+    spec: (i, v) => HANDLER(i, CLEAN(v), newTrace()),
+    atoms: (i, v) => {
+      const st = F3(i.tec, i.rec, { bug: "none" }, newTrace());
+      const ok = F1(i.id, i.dlc, i.extended, newTrace(), null) && F2(i.value, i.previous, i.first_sample, v, newTrace());
+      const stNow = here("TEC = " + i.tec);
+      const notBo = [st !== "BUS_OFF", L("controlerul să nu fie în BUS_OFF (TEC ≤ 255)", "the controller not in BUS_OFF (TEC ≤ 255)"), stNow];
+      return {
+        "SWR-INT-01": [[st === "BUS_OFF", L("controlerul în BUS_OFF (TEC > 255)", "the controller in BUS_OFF (TEC > 255)"), stNow]],
+        "SWR-INT-02": [notBo],
+        "SWR-INT-03": [notBo, [!ok, L("cadrul invalid (SWR-F1) sau valoarea neplauzibilă (SWR-F2)", "an invalid frame (SWR-F1) or an implausible value (SWR-F2)"),
+                               here(L("cadrul e valid și valoarea plauzibilă", "the frame is valid and the value plausible"))]]
+      };
+    },
+    meaning: () => L(" Urmărește cerințele în ordine: întâi starea CAN, apoi cadrul (F1) și valoarea (F2).", " Follow the requirements in order: first the CAN state, then the frame (F1) and the value (F2).")
+  }
+};
+function checkTest(exKey, v, tst, vals) {
+  const o = ORACLE[exKey];
+  const spec = o.spec(vals, v);
+  const w = []; let labelOk = false;
+  if (!tst.req) {
+    w.push(L("nu e legat de nicio cerință. Alege în coloana „Cerință” ce cerință verifică testul.", "is not linked to any requirement. Choose in the “Requirement” column which requirement the test checks."));
+  } else {
+    const bad = (o.atoms(vals, v)[tst.req] || []).filter((a) => !a[0]);
+    const bnd = o.bounds ? o.bounds(vals, v)[tst.req] : null;
+    labelOk = bad.length === 0 || (!!bnd && bnd.every((a) => a[0]));
+    if (!labelOk) w.push(L("e etichetat ", "is labelled ") + tst.req + L(", dar pentru ", ", but to exercise ") + tst.req + L(" trebuie: ", " it needs: ") +
+      bad.map((a) => a[1] + " (" + a[2] + ")").join("; ") +
+      L(". Ce cerință verifică de fapt testul?", ". Which requirement does the test really check?"));
+  }
+  const expOk = !tst.expected || tst.expected === spec;
+  if (!expOk) w.push(L("rezultatul așteptat (", "the expected result (") + tst.expected +
+    L(") nu corespunde cerințelor pentru aceste intrări.", ") does not match the requirements for these inputs.") + o.meaning());
+  return { spec: spec, labelOk: labelOk, expOk: expOk, valid: labelOk && !!tst.expected && expOk, warnings: w };
+}
+/* small reading aids under the numeric inputs: decimal value, physical value and position relative to the limits */
+function relTo(n, lim, label) { return (n < lim ? "< " : n === lim ? "= " : "> ") + label; }
+function inputHint(exKey, k, raw, v) {
+  const ex = EX[exKey]; const f = ex.inputs.find((x) => x.k === k);
+  const n = parseNum(raw[k], f.type); if (n === null) return "";
+  const s = SIGNALS[v.sig];
+  if (k === "id") return "= " + dec(n) + " · " + relTo(n, 0x7FF, "0x7FF") + " · " + relTo(n, 0x1FFFFFFF, "0x1FFFFFFF");
+  if (k === "dlc") return relTo(n, 8, "8");
+  if (k === "tec") return relTo(n, 127, "127") + " · " + relTo(n, 255, "255");
+  if (k === "rec") return relTo(n, 127, "127");
+  if (k === "value" || k === "previous") {
+    let h = "= " + phys(n, v.sig);
+    if (k === "value") h += " · " + (n < s.min ? "< min" : n === s.min ? "= min" : n > s.max ? "> max" : n === s.max ? "= max" : L("în domeniu", "in range"));
+    if (k === "previous") {
+      const val = parseNum(raw.value, "i16");
+      if (val !== null) { const d = Math.abs(val - n); h += " · |Δ| = " + d + " " + relTo(d, s.step, s.step + " (" + L("pas max", "max step") + ")"); }
+    }
+    return h;
+  }
+  return "";
 }
 
 /* ---------------------------------------------------------------- state */
@@ -756,8 +909,10 @@ function renderTests(exKey, an) {
   const ex = EX[exKey]; const v = V();
   const reqIds = ex.reqs(v).map((r) => r[0]);
   const rowRes = {}; if (an) an.rows.forEach((r) => { rowRes[r.id] = r; });
+  const expSub = exKey === "f1" ? L("true = cadru acceptat<br>false = cadru respins", "true = frame accepted<br>false = frame rejected") :
+                 exKey === "f2" ? L("true = valoare acceptată<br>false = valoare respinsă", "true = value accepted<br>false = value rejected") : "";
   const head = "<tr><th>" + t("colId") + "</th>" + ex.inputs.map((f) => "<th>" + f.k + "</th>").join("") +
-    "<th>" + t("colExpected") + "</th><th>" + t("colReq") + "</th><th>" + t("colActual") + "</th><th>" + t("colVerdict") + "</th><th></th></tr>";
+    "<th>" + t("colExpected") + (expSub ? '<div class="thsub">' + expSub + "</div>" : "") + "</th><th>" + t("colReq") + "</th><th>" + t("colActual") + "</th><th>" + t("colVerdict") + "</th><th></th></tr>";
   const body = S.tests[exKey].map((tst, idx) => {
     const r = rowRes[tst.id];
     const badSet = new Set(r && r.bad ? r.bad : []);
@@ -766,7 +921,8 @@ function renderTests(exKey, an) {
       if (f.type === "bool") return '<td><select data-ex="' + exKey + '" data-i="' + idx + '" data-k="' + f.k + '" aria-label="' + f.k + '">' +
         BOOL.map((b) => '<option' + (val === b ? " selected" : "") + ">" + b + "</option>").join("") + "</select></td>";
       return '<td><input data-ex="' + exKey + '" data-i="' + idx + '" data-k="' + f.k + '" aria-label="' + f.k + '" value="' + esc(val) + '"' +
-        (badSet.has(f.k) ? ' class="invalid"' : "") + ' placeholder="' + (f.hex ? "0x…" : "0") + '"></td>';
+        (badSet.has(f.k) ? ' class="invalid"' : "") + ' placeholder="' + (f.hex ? "0x…" : "0") + '">' +
+        '<div class="hint" data-hint="' + idx + ":" + f.k + '">' + esc(inputHint(exKey, f.k, tst.inputs, v)) + "</div></td>";
     }).join("");
     const expSel = '<select data-ex="' + exKey + '" data-i="' + idx + '" data-k="__exp" aria-label="' + t("colExpected") + '"><option value="">–</option>' +
       ex.outputs.map((o) => '<option' + (tst.expected === o ? " selected" : "") + ">" + o + "</option>").join("") + "</select>";
@@ -778,12 +934,16 @@ function renderTests(exKey, an) {
       else {
         act = esc(r.actual);
         verdict = r.verdict === "pass" ? '<span class="chip ok">' + t("pass") + "</span>" :
-                  r.verdict === "fail" ? '<span class="chip bad">' + t("fail") + "</span>" : '<span class="chip neutral">' + t("noExp") + "</span>";
+                  r.verdict === "fail" ? (r.failKind === "test" ? '<span class="chip warn" title="' + esc(t("failTestTip")) + '">' + t("failTest") + "</span>"
+                                                                 : '<span class="chip bad" title="' + esc(t("failBugTip")) + '">' + t("failBug") + "</span>")
+                                       : '<span class="chip neutral">' + t("noExp") + "</span>";
       }
     }
-    return '<tr><td class="tid">' + esc(tst.id) + (tst.example ? ' <span class="chip neutral">' + t("exampleRow") + "</span>" : "") + "</td>" + cells +
+    const warns = r && r.chk ? r.chk.warnings : [];
+    return '<tr' + (warns.length ? ' class="haswarn"' : "") + '><td class="tid">' + esc(tst.id) + (tst.example ? ' <span class="chip neutral">' + t("exampleRow") + "</span>" : "") + "</td>" + cells +
       "<td>" + expSel + "</td><td>" + reqSel + '</td><td class="act">' + act + "</td><td>" + verdict + "</td>" +
-      '<td><button class="xbtn" data-del="' + idx + '" data-ex="' + exKey + '" aria-label="' + t("deleteTest") + '" title="' + t("deleteTest") + '">×</button></td></tr>';
+      '<td><button class="xbtn" data-del="' + idx + '" data-ex="' + exKey + '" aria-label="' + t("deleteTest") + '" title="' + t("deleteTest") + '">×</button></td></tr>' +
+      (warns.length ? '<tr class="warnrow"><td colspan="' + (ex.inputs.length + 6) + '">' + warns.map((w) => "<div>⚠ <strong>" + esc(tst.id) + "</strong> " + esc(w) + "</div>").join("") + "</td></tr>" : "");
   }).join("");
   return '<div class="tablewrap"><table class="tests"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
 }
@@ -822,6 +982,8 @@ function renderResults(exKey, an) {
     "<div><h3>" + t("uncoveredLines") + "</h3><ul>" + (unl.length ? unl.map((n) => "<li>" + t("line") + " " + n + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("missingOutcomes") + "</h3><ul>" + (miss.length ? miss.map((m) => "<li>" + esc(m) + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("reqMissing") + "</h3><ul>" + (an.reqMissing.length ? an.reqMissing.map((r) => '<li class="mono">' + r + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
+  html += "<div><h3>" + t("warnTitle") + "</h3><ul>" + (an.warned.length ? an.warned.map((r) => '<li><span class="mono">' + esc(r.id) + "</span>: " +
+    r.chk.warnings.length + " " + t(r.chk.warnings.length === 1 ? "warnOne" : "warnMany") + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
   if (singles.length) html += "<div><h3>MC/DC · " + t("notShown") + "</h3><ul>" + singles.map((d) => '<li><span class="mono">' + esc(d.conds[0].label) + "</span> (" + t("line") + " " + d.line + ")</li>").join("") + "</ul></div>";
   html += "</div>";
   const tts = an.decisions.map(truthTable).filter(Boolean).join("");
@@ -870,6 +1032,7 @@ function renderExercise(view, exKey) {
     "</div>" +
     '<div class="panel stack"><div class="row" style="justify-content:space-between"><h3>' + t("tests") + '</h3><div class="row">' +
       '<button class="btn" id="addTest" type="button">+ ' + t("addTest") + '</button><button class="btn primary" id="runTests" type="button">▶ ' + t("run") + "</button></div></div>" +
+      '<p class="notice" id="staleNote" hidden>' + esc(t("stale")) + "</p>" +
       renderTests(exKey, an) + "</div>" +
     '<div class="panel stack"><h3>' + t("results") + "</h3>" + renderResults(exKey, an) + "</div>" +
     (exKey === bugTab() ? bugBlock() : "") + (exKey === "int" ? justBlock() : "") +
@@ -887,6 +1050,13 @@ function renderExercise(view, exKey) {
       else if (n.dataset.k === "__req") tst.req = n.value;
       else tst.inputs[n.dataset.k] = n.value;
       tst.example = false; save();
+      if (S.ran[exKey]) view.querySelector("#staleNote").hidden = false;
+    });
+    /* live reading aids: recompute every hint of the edited row */
+    n.addEventListener("input", () => {
+      const i = +n.dataset.i; const tst = S.tests[exKey][i];
+      if (n.dataset.k.indexOf("__") !== 0) tst.inputs[n.dataset.k] = n.value;
+      view.querySelectorAll('[data-hint^="' + i + ':"]').forEach((h) => { h.textContent = inputHint(exKey, h.dataset.hint.split(":")[1], tst.inputs, V()); });
     });
   });
   view.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
@@ -917,12 +1087,15 @@ function buildReport() {
     const head = "<tr><th>ID</th>" + ex.inputs.map((f) => "<th>" + f.k + "</th>").join("") + "<th>" + t("colExpected") + "</th><th>" + t("colReq") + "</th><th>" + t("colActual") + "</th><th>" + t("colVerdict") + "</th></tr>";
     const rows = S.tests[k].map((tst, i) => {
       const r = an.rows[i];
-      const verdict = r.bad ? t("invalid") : r.verdict === "pass" ? t("pass") : r.verdict === "fail" ? t("fail") : t("noExp");
+      const verdict = r.bad ? t("invalid") : r.verdict === "pass" ? t("pass") : r.verdict === "fail" ? t(r.failKind === "test" ? "failTest" : "failBug") : t("noExp");
       text.push("  " + tst.id + ": " + ex.inputs.map((f) => f.k + "=" + tst.inputs[f.k]).join(", ") + " | exp=" + (tst.expected || "–") + " | req=" + (tst.req || "–") + " | act=" + (r.bad ? "–" : r.actual) + " | " + verdict);
       return "<tr><td>" + esc(tst.id) + "</td>" + ex.inputs.map((f) => "<td>" + esc(tst.inputs[f.k]) + "</td>").join("") + "<td>" + esc(tst.expected || "–") + "</td><td>" + esc(tst.req || "–") +
         "</td><td>" + esc(r.bad ? "–" : r.actual) + "</td><td>" + verdict + "</td></tr>";
     }).join("");
     parts.push('<table class="r">' + head + rows + "</table>");
+    const wl = []; an.rows.forEach((r) => { if (r.chk) r.chk.warnings.forEach((w) => wl.push(r.id + " " + w)); });
+    parts.push("<p><strong>" + t("warnTitle") + " (" + wl.length + "):</strong></p><ul>" + (wl.length ? wl.map((w) => "<li>" + esc(w) + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul>");
+    text.push("  " + t("warnTitle") + " (" + wl.length + "): " + (wl.length ? wl.join(" || ") : t("none")));
     const unl = an.stmtLines.filter((n) => an.hits[n] === 0);
     const miss = []; an.decisions.forEach((d) => d.missing.forEach((o) => miss.push(d.line + ":" + (o === true ? "true" : o === false ? "false" : o))));
     const condMiss = []; an.decisions.forEach((d) => d.conds.forEach((c) => { if (!c.shown) condMiss.push(d.line + ": " + c.label); }));
@@ -963,7 +1136,7 @@ function renderReport(view) {
     '<textarea id="reportText" readonly hidden></textarea>';
   if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "SW-TCA", lang: LANG, getPayload: () => {
     const x = buildReport(); const v = V();
-    const sum = EX_KEYS.map((k) => { const an = analyse(k, v, S.tests[k]); return EX[k].fn + " " + pct(an.stmt) + " / " + pct(an.dec) + " / " + pct(an.mcdc); }).join("; ");
+    const sum = EX_KEYS.map((k) => { const an = analyse(k, v, S.tests[k]); return EX[k].fn + " " + pct(an.stmt) + " / " + pct(an.dec) + " / " + pct(an.mcdc) + " ⚠" + an.warned.length; }).join("; ");
     return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, summary: "stmt / branch / MC/DC: " + sum + " · bug: " + ((S.bug && S.bug.line) || "-") };
   } });
   view.querySelector("#dl").addEventListener("click", () => {
