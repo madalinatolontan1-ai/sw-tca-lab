@@ -121,8 +121,22 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .req:first-child { border-top: 0; }
 .req .id { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; color: var(--accent); white-space: nowrap; padding-top: 1px; }
 .req .txt { font-size: 0.93rem; }
+.req .txt .ro { display: block; color: var(--muted); font-size: 0.86rem; margin-top: 2px; }
 .task { font-size: 0.95rem; display: flex; flex-direction: column; gap: 6px; }
 .task ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 3px; }
+.ctxbox { border-left: 3px solid var(--accent); }
+.ctxbox p { margin: 6px 0 0; font-size: 0.95rem; max-width: 110ch; }
+details.help > summary { cursor: pointer; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+details.help[open] > summary { margin-bottom: 8px; }
+details.help ol.task { margin: 0; padding-left: 1.2em; gap: 5px; }
+table.prov { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+table.prov th { text-align: left; vertical-align: top; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; padding: 6px 10px 6px 0; white-space: nowrap; color: var(--accent); }
+table.prov td { padding: 6px 0; border-top: 1px solid var(--line); }
+table.prov tr:first-child td { border-top: 0; }
+@media (max-width: 720px) { table.prov th { white-space: normal; } }
+.meter[title], .legend [title], tr.ctx[title], table.tests th[title] { cursor: help; }
+table.tests th[title] { text-decoration: underline dotted; text-underline-offset: 3px; }
+.code td.src.hasprov { text-decoration: underline dotted; text-underline-offset: 3px; }
 
 /* code */
 .code { background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font-family: var(--font-mono); font-size: 0.83rem; line-height: 1.6; }
@@ -257,6 +271,7 @@ const I18N = {
     failTest: "FAIL · incident – cauză probabilă: testul", failBug: "FAIL · incident – cauză probabilă: codul",
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). Rezultatul așteptat contrazice cerințele, deci cauza probabilă e specificația testului: corectează testul, nu codul.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomalie, ISO 26262-2, 5.4.3.2). Rezultatul așteptat respectă cerințele, dar codul dă altceva, deci cauza probabilă e obiectul testat: completează raportul de incident.",
+    ctxTitle: "Context: ce face funcția", howTitle: "Cum se face", provTitle: "De unde vin valorile",
     thrHidden: "Pe varianta voastră aplicația arată doar câte praguri sunt testate complet. Care sunt pragurile și ce valori testați la limită și imediat peste le scoateți din cerințe.",
     histTitle: "Istoricul lucrului", histNote: "Pentru fiecare funcție: de câte ori s-au rulat testele, câte versiuni de test au primit avertisment pe parcurs și câte avertismente au rămas la final.", histResets: "Reporniri de la zero în acest browser",
     histRuns: "Rulări", histWarned: "Versiuni de test cu avertisment, cumulat", histLeft: "Avertismente rămase",
@@ -317,6 +332,7 @@ const I18N = {
     failTest: "FAIL · incident – probable cause: the test", failBug: "FAIL · incident – probable cause: the code",
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). The expected result contradicts the requirements, so the probable cause is the test specification: fix the test, not the code.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomaly, ISO 26262-2, 5.4.3.2). The expected result follows the requirements, but the code returns something else, so the probable cause is the test object: fill in the incident report.",
+    ctxTitle: "Context: what the function does", howTitle: "How to do it", provTitle: "Where the values come from",
     thrHidden: "On your variant the app shows only how many thresholds are fully tested. Which thresholds there are, and which values to test at and just beyond the limit, you derive from the requirements.",
     histTitle: "Work history", histNote: "For every function: how many times the tests were run, how many test versions drew a warning along the way, and how many warnings remain at the end.", histResets: "Start-overs in this browser",
     histRuns: "Runs", histWarned: "Test versions with a warning, cumulative", histLeft: "Warnings remaining",
@@ -555,7 +571,9 @@ const EX = {
     },
     decisions: (v) => ({ "F2.25": { line: 25, conds: ["delta < 0"] },
       "F2.28": { line: 28, conds: ["value >= SENSOR_MIN", "value <= SENSOR_MAX", "first_sample", "delta <= SENSOR_MAX_STEP"] } }),
-    exec: (i, v, tr) => String(F2(i.value, i.previous, i.first_sample, v, tr))
+    exec: (i, v, tr) => String(F2(i.value, i.previous, i.first_sample, v, tr)),
+    /* first detection, value in the middle of the range: accepted (SWR-F2-03) */
+    example: (v) => { const s = SIGNALS[v.sig]; return { inputs: { value: String((s.min + s.max) >> 1), previous: "0", first_sample: "true" }, expected: "true", req: "SWR-F2-03" }; }
   },
   f3: {
     tab: "tabF3", num: "3", fn: "can_error_state", task: "t3", code: (v) => codeF3(v),
@@ -568,7 +586,8 @@ const EX = {
     decisions: (v) => { const o = f3Ops(v); return {
       "F3.38": { line: 38, conds: ["tec " + o.busoff + " CAN_BUSOFF_LIMIT"] },
       "F3.41": { line: 41, conds: ["tec " + o.tecP + " CAN_PASSIVE_LIMIT", "rec " + o.recP + " CAN_PASSIVE_LIMIT"] } }; },
-    exec: (i, v, tr) => F3(i.tec, i.rec, v, tr)
+    exec: (i, v, tr) => F3(i.tec, i.rec, v, tr),
+    example: { inputs: { tec: "0", rec: "0" }, expected: "ERROR_ACTIVE", req: "SWR-F3-03" }
   },
   int: {
     tab: "tabInt", num: "4", fn: "can_rx_handler", task: "t4", code: () => codeInt(),
@@ -584,6 +603,9 @@ const EX = {
                  "I.57": { line: 57, conds: ["can_frame_is_valid(...)", "sensor_value_plausible(...)"] } },
     exec: (i, v, tr) => HANDLER(i, v, tr),
     calls: [["C1", 52, "can_error_state()"], ["C2", 57, "can_frame_is_valid()"], ["C3", 58, "sensor_value_plausible()"]],
+    /* controller BUS_OFF: the frame is discarded (SWR-INT-01) */
+    example: (v) => { const s = SIGNALS[v.sig]; const m = (s.min + s.max) >> 1;
+      return { inputs: { id: "0x100", dlc: "8", extended: "false", value: String(m), previous: String(m), first_sample: "false", tec: "300", rec: "0" }, expected: "RX_BUS_OFF", req: "SWR-INT-01" }; },
     funcs: ["can_rx_handler", "can_error_state", "can_frame_is_valid", "sensor_value_plausible"]
   }
 };
@@ -830,6 +852,199 @@ function thresholds(exKey, v, rows, tests) {
   rows.forEach((r, k) => { if (r.chk && tests[k].expected && r.chk.expOk) ok.push(r.vals); });
   return THRESH[exKey](v).map((th) => ({ name: th[0], at: ok.some(th[1]), over: ok.some(th[2]) }));
 }
+/* ---------------------------------------------------------------- help: context, method, provenance, tooltips
+   Everything a student without automotive background needs next to the exercise.
+   Texts are {ro, en}; HX() picks the current language. */
+const HX = (o) => (o && typeof o === "object" && "ro" in o ? o[LANG] : o);
+const HELP = {
+  f1: {
+    context: {
+      ro: "Radarul trimite lista de obiecte detectate pe magistrala CAN, în cadre (mesaje scurte). Înainte să folosească un cadru primit, nodul verifică dacă e bine format: câți octeți de date are (DLC) și dacă identificatorul (ID) încape în formatul cadrului. Un cadru greșit e respins (false), ca să nu ajungă date corupte la funcțiile de asistență. Este echivalentul unei verificări la recepție: piesa care nu respectă specificația nu intră în fabricație.",
+      en: "The radar sends its list of detected objects on the CAN bus, in frames (short messages). Before using a received frame, the node checks that it is well formed: how many data bytes it has (DLC) and whether the identifier (ID) fits the frame format. A bad frame is rejected (false), so corrupted data never reaches the assistance functions. It is the equivalent of an incoming inspection: a part that does not meet the specification does not enter production."
+    },
+    how: (demo) => demo ? {
+      ro: ["Ia cerințele pe rând. Pentru o cerință de respingere (SWR-F1-01…03) construiește un cadru care încalcă doar acea regulă; restul valorilor rămân corecte. Exemplu pentru SWR-F1-02: cadru standard, DLC 8, ID 0x800.",
+           "Pentru SWR-F1-04 construiește un cadru corect în toate privințele: DLC 0…8 și ID sub limita formatului.",
+           "Rezultatul așteptat îl iei din cerință, nu din cod: true = cadru acceptat, false = cadru respins.",
+           "Rulează și citește listele de sub procente: ce linie, ce decizie sau ce cerință mai lipsește.",
+           "Pentru fiecare prag adaugă perechea exact la limită și imediat peste: DLC 8 / 9, ID standard 0x7FF / 0x800, ID extins 0x1FFFFFFF / 0x20000000."],
+      en: ["Take the requirements one by one. For a rejection requirement (SWR-F1-01…03) build a frame that breaks only that rule; every other value stays correct. Example for SWR-F1-02: standard frame, DLC 8, ID 0x800.",
+           "For SWR-F1-04 build a frame that is correct in every respect: DLC 0…8 and the ID below the format limit.",
+           "Take the expected result from the requirement, not from the code: true = frame accepted, false = frame rejected.",
+           "Run and read the lists under the percentages: which line, decision or requirement is still missing.",
+           "For every threshold add the pair exactly at the limit and just beyond: DLC 8 / 9, standard ID 0x7FF / 0x800, extended ID 0x1FFFFFFF / 0x20000000."]
+    } : {
+      ro: ["Ia cerințele pe rând. Pentru o cerință de respingere construiește un cadru care încalcă doar acea regulă; restul valorilor rămân corecte.",
+           "Pentru SWR-F1-04 construiește un cadru corect în toate privințele.",
+           "Rezultatul așteptat îl iei din cerință, nu din cod: true = cadru acceptat, false = cadru respins.",
+           "Rulează și citește listele de sub procente: ce linie, ce decizie sau ce cerință mai lipsește.",
+           "Pentru fiecare prag din cerințe adaugă perechea exact la limită și imediat peste."],
+      en: ["Take the requirements one by one. For a rejection requirement build a frame that breaks only that rule; every other value stays correct.",
+           "For SWR-F1-04 build a frame that is correct in every respect.",
+           "Take the expected result from the requirement, not from the code: true = frame accepted, false = frame rejected.",
+           "Run and read the lists under the percentages: which line, decision or requirement is still missing.",
+           "For every threshold in the requirements add the pair exactly at the limit and just beyond."]
+    },
+    prov: () => [
+      ["CAN_MAX_DLC = 8", { ro: "Un cadru CAN clasic transportă cel mult 8 octeți de date (ISO 11898-1). Atenție: un DLC de 9…15 este valid la nivel de protocol și înseamnă tot 8 octeți. Respingerea lui (SWR-F1-01) este o cerință a aplicației noastre, aleasă pentru robustețe, nu o regulă CAN.",
+                            en: "A classic CAN frame carries at most 8 data bytes (ISO 11898-1). Note: a DLC of 9…15 is valid at protocol level and still means 8 bytes. Rejecting it (SWR-F1-01) is a requirement of our application, chosen for robustness, not a CAN rule." }],
+      ["CAN_STD_ID_MAX = 0x7FF", { ro: "Identificatorul standard are 11 biți: 2^11 − 1 = 2047 = 0x7FF (ISO 11898-1).", en: "The standard identifier has 11 bits: 2^11 − 1 = 2047 = 0x7FF (ISO 11898-1)." }],
+      ["CAN_EXT_ID_MAX = 0x1FFFFFFF", { ro: "Identificatorul extins are 29 de biți: 2^29 − 1 = 536.870.911 = 0x1FFFFFFF (ISO 11898-1).", en: "The extended identifier has 29 bits: 2^29 − 1 = 536,870,911 = 0x1FFFFFFF (ISO 11898-1)." }],
+      ["0x…", { ro: "Prefixul numerelor scrise în hexazecimal (baza 16). Sub fiecare ID, aplicația arată valoarea zecimală și poziția față de limite.", en: "The prefix of numbers written in hexadecimal (base 16). Under every ID the app shows the decimal value and its position relative to the limits." }],
+      ["ASIL B", { ro: "Ipoteza laboratorului (nu am făcut analiza de pericole, HARA). La ASIL B, ISO 26262-6, tabelul 9 dă statement și branch coverage ++, iar MC/DC +.", en: "The lab assumption (no hazard analysis, HARA, was done). For ASIL B, ISO 26262-6 Table 9 gives statement and branch coverage ++ and MC/DC +." }]
+    ]
+  },
+  f2: {
+    context: {
+      ro: "Chiar dacă un cadru e corect, valoarea din el poate fi greșită: zgomot, o reflexie falsă, o eroare de măsurare. F2 verifică dacă valoarea e plauzibilă: e în domeniul radarului și nu sare între două măsurători (la 72 ms distanță) mai mult decât s-ar putea mișca un obiect real. La prima detecție a unui obiect nu există valoare anterioară, deci saltul nu se verifică.",
+      en: "Even when a frame is correct, the value inside it can be wrong: noise, a false reflection, a measurement error. F2 checks whether the value is plausible: inside the radar range, and not jumping between two measurements (72 ms apart) more than a real object could move. At the first detection of an object there is no previous value, so the jump is not checked."
+    },
+    how: (demo, s) => demo ? {
+      ro: ["Notează limitele variantei: MIN " + s.min + ", MAX " + s.max + ", PAS " + s.step + " (le găsești în cerințe și în #define).",
+           "Pornește de la un test acceptat: valoare în domeniu, first_sample = false, salt mic (de exemplu value " + (s.min + s.max >> 1) + ", previous " + ((s.min + s.max >> 1) - (s.step >> 1)) + ").",
+           "Strică pe rând câte o condiție față de el: valoare sub MIN (A), peste MAX (B), salt mai mare decât PASUL (D). Apoi păstrează saltul mare și pune first_sample = true (C).",
+           "Verifică tabelul de adevăr: fiecare condiție trebuie să aibă o pereche de teste care diferă doar prin ea și dau rezultate diferite. „–” înseamnă condiție neevaluată.",
+           "Adaugă limitele: MIN și MIN − 1, MAX și MAX + 1, salt exact egal cu PASUL și PAS + 1."],
+      en: ["Write down the limits of the variant: MIN " + s.min + ", MAX " + s.max + ", STEP " + s.step + " (they are in the requirements and in the #define lines).",
+           "Start from an accepted test: value in range, first_sample = false, small jump (for example value " + (s.min + s.max >> 1) + ", previous " + ((s.min + s.max >> 1) - (s.step >> 1)) + ").",
+           "Break one condition at a time: value below MIN (A), above MAX (B), jump larger than the STEP (D). Then keep the large jump and set first_sample = true (C).",
+           "Check the truth table: every condition needs a pair of tests that differ only in it and give different results. “–” means the condition was not evaluated.",
+           "Add the limits: MIN and MIN − 1, MAX and MAX + 1, a jump exactly equal to the STEP and STEP + 1."]
+    } : {
+      ro: ["Notează limitele variantei tale din cerințe: MIN, MAX și PASUL maxim. Sunt altele decât la V0.",
+           "Pornește de la un test acceptat: valoare în domeniu, first_sample = false, salt mic.",
+           "Strică pe rând câte o condiție față de el: valoare sub MIN (A), peste MAX (B), salt prea mare (D). Apoi păstrează saltul mare și pune first_sample = true (C).",
+           "Verifică tabelul de adevăr: fiecare condiție trebuie să aibă o pereche de teste care diferă doar prin ea și dau rezultate diferite.",
+           "Pentru fiecare prag din cerințe adaugă perechea exact la limită și imediat peste."],
+      en: ["Write down the limits of your variant from the requirements: MIN, MAX and the maximum STEP. They differ from V0.",
+           "Start from an accepted test: value in range, first_sample = false, small jump.",
+           "Break one condition at a time: value below MIN (A), above MAX (B), jump too large (D). Then keep the large jump and set first_sample = true (C).",
+           "Check the truth table: every condition needs a pair of tests that differ only in it and give different results.",
+           "For every threshold in the requirements add the pair exactly at the limit and just beyond."]
+    },
+    prov: (v) => {
+      const P = {
+        dist: [
+          ["0,1 m", { ro: "Valorile sunt numere întregi în pași de 0,1 m, cum se transmit pe CAN: 1000 = 100,0 m.", en: "Values are integers in steps of 0.1 m, as sent on CAN: 1000 = 100.0 m." }],
+          ["SENSOR_MIN = 2 (0,2 m)", { ro: "Distanța minimă de detecție, valoare tipică pentru un radar auto de lungă distanță.", en: "The minimum detection distance, a typical value for a long-range automotive radar." }],
+          ["SENSOR_MAX = 2500 (250 m)", { ro: "Raza maximă, valoare tipică pentru un radar auto de lungă distanță.", en: "The maximum range, a typical value for a long-range automotive radar." }],
+          ["SENSOR_MAX_STEP = 80 (8,0 m)", { ro: "Saltul maxim între două cicluri: 8,0 m în 72 ms = 8,0 / 0,072 = 111,1 m/s ≈ 400 km/h viteză relativă, cât au două vehicule care se apropie cu câte 200 km/h. Un salt mai mare nu poate veni de la un obiect real: e o eroare de măsurare.", en: "The maximum jump between two cycles: 8.0 m in 72 ms = 8.0 / 0.072 = 111.1 m/s ≈ 400 km/h relative speed, two vehicles closing at 200 km/h each. A larger jump cannot come from a real object: it is a measurement error." }]],
+        vrel: [
+          ["0,1 m/s", { ro: "Valorile sunt numere întregi în pași de 0,1 m/s. Negativ = obiectul se apropie, pozitiv = se depărtează.", en: "Values are integers in steps of 0.1 m/s. Negative = the object approaches, positive = it moves away." }],
+          ["SENSOR_MIN = −1111 (−111,1 m/s)", { ro: "−111,1 m/s = −400 km/h: apropierea maximă, două vehicule care vin din sens opus cu câte 200 km/h.", en: "−111.1 m/s = −400 km/h: the fastest approach, two vehicles coming head-on at 200 km/h each." }],
+          ["SENSOR_MAX = 556 (55,6 m/s)", { ro: "55,6 m/s = 200 km/h: depărtarea maximă, un obiect care se îndepărtează de noi cu cel mult 200 km/h.", en: "55.6 m/s = 200 km/h: the fastest separation, an object moving away from us at up to 200 km/h." }],
+          ["SENSOR_MAX_STEP = 14 (1,4 m/s)", { ro: "Schimbarea maximă de viteză relativă între două cicluri: 1,4 m/s în 72 ms = 1,4 / 0,072 = 19,4 m/s² ≈ 2 g. O frânare de urgență are cam 1 g; 2 g lasă marjă pentru ambele vehicule.", en: "The maximum change of relative speed between two cycles: 1.4 m/s in 72 ms = 1.4 / 0.072 = 19.4 m/s² ≈ 2 g. Emergency braking is about 1 g; 2 g leaves margin for both vehicles." }]],
+        lat: [
+          ["0,1 m", { ro: "Valorile sunt numere întregi în pași de 0,1 m. 0 = în axa vehiculului, negativ = la stânga, pozitiv = la dreapta.", en: "Values are integers in steps of 0.1 m. 0 = on the vehicle axis, negative = left, positive = right." }],
+          ["SENSOR_MIN / MAX = ±700 (±70 m)", { ro: "Deschiderea laterală a câmpului de vedere la distanță mare, valoare tipică pentru un radar auto de lungă distanță.", en: "The lateral width of the field of view at long distance, a typical value for a long-range automotive radar." }],
+          ["SENSOR_MAX_STEP = 7 (0,7 m)", { ro: "Saltul lateral maxim între două cicluri: 0,7 m în 72 ms = 0,7 / 0,072 = 9,7 m/s ≈ 35 km/h viteză laterală. O schimbare de bandă are de obicei sub 3 m/s lateral, deci pragul lasă marjă.", en: "The maximum lateral jump between two cycles: 0.7 m in 72 ms = 0.7 / 0.072 = 9.7 m/s ≈ 35 km/h lateral speed. A lane change is usually below 3 m/s lateral, so the threshold leaves margin." }]]
+      };
+      return P[v.sig].concat([["72 ms", { ro: "Durata unui ciclu de măsurare, valoare tipică pentru un radar auto de lungă distanță: la fiecare ciclu radarul trimite o listă nouă de obiecte.", en: "The duration of one measurement cycle, a typical value for a long-range automotive radar: every cycle the radar sends a new object list." }],
+        ["first_sample", { ro: "true la primul ciclu în care obiectul apare: nu există valoare anterioară, deci saltul nu se verifică (SWR-F2-03).", en: "true in the first cycle in which the object appears: there is no previous value, so the jump is not checked (SWR-F2-03)." }]]);
+    }
+  },
+  f3: {
+    context: {
+      ro: "Fiecare nod CAN își numără erorile: TEC (Transmit Error Counter) la transmisie și REC (Receive Error Counter) la recepție. Din contoare rezultă starea nodului: ERROR_ACTIVE (normal), ERROR_PASSIVE (prea multe erori, nodul devine prudent) sau BUS_OFF (nodul se deconectează de pe magistrală, ca să nu-i blocheze pe ceilalți). F3 calculează starea din cele două contoare. Acasă, greșeala variantei voastre este aici.",
+      en: "Every CAN node counts its errors: TEC (Transmit Error Counter) and REC (Receive Error Counter). The counters give the node state: ERROR_ACTIVE (normal), ERROR_PASSIVE (too many errors, the node becomes cautious) or BUS_OFF (the node disconnects from the bus so it does not block the others). F3 computes the state from the two counters. At home, the defect of your variant is here."
+    },
+    how: (demo) => demo ? {
+      ro: ["Împarte valorile în clase, din cerințe: TEC ≤ 127 și REC ≤ 127 → ERROR_ACTIVE; TEC 128…255 sau REC > 127 → ERROR_PASSIVE; TEC > 255 → BUS_OFF.",
+           "Scrie câte un test din fiecare clasă (de exemplu TEC 300, TEC 200, TEC 0).",
+           "Adaugă perechile la limită și peste: TEC 127 / 128, TEC 255 / 256, REC 127 / 128.",
+           "Dacă un test pică, uită-te la cauza probabilă. „Codul” înseamnă un defect: completează raportul de incident (cerința, linia, corecția)."],
+      en: ["Split the values into classes, from the requirements: TEC ≤ 127 and REC ≤ 127 → ERROR_ACTIVE; TEC 128…255 or REC > 127 → ERROR_PASSIVE; TEC > 255 → BUS_OFF.",
+           "Write one test from every class (for example TEC 300, TEC 200, TEC 0).",
+           "Add the pairs at and beyond the limit: TEC 127 / 128, TEC 255 / 256, REC 127 / 128.",
+           "If a test fails, look at the probable cause. “The code” means a defect: fill in the incident report (requirement, line, fix)."]
+    } : {
+      ro: ["Împarte valorile contoarelor în clase, din cerințe: câte o clasă pentru fiecare stare.",
+           "Scrie câte un test din fiecare clasă.",
+           "Pentru fiecare prag din cerințe adaugă perechea exact la limită și imediat peste, separat pentru TEC și pentru REC.",
+           "Dacă un test pică, uită-te la cauza probabilă. „Codul” înseamnă un defect: completează raportul de incident (cerința, linia, corecția)."],
+      en: ["Split the counter values into classes, from the requirements: one class for every state.",
+           "Write one test from every class.",
+           "For every threshold in the requirements add the pair exactly at the limit and just beyond, separately for TEC and REC.",
+           "If a test fails, look at the probable cause. “The code” means a defect: fill in the incident report (requirement, line, fix)."]
+    },
+    prov: () => [
+      ["CAN_PASSIVE_LIMIT = 127", { ro: "ISO 11898-1: nodul trece în error passive când TEC sau REC ajunge la 128, adică devine mai mare decât 127. Revine în error active când ambele sunt din nou cel mult 127.", en: "ISO 11898-1: the node becomes error passive when TEC or REC reaches 128, i.e. exceeds 127. It returns to error active when both are again at most 127." }],
+      ["CAN_BUSOFF_LIMIT = 255", { ro: "ISO 11898-1: nodul intră în bus-off când TEC ajunge la 256, adică devine mai mare decât 255. Doar TEC poate duce în bus-off; REC nu.", en: "ISO 11898-1: the node goes bus-off when TEC reaches 256, i.e. exceeds 255. Only TEC can lead to bus-off; REC cannot." }],
+      ["uint16_t", { ro: "Contoarele sunt pe 16 biți (0…65535). Cu uint8_t (maxim 255), condiția tec > 255 n-ar putea fi niciodată adevărată: linia 39 ar fi cod mort.", en: "The counters are 16-bit (0…65535). With uint8_t (maximum 255), tec > 255 could never be true: line 39 would be dead code." }],
+      [{ ro: "ordinea verificărilor", en: "order of the checks" }, { ro: "Bus-off se verifică primul. Altfel, TEC = 300 ar intra deja în prima condiție de error passive și funcția ar întoarce ERROR_PASSIVE.", en: "Bus-off is checked first. Otherwise TEC = 300 would already match the error passive condition and the function would return ERROR_PASSIVE." }]
+    ]
+  },
+  int: {
+    context: {
+      ro: "can_rx_handler este funcția care primește efectiv un cadru. Întâi întreabă starea controlerului CAN (F3): dacă nodul e BUS_OFF, aruncă cadrul. Altfel verifică cadrul (F1) și valoarea (F2) și decide RX_ACCEPTED sau RX_REJECTED. Aici nu se mai testează fiecare prag (asta s-a făcut la F1–F3), ci dacă funcțiile lucrează corect împreună: fiecare funcție apelată, fiecare apel executat.",
+      en: "can_rx_handler is the function that actually receives a frame. It first asks for the CAN controller state (F3): if the node is BUS_OFF, it discards the frame. Otherwise it checks the frame (F1) and the value (F2) and decides RX_ACCEPTED or RX_REJECTED. The thresholds are not tested again here (that was done in F1–F3); the question is whether the functions work together: every function called, every call executed."
+    },
+    how: () => ({
+      ro: ["Scrie un test pentru fiecare drum prin funcție: cadru bun și valoare bună (RX_ACCEPTED), TEC peste 255 (RX_BUS_OFF), cadru invalid, valoare neplauzibilă (ambele RX_REJECTED).",
+           "Urmărește funcțiile apelate și apelurile executate. C3 (F2) se execută doar dacă F1 a acceptat cadrul, din cauza lui &&.",
+           "Liniile 67–68 (default) rămân neacoperite: nicio stare normală nu ajunge acolo. Scrie justificarea sau descrie testul prin injectare de defecte (o stare coruptă forțată, rezultat așteptat RX_FAULT)."],
+      en: ["Write one test for every path through the function: good frame and good value (RX_ACCEPTED), TEC above 255 (RX_BUS_OFF), invalid frame, implausible value (both RX_REJECTED).",
+           "Watch the functions called and the calls executed. C3 (F2) runs only if F1 accepted the frame, because of &&.",
+           "Lines 67–68 (default) stay uncovered: no normal state reaches them. Write the rationale or describe the fault injection test (a forced corrupted state, expected RX_FAULT)."]
+    }),
+    prov: () => [
+      ["RX_ACCEPTED / RX_REJECTED / RX_BUS_OFF / RX_FAULT", { ro: "Rezultatele funcției, definite pentru laborator în can_node.h.", en: "The function results, defined for the lab in can_node.h." }],
+      ["default", { ro: "Cod defensiv: MISRA C:2012 regula 16.4 cere un default la orice switch, iar ISO 26262-6, tabelul 1, nota d îl dă ca exemplu de tehnică defensivă. Prinde o valoare coruptă a lui state.", en: "Defensive code: MISRA C:2012 rule 16.4 requires a default in every switch, and ISO 26262-6 Table 1 note d gives it as an example of a defensive technique. It catches a corrupted value of state." }],
+      ["C1, C2, C3", { ro: "Locurile de apel: C1 = can_error_state() la linia 52, C2 = can_frame_is_valid() la linia 57, C3 = sensor_value_plausible() la linia 58.", en: "The call sites: C1 = can_error_state() at line 52, C2 = can_frame_is_valid() at line 57, C3 = sensor_value_plausible() at line 58." }]
+    ]
+  }
+};
+/* tooltips: column headers, metrics, legend */
+const TIPS = {
+  id: { ro: "Identificatorul cadrului CAN, în hexazecimal (0x…). Standard: 11 biți, maxim 0x7FF. Extins: 29 de biți, maxim 0x1FFFFFFF.", en: "The CAN frame identifier, in hexadecimal (0x…). Standard: 11 bits, max 0x7FF. Extended: 29 bits, max 0x1FFFFFFF." },
+  dlc: { ro: "Data Length Code: câți octeți de date are cadrul. Un cadru CAN clasic are 0…8.", en: "Data Length Code: how many data bytes the frame has. A classic CAN frame has 0…8." },
+  extended: { ro: "true = cadru extins (ID pe 29 de biți); false = cadru standard (ID pe 11 biți). Decide cu ce limită se compară ID-ul.", en: "true = extended frame (29-bit ID); false = standard frame (11-bit ID). It decides which limit the ID is compared with." },
+  value: { ro: "Valoarea măsurată de radar în acest ciclu, în pași de 0,1 (1000 = 100,0 m).", en: "The value measured by the radar in this cycle, in steps of 0.1 (1000 = 100.0 m)." },
+  previous: { ro: "Valoarea din ciclul anterior de măsurare, cu 72 ms înainte. Saltul este |value − previous|.", en: "The value of the previous measurement cycle, 72 ms earlier. The jump is |value − previous|." },
+  first_sample: { ro: "true = prima detecție a obiectului: nu există valoare anterioară, deci saltul nu se verifică.", en: "true = first detection of the object: there is no previous value, so the jump is not checked." },
+  tec: { ro: "Transmit Error Counter: erorile la transmisie. Peste 127 → error passive; peste 255 → bus-off.", en: "Transmit Error Counter: transmit errors. Above 127 → error passive; above 255 → bus-off." },
+  rec: { ro: "Receive Error Counter: erorile la recepție. Peste 127 → error passive.", en: "Receive Error Counter: receive errors. Above 127 → error passive." },
+  exp: { ro: "Ce cere cerința pentru aceste intrări. Nu copia rezultatul obținut: așa nu mai găsești greșeala.", en: "What the requirement prescribes for these inputs. Do not copy the actual result: you would never find the defect." },
+  req: { ro: "Cerința pe care o verifică testul (trasabilitate). Aplicația verifică dacă testul chiar o exercită.", en: "The requirement the test verifies (traceability). The app checks that the test really exercises it." },
+  act: { ro: "Ce a întors codul pentru aceste intrări.", en: "What the code returned for these inputs." },
+  verdict: { ro: "PASS: obținut = așteptat. FAIL: incident, cu cauza probabilă (testul sau codul).", en: "PASS: actual = expected. FAIL: incident, with the probable cause (the test or the code)." },
+  mStmt: { ro: "Câte instrucțiuni au fost executate măcar o dată, din total.", en: "How many statements were executed at least once, out of all." },
+  mDec: { ro: "Câte rezultate de decizie au fost atinse: fiecare if trebuie să fie o dată true și o dată false.", en: "How many decision outcomes were reached: every if must be true once and false once." },
+  mMcdc: { ro: "Câte condiții au o pereche de teste care diferă doar prin ele și dau rezultate diferite.", en: "How many conditions have a pair of tests that differ only in them and give different results." },
+  mReq: { ro: "Câte cerințe au cel puțin un test valid: testul exercită cerința și are rezultatul așteptat corect.", en: "How many requirements have at least one valid test: it exercises the requirement and has the correct expected result." },
+  mThr: { ro: "Câte praguri au perechea de teste exact la limită și imediat peste (ISO 26262-6, tabelul 8, nota b).", en: "How many thresholds have the pair of tests exactly at the limit and just beyond (ISO 26262-6, Table 8, note b)." },
+  mFunc: { ro: "Câte funcții au fost apelate măcar o dată.", en: "How many functions were called at least once." },
+  mCall: { ro: "Câte locuri de apel (C1, C2, C3) au fost executate.", en: "How many call sites (C1, C2, C3) were executed." },
+  hits: { ro: "Numărul din stânga codului: de câte ori a rulat linia. ##### = linie neexecutată.", en: "The number left of the code: how many times the line ran. ##### = line not executed." },
+  tf: { ro: "T / F: decizia de pe linie a fost true (T) sau false (F). Verde = atins, roșu = lipsește.", en: "T / F: the decision on the line was true (T) or false (F). Green = reached, red = missing." },
+  dash: { ro: "„–” = condiția nu a fost evaluată: în C, && și || se opresc când rezultatul e deja sigur.", en: "“–” = the condition was not evaluated: in C, && and || stop as soon as the result is certain." }
+};
+const tip = (k) => esc(HX(TIPS[k]) || "");
+/* Romanian reading of every requirement, shown under the English text */
+function reqRo(id, v) {
+  const s = SIGNALS[v.sig];
+  const nm = { dist: "distanță longitudinală", vrel: "viteză relativă", lat: "distanță laterală" }[s ? v.sig : "dist"];
+  const u = v.sig === "vrel" ? " m/s" : " m";
+  const ph = (n) => (n / 10).toFixed(1).replace(".", ",") + u;
+  const R = {
+    "SWR-F1-01": "Funcția respinge un cadru al cărui DLC este mai mare decât 8.",
+    "SWR-F1-02": "La un cadru standard, funcția respinge un identificator mai mare decât 0x7FF.",
+    "SWR-F1-03": "La un cadru extins, funcția respinge un identificator mai mare decât 0x1FFFFFFF.",
+    "SWR-F1-04": "Funcția acceptă orice cadru care nu este respins de SWR-F1-01…03.",
+    "SWR-F2-01": "O " + nm + " mai mică decât " + s.min + " (" + ph(s.min) + ") se respinge ca neplauzibilă.",
+    "SWR-F2-02": "O " + nm + " mai mare decât " + s.max + " (" + ph(s.max) + ") se respinge ca neplauzibilă.",
+    "SWR-F2-03": "La prima detecție a unui obiect, orice valoare din domeniu se acceptă.",
+    "SWR-F2-04": "La fiecare ciclu următor, o " + nm + " din domeniu se acceptă doar dacă |value − previous| ≤ " + s.step + " (" + ph(s.step) + ").",
+    "SWR-F3-01": "Funcția raportează BUS_OFF când TEC este mai mare decât 255.",
+    "SWR-F3-02": "Dacă SWR-F3-01 nu se aplică, funcția raportează ERROR_PASSIVE când TEC sau REC este mai mare decât 127.",
+    "SWR-F3-03": "În toate celelalte cazuri, funcția raportează ERROR_ACTIVE.",
+    "SWR-INT-01": "Când controlerul CAN este BUS_OFF, cadrul primit se aruncă și funcția returnează RX_BUS_OFF.",
+    "SWR-INT-02": "Altfel, un cadru se acceptă (RX_ACCEPTED) doar dacă este valid (SWR-F1) și valoarea lui e plauzibilă (SWR-F2).",
+    "SWR-INT-03": "Un cadru care nu este acceptat returnează RX_REJECTED."
+  };
+  return R[id] || "";
+}
+
 /* small reading aids under the numeric inputs: decimal value, physical value and position relative to the limits */
 function relTo(n, lim, label) { return (n < lim ? "< " : n === lim ? "= " : "> ") + label; }
 function inputHint(exKey, k, raw, v) {
@@ -942,7 +1157,15 @@ function renderStart() {
 function renderCode(exKey, an) {
   const ex = EX[exKey]; const v = V(); const code = ex.code(v);
   const decByLine = {}; if (an) an.decisions.forEach((d) => { decByLine[d.line] = d; });
-  let rows = code.ctx.map((c) => '<tr class="ctx"><td class="n">h</td><td class="h"></td><td class="d"></td><td class="src">' + esc(c) + "</td></tr>").join("");
+  /* hover on a #define line shows where its value comes from */
+  const prov = HELP[exKey].prov(v);
+  const provOf = (line) => {
+    const m = /#define\s+(\w+)/.exec(line); if (!m) return "";
+    const p = prov.find((x) => HX(x[0]).indexOf(m[1]) >= 0 || (m[1] === "SENSOR_MAX" && HX(x[0]).indexOf("/ MAX") >= 0));
+    return p ? HX(p[1]) : "";
+  };
+  let rows = code.ctx.map((c) => { const pv = provOf(c);
+    return '<tr class="ctx"' + (pv ? ' title="' + esc(pv) + '"' : "") + '><td class="n">h</td><td class="h"></td><td class="d"></td><td class="src' + (pv ? " hasprov" : "") + '">' + esc(c) + "</td></tr>"; }).join("");
   rows += '<tr class="sep"><td colspan="4"></td></tr>';
   rows += code.lines.map((l) => {
     const n = l[0], src = l[1], isStmt = !!l[2];
@@ -962,8 +1185,8 @@ function renderCode(exKey, an) {
     return '<tr class="' + cls + '"><td class="n">' + n + '</td><td class="h">' + h + '</td><td class="d">' + d + '</td><td class="src">' + esc(src) + "</td></tr>";
   }).join("");
   return '<div class="code"><table>' + rows + "</table></div>" +
-    '<div class="legend"><span><i style="background:var(--ok-bg)"></i>' + esc(t("legendHit")) + '</span><span><i style="background:var(--bad-bg)"></i>' + esc(t("legendMiss")) +
-    '</span><span><i style="background:var(--warn-bg)"></i>' + esc(t("legendPart")) + '</span><span>' + esc(t("legendTF")) + "</span></div>";
+    '<div class="legend"><span title="' + tip("hits") + '"><i style="background:var(--ok-bg)"></i>' + esc(t("legendHit")) + '</span><span title="' + tip("hits") + '"><i style="background:var(--bad-bg)"></i>' + esc(t("legendMiss")) +
+    '</span><span><i style="background:var(--warn-bg)"></i>' + esc(t("legendPart")) + '</span><span title="' + tip("tf") + '">' + esc(t("legendTF")) + "</span></div>";
 }
 
 function renderTests(exKey, an) {
@@ -972,8 +1195,9 @@ function renderTests(exKey, an) {
   const rowRes = {}; if (an) an.rows.forEach((r) => { rowRes[r.id] = r; });
   const expSub = exKey === "f1" ? L("true = cadru acceptat<br>false = cadru respins", "true = frame accepted<br>false = frame rejected") :
                  exKey === "f2" ? L("true = valoare acceptată<br>false = valoare respinsă", "true = value accepted<br>false = value rejected") : "";
-  const head = "<tr><th>" + t("colId") + "</th>" + ex.inputs.map((f) => "<th>" + f.k + "</th>").join("") +
-    "<th>" + t("colExpected") + (expSub ? '<div class="thsub">' + expSub + "</div>" : "") + "</th><th>" + t("colReq") + "</th><th>" + t("colActual") + "</th><th>" + t("colVerdict") + "</th><th></th></tr>";
+  const head = "<tr><th>" + t("colId") + "</th>" + ex.inputs.map((f) => '<th title="' + tip(f.k) + '">' + f.k + "</th>").join("") +
+    '<th title="' + tip("exp") + '">' + t("colExpected") + (expSub ? '<div class="thsub">' + expSub + "</div>" : "") + '</th><th title="' + tip("req") + '">' + t("colReq") +
+    '</th><th title="' + tip("act") + '">' + t("colActual") + '</th><th title="' + tip("verdict") + '">' + t("colVerdict") + "</th><th></th></tr>";
   const body = S.tests[exKey].map((tst, idx) => {
     const r = rowRes[tst.id];
     const badSet = new Set(r && r.bad ? r.bad : []);
@@ -1009,9 +1233,9 @@ function renderTests(exKey, an) {
   return '<div class="tablewrap"><table class="tests"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
 }
 
-function meter(label, frac) {
+function meter(label, frac, tipKey) {
   const pct = frac[1] ? Math.round(100 * frac[0] / frac[1]) : 0;
-  return '<div class="meter' + (frac[1] && frac[0] === frac[1] ? " full" : "") + '"><span class="label">' + esc(label) + '</span>' +
+  return '<div class="meter' + (frac[1] && frac[0] === frac[1] ? " full" : "") + '"' + (tipKey ? ' title="' + tip(tipKey) + '"' : "") + '><span class="label">' + esc(label) + '</span>' +
     '<span class="val">' + pct + '%</span><div class="bar"><i style="width:' + pct + '%"></i></div><span class="frac">' + frac[0] + " / " + frac[1] + "</span></div>";
 }
 
@@ -1023,17 +1247,17 @@ function truthTable(d) {
     '<td class="' + (r.out ? "c-y" : "c-n") + '">' + (r.out ? 1 : 0) + "</td></tr>").join("");
   const list = d.conds.map((c, i) => "<div><strong class=\"mono\">" + letters[i] + "</strong><span class=\"mono\">" + esc(c.label) + "</span>" +
     (c.shown ? '<span class="chip ok">' + t("shown") + " " + esc(c.pair[0]) + "–" + esc(c.pair[1]) + "</span>" : '<span class="chip bad">' + t("notShown") + "</span>") + "</div>").join("");
-  return '<div><h3>' + t("mcdcTitle") + " · " + t("line") + " " + d.line + '</h3><div class="tablewrap" style="display:inline-block;max-width:100%;border:0"><table class="tt">' + head + body + '</table></div><div class="condlist">' + list + "</div></div>";
+  return '<div><h3>' + t("mcdcTitle") + " · " + t("line") + " " + d.line + '</h3><div class="tablewrap" style="display:inline-block;max-width:100%;border:0"><table class="tt">' + head + body + '</table></div><div class="condlist">' + list + '</div><p class="muted" style="font-size:0.82rem;margin:6px 0 0">' + esc(HX(TIPS.dash)) + "</p></div>";
 }
 
 function renderResults(exKey, an) {
   if (!an) return '<p class="muted">' + esc(t("notRun")) + "</p>";
   const ex = EX[exKey];
-  let html = '<div class="meters">' + meter(t("mStmt"), an.stmt) + meter(t("mDec"), an.dec) + meter(t("mMcdc"), an.mcdc) + meter(t("mReq"), an.req);
-  if (an.thr) html += meter(t("mThr"), [an.thr.filter((x) => x.at && x.over).length, an.thr.length]);
+  let html = '<div class="meters">' + meter(t("mStmt"), an.stmt, "mStmt") + meter(t("mDec"), an.dec, "mDec") + meter(t("mMcdc"), an.mcdc, "mMcdc") + meter(t("mReq"), an.req, "mReq");
+  if (an.thr) html += meter(t("mThr"), [an.thr.filter((x) => x.at && x.over).length, an.thr.length], "mThr");
   if (exKey === "int") {
-    html += meter(t("mFunc"), [ex.funcs.filter((f) => an.funcs.has(f)).length, ex.funcs.length]);
-    html += meter(t("mCall"), [ex.calls.filter((c) => an.calls.has(c[0])).length, ex.calls.length]);
+    html += meter(t("mFunc"), [ex.funcs.filter((f) => an.funcs.has(f)).length, ex.funcs.length], "mFunc");
+    html += meter(t("mCall"), [ex.calls.filter((c) => an.calls.has(c[0])).length, ex.calls.length], "mCall");
   }
   html += '</div><p class="muted" style="font-size:0.8rem;margin:0">' + esc(t("target")) + "</p>";
   const unl = an.stmtLines.filter((n) => an.hits[n] === 0);
@@ -1081,19 +1305,44 @@ function justBlock() {
 }
 
 const ANALYSIS = {};
+/* one example test per tab, added once per variant when the tab has no tests */
+function seedExample(exKey) {
+  const ex = EX[exKey]; if (!ex.example) return;
+  if (!S.seeded) S.seeded = {};
+  const key = S.variant + ":" + exKey;
+  if (S.seeded[key] || S.tests[exKey].length) { S.seeded[key] = true; return; }
+  const e = resolve(ex.example, V());
+  S.tests[exKey].push({ id: nextId(exKey), inputs: Object.assign({}, e.inputs), expected: e.expected, req: e.req, example: true });
+  S.seeded[key] = true; save();
+}
+function helpBlocks(exKey) {
+  const v = V(); const h = HELP[exKey];
+  const how = HX(h.how(isDemo(), SIGNALS[v.sig]));
+  const prov = h.prov(v).map((p) => "<tr><th>" + esc(HX(p[0])) + "</th><td>" + esc(HX(p[1])) + "</td></tr>").join("");
+  return {
+    context: '<div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(HX(h.context)) + "</p></div>",
+    how: '<details class="panel help"' + (isDemo() ? " open" : "") + '><summary>' + t("howTitle") + '</summary><ol class="task">' + how.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ol></details>",
+    prov: '<details class="panel help"><summary>' + t("provTitle") + '</summary><table class="prov">' + prov + "</table></details>"
+  };
+}
 function renderExercise(view, exKey) {
   const ex = EX[exKey]; const v = V();
+  seedExample(exKey);
+  const hb = helpBlocks(exKey);
   const an = S.ran[exKey] ? analyse(exKey, v, S.tests[exKey]) : null;
   ANALYSIS[exKey] = an;
-  const reqs = ex.reqs(v).map((r) => '<div class="req"><span class="id">' + r[0] + '</span><span class="txt">' + esc(r[1]) + "</span></div>").join("");
+  const reqs = ex.reqs(v).map((r) => '<div class="req"><span class="id">' + r[0] + '</span><span class="txt">' + esc(r[1]) +
+    (LANG === "ro" ? '<span class="ro">' + esc(reqRo(r[0], v)) + "</span>" : "") + "</span></div>").join("");
   view.innerHTML =
     '<div class="row" style="justify-content:space-between"><h2><span class="mono" style="color:var(--accent)">' + ex.fn + '()</span></h2>' +
     '<span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
+    hb.context +
     (exKey === "f1" ? asilBlock() : "") +
     '<div class="grid2">' +
       '<div class="stack"><div class="panel stack"><span class="label">' + t("task") + '</span><div class="task"><ol>' + t(ex.task).map((s) => "<li>" + esc(s) + "</li>").join("") + "</ol></div></div>" +
+      hb.how +
       '<div class="panel"><span class="label">' + t("requirements") + "</span>" + reqs + "</div></div>" +
-      '<div class="panel stack"><span class="label">' + t("code") + " · can_node.c</span>" + renderCode(exKey, an) + "</div>" +
+      '<div class="stack"><div class="panel stack"><span class="label">' + t("code") + " · can_node.c</span>" + renderCode(exKey, an) + "</div>" + hb.prov + "</div>" +
     "</div>" +
     '<div class="panel stack"><div class="row" style="justify-content:space-between"><h3>' + t("tests") + '</h3><div class="row">' +
       '<button class="btn" id="addTest" type="button">+ ' + t("addTest") + '</button><button class="btn primary" id="runTests" type="button">▶ ' + t("run") + "</button></div></div>" +
@@ -1251,6 +1500,8 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
     if (!S.tests.f1.length) {
       const e1 = EX.f1.example;
       S.tests.f1.push({ id: "T1", inputs: Object.assign({}, e1.inputs), expected: e1.expected, req: e1.req, example: true });
+      if (!S.seeded) S.seeded = {};
+      S.seeded[code + ":f1"] = true;
     }
   }
   document.getElementById("stVariant").value = code;
