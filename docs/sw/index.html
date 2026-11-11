@@ -257,6 +257,9 @@ const I18N = {
     failTest: "FAIL · incident – cauză probabilă: testul", failBug: "FAIL · incident – cauză probabilă: codul",
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). Rezultatul așteptat contrazice cerințele, deci cauza probabilă e specificația testului: corectează testul, nu codul.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomalie, ISO 26262-2, 5.4.3.2). Rezultatul așteptat respectă cerințele, dar codul dă altceva, deci cauza probabilă e obiectul testat: completează raportul de incident.",
+    thrHidden: "Pe varianta voastră aplicația arată doar câte praguri sunt testate complet. Care sunt pragurile și ce valori testați la limită și imediat peste le scoateți din cerințe.",
+    histTitle: "Istoricul lucrului", histNote: "Pentru fiecare funcție: de câte ori s-au rulat testele, câte versiuni de test au primit avertisment pe parcurs și câte avertismente au rămas la final.", histResets: "Reporniri de la zero în acest browser",
+    histRuns: "Rulări", histWarned: "Versiuni de test cu avertisment, cumulat", histLeft: "Avertismente rămase",
     thrTitle: "Praguri: la limită și peste", thrAt: "la limită", thrOver: "peste", mThr: "Praguri complet testate",
     target: "100% = ținta de laborator (practică industrială). ISO 26262 cere o valoare-țintă definită și justificată (ISO 26262-6, 9.4.4, NOTA 1).",
     warnTitle: "Avertismente", warnOne: "avertisment", warnMany: "avertismente",
@@ -314,6 +317,9 @@ const I18N = {
     failTest: "FAIL · incident – probable cause: the test", failBug: "FAIL · incident – probable cause: the code",
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). The expected result contradicts the requirements, so the probable cause is the test specification: fix the test, not the code.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomaly, ISO 26262-2, 5.4.3.2). The expected result follows the requirements, but the code returns something else, so the probable cause is the test object: fill in the incident report.",
+    thrHidden: "On your variant the app shows only how many thresholds are fully tested. Which thresholds there are, and which values to test at and just beyond the limit, you derive from the requirements.",
+    histTitle: "Work history", histNote: "For every function: how many times the tests were run, how many test versions drew a warning along the way, and how many warnings remain at the end.", histResets: "Start-overs in this browser",
+    histRuns: "Runs", histWarned: "Test versions with a warning, cumulative", histLeft: "Warnings remaining",
     thrTitle: "Thresholds: at and beyond the limit", thrAt: "at the limit", thrOver: "beyond", mThr: "Thresholds fully tested",
     target: "100% = the lab target (industrial practice). ISO 26262 asks for a defined, justified target value (ISO 26262-6, 9.4.4, NOTE 1).",
     warnTitle: "Warnings", warnOne: "warning", warnMany: "warnings",
@@ -364,7 +370,7 @@ const SIGNALS = {
           r4: "For every following measurement cycle, a lateral distance within the range shall be accepted only if |value - previous| <= 7 (0.7 m)." }
 };
 const VARIANTS = {
-  V0: { sig: "dist", bug: "none", f1bug: true },  /* demo variant done together in the lab */
+  V0: { sig: "dist", bug: "none", f1bug: true, demo: true },  /* demo variant done together in the lab */
   V1: { sig: "dist", bug: "A" }, V2: { sig: "dist", bug: "B" },
   V3: { sig: "vrel", bug: "C" }, V4: { sig: "vrel", bug: "A" },
   V5: { sig: "lat",  bug: "B" }, V6: { sig: "lat",  bug: "C" }
@@ -850,7 +856,7 @@ function inputHint(exKey, k, raw, v) {
 const STORE_KEY = "swtca-lab-v1";
 let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", tests: { f1: [], f2: [], f3: [], int: [] },
           ran: { f1: false, f2: false, f3: false, int: false }, notes: { f1: "", f2: "", f3: "", int: "" },
-          asil: { stmt: "", branch: "", mcdc: "" }, bug: { test: "", line: "", fix: "", desc: "" }, just: "" };
+          asil: { stmt: "", branch: "", mcdc: "" }, bug: { test: "", line: "", fix: "", desc: "" }, just: "", hist: {} };
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() {
   try {
@@ -859,6 +865,24 @@ function load() {
   } catch (e) { /* storage unavailable */ }
 }
 const V = () => VARIANTS[S.variant];
+const isDemo = () => !!(V() && V().demo);   /* V0: full help; V1-V6 (graded): threshold values hidden */
+const RESET_KEY = "swtca-lab-resets";
+/* work history for the graded report: runs and distinct test versions that drew a warning */
+function histOf(exKey) {
+  if (!S.hist) S.hist = {};
+  const hv = S.hist[S.variant] || (S.hist[S.variant] = {});
+  return hv[exKey] || (hv[exKey] = { runs: 0, warned: [] });
+}
+function recordRun(exKey) {
+  const h = histOf(exKey); h.runs++;
+  const an = analyse(exKey, V(), S.tests[exKey]);
+  an.rows.forEach((r, i) => {
+    if (!r.chk || !r.chk.warnings.length) return;
+    const tst = S.tests[exKey][i];
+    const key = tst.id + "|" + JSON.stringify(tst.inputs) + "|" + tst.expected + "|" + tst.req;
+    if (h.warned.indexOf(key) < 0 && h.warned.length < 500) h.warned.push(key);
+  });
+}
 const bugTab = () => (V() && V().f1bug ? "f1" : "f3");  /* the tab that holds the planted bug */
 
 function nextId(exKey) {
@@ -1020,7 +1044,8 @@ function renderResults(exKey, an) {
     "<div><h3>" + t("uncoveredLines") + "</h3><ul>" + (unl.length ? unl.map((n) => "<li>" + t("line") + " " + n + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("missingOutcomes") + "</h3><ul>" + (miss.length ? miss.map((m) => "<li>" + esc(m) + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("reqMissing") + "</h3><ul>" + (an.reqMissing.length ? an.reqMissing.map((r) => '<li class="mono">' + r + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
-  if (an.thr) html += "<div><h3>" + t("thrTitle") + "</h3><ul>" + an.thr.map((x) => '<li><span class="mono">' + esc(x.name) + "</span> " +
+  if (an.thr && !isDemo()) html += "<div><h3>" + t("thrTitle") + '</h3><p class="muted" style="font-size:0.9rem;margin:6px 0 0">' + esc(t("thrHidden")) + "</p></div>";
+  if (an.thr && isDemo()) html += "<div><h3>" + t("thrTitle") + "</h3><ul>" + an.thr.map((x) => '<li><span class="mono">' + esc(x.name) + "</span> " +
     '<span class="chip ' + (x.at ? "ok" : "bad") + '">' + t("thrAt") + (x.at ? " ✓" : " ✗") + '</span> <span class="chip ' + (x.over ? "ok" : "bad") + '">' + t("thrOver") + (x.over ? " ✓" : " ✗") + "</span></li>").join("") + "</ul></div>";
   html += "<div><h3>" + t("warnTitle") + "</h3><ul>" + (an.warned.length ? an.warned.map((r) => '<li><span class="mono">' + esc(r.id) + "</span>: " +
     r.chk.warnings.length + " " + t(r.chk.warnings.length === 1 ? "warnOne" : "warnMany") + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
@@ -1082,7 +1107,7 @@ function renderExercise(view, exKey) {
   view.querySelector("#addTest").addEventListener("click", () => {
     S.tests[exKey].push({ id: nextId(exKey), inputs: blankInputs(ex), expected: "", req: "" }); save(); render();
   });
-  view.querySelector("#runTests").addEventListener("click", () => { S.ran[exKey] = true; save(); render(); });
+  view.querySelector("#runTests").addEventListener("click", () => { S.ran[exKey] = true; recordRun(exKey); save(); render(); });
   view.querySelectorAll("[data-ex][data-i]").forEach((n) => {
     n.addEventListener("change", () => {
       const tst = S.tests[exKey][+n.dataset.i];
@@ -1117,6 +1142,8 @@ function buildReport() {
   parts.push("<h1>" + esc(t("reportTitle")) + " · SW TCA</h1>");
   parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("group") + ":</strong> " + esc(S.group || "–") +
     " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) + " · <strong>" + t("generated") + ":</strong> " + now.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>");
+  let resets = 0; try { resets = +localStorage.getItem(RESET_KEY) || 0; } catch (e) { /* storage unavailable */ }
+  parts.push("<p><strong>" + t("histTitle") + ":</strong> " + esc(t("histNote")) + " " + t("histResets") + ": " + resets + ".</p>");
   text.push(t("reportTitle") + " · SW TCA", t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + now.toISOString(), "");
   parts.push("<h2>ASIL B · ISO 26262-6</h2><ul><li>Statement: " + esc(asilTxt("stmt")) + "</li><li>Branch: " + esc(asilTxt("branch")) + "</li><li>MC/DC: " + esc(asilTxt("mcdc")) + "</li></ul>");
   text.push("ASIL B: Statement = " + asilTxt("stmt") + "; Branch = " + asilTxt("branch") + "; MC/DC = " + asilTxt("mcdc"), "");
@@ -1149,10 +1176,15 @@ function buildReport() {
     cov += "<li>" + t("uncoveredLines") + ": " + (unl.length ? unl.join(", ") : t("none")) + "</li><li>" + t("missingOutcomes") + ": " + (miss.length ? esc(miss.join(", ")) : t("none")) +
       "</li><li>MC/DC · " + t("notShown") + ": " + (condMiss.length ? esc(condMiss.join("; ")) : t("none")) + "</li><li>" + t("reqMissing") + ": " + (an.reqMissing.length ? an.reqMissing.join(", ") : t("none")) + "</li></ul>";
     if (an.thr) {
-      const th = an.thr.map((x) => x.name + ": " + t("thrAt") + (x.at ? " ✓" : " ✗") + ", " + t("thrOver") + (x.over ? " ✓" : " ✗"));
+      const th = isDemo() ? an.thr.map((x) => x.name + ": " + t("thrAt") + (x.at ? " ✓" : " ✗") + ", " + t("thrOver") + (x.over ? " ✓" : " ✗"))
+                          : [an.thr.filter((x) => x.at && x.over).length + " / " + an.thr.length];
       cov = cov.replace("</ul>", "<li>" + t("thrTitle") + ": " + esc(th.join("; ")) + "</li></ul>");
       text.push("  " + t("thrTitle") + ": " + th.join("; "));
     }
+    const h = histOf(k);
+    const histLine = t("histRuns") + ": " + h.runs + " · " + t("histWarned") + ": " + h.warned.length + " · " + t("histLeft") + ": " + an.warned.reduce((a, r) => a + r.chk.warnings.length, 0);
+    cov = cov.replace("</ul>", "<li>" + esc(histLine) + "</li></ul>");
+    text.push("  " + histLine);
     parts.push(cov);
     text.push("  " + t("mStmt") + ": " + pct(an.stmt) + " | " + t("mDec") + ": " + pct(an.dec) + " | " + t("mMcdc") + ": " + pct(an.mcdc) + " | " + t("mReq") + ": " + pct(an.req));
     text.push("  " + t("uncoveredLines") + ": " + (unl.length ? unl.join(", ") : t("none")) + " | " + t("missingOutcomes") + ": " + (miss.length ? miss.join(", ") : t("none")));
@@ -1230,7 +1262,10 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
   const b = document.getElementById("resetAll"); let armed = 0, timer = null;
   b.addEventListener("click", () => {
     if (Date.now() - armed < 5000) {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify({ lang: LANG })); } catch (e) { /* storage unavailable */ }
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ lang: LANG }));
+        localStorage.setItem(RESET_KEY, String((+localStorage.getItem(RESET_KEY) || 0) + 1));
+      } catch (e) { /* storage unavailable */ }
       location.reload(); return;
     }
     armed = Date.now(); b.textContent = t("resetConfirm"); b.classList.add("danger");
