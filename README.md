@@ -25,6 +25,25 @@ gcovr**, which report statement, branch and condition (MC/DC) coverage.
 | `make report SET=f2_branch` | every decision is true and false, but MC/DC is not reached |
 | `make report SET=int_one` | function and call coverage with one integration test |
 
+## The same tests with GoogleTest
+
+`test/test_gtest.cpp` holds the lab tests written with GoogleTest: table-driven
+(parameterized) tests for F1, F2 and F3, integration tests, and a fault-injection
+test for the defensive `default` branch. Every test records the requirement it
+verifies, and `tools/trace.py` turns the XML results into a requirement → test table.
+
+| Command | What you see |
+|---|---|
+| `make gtest` | every suite: line, branch and condition (MC/DC) coverage, traceability table |
+| `make gtest FILTER='F1Statement*'` | three extended frames: 100% of `can_frame_is_valid` lines, not every branch |
+| `make gtest FILTER='F1Statement*:F1Branch*' BUG=1` | full F1 coverage on the planted bug, every test passes |
+| `make gtest FILTER='F1Limits*' BUG=1` | boundary tests at and beyond each limit find it (2 failures) |
+| `make gtest FILTER='F2Mcdc*'` | five tests for four conditions: every condition outcome covered |
+| `make gtest FI=1` | fault injection forces a corrupted CAN state and reaches the `default` branch: 100% |
+
+Suites: `F1Statement`, `F1Branch`, `F1Limits`, `F2Mcdc`, `F2Limits`, `F3Limits`,
+`Integration`, `FaultInjection` (only with `FI=1`). Several suites: separate them with `:`.
+
 ## Lab app
 
 The exercises run in the browser. Enter your name, group and the variant code you received in the lab.
@@ -40,7 +59,8 @@ The apps can send each report to a Google Apps Script collector (Drive folder + 
 ## Files
 
 - `src/can_node.h`, `src/can_node.c` – code under test
-- `test/test_demo.c` – demo test sets
+- `test/test_demo.c` – demo test sets (plain C)
+- `test/test_gtest.cpp` – the same tests with GoogleTest; `tools/trace.py` – requirement traceability
 - `Makefile` – build with coverage, run the tests, generate the report
 - `docs/sw/index.html`, `docs/hw/index.html`, `docs/fmea/index.html` – the lab apps (GitHub Pages); `docs/index.html` links both
 
@@ -52,5 +72,9 @@ Demo pentru laboratorul de *Analiza acoperirii testelor software*. Deschide un
 Codespace (**Code → Codespaces → Create codespace on main**), rulează în terminal
 una dintre comenzile din tabel, apoi `make serve` și apasă **Open in Browser**. Fiecare student
 lucrează în propriul Codespace; modificările tale nu afectează repository-ul.
+
+Aceleași teste scrise cu GoogleTest: `make gtest` (toate), `make gtest FILTER='F1Limits*' BUG=1`
+(testele la limită găsesc greșeala), `make gtest FI=1` (injectarea de defecte atinge ramura default).
+Fiecare test are cerința lui, iar la final apare tabelul cerință → test.
 
 Aplicațiile de laborator: SW TCA la `/sw/`, HW TCA la `/hw/`, FMEA la `/fmea/` (linkurile de mai sus).

@@ -1,7 +1,7 @@
 {
-  "name": "SW TCA lab (GCC 14 + gcovr)",
+  "name": "SW TCA lab (GCC 14 + gcovr + GoogleTest)",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y gcc-14 make pipx && pipx install gcovr && pipx ensurepath",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 make pipx libgtest-dev && pipx install gcovr && pipx ensurepath",
   "customizations": {
     "vscode": {
       "extensions": [
