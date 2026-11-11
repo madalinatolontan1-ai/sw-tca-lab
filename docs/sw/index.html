@@ -235,12 +235,12 @@ const I18N = {
     variantLoaded: "Varianta {v} a fost încărcată.",
     introTitle: "Analiza acoperirii testelor software",
     introP1: "Lucrezi pe firmware-ul unui nod CAN care transmite datele unui radar frontal (ASIL B). Pentru fiecare funcție scrii teste pornind de la cerințe, le rulezi și urmărești ce parte din cod au exercitat.",
-    introP2: "Aplicația măsoară acoperirea de instrucțiuni (statement), de decizii (branch) și MC/DC, ca un instrument de acoperire real. Codul afișat este exact codul testat.",
+    introP2: "Aplicația măsoară acoperirea de instrucțiuni (statement), de decizii (branch) și MC/DC, cum o face un instrument de acoperire. Codul afișat este exact codul testat. Este un simulator didactic: într-un proiect real, acoperirea vine dintr-o unealtă evaluată sau calificată conform ISO 26262-8 clauza 11, rulată pe cod instrumentat.",
     introP3: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
     introSteps: "Exercițiile",
     s1: "Instrucțiuni și decizii: de ce 100% statement nu ajunge.",
     s2: "MC/DC: fiecare condiție trebuie să influențeze singură rezultatul.",
-    s3: "Teste derivate din cerințe, valori la limită și raport de defect.",
+    s3: "Teste derivate din cerințe, valori la limită și raport de incident.",
     s4: "Integrare: acoperirea funcțiilor și a apelurilor, justificarea codului neacoperit.",
     s5: "Raportul final, de descărcat și predat.",
     requirements: "Cerințe", task: "Ce ai de făcut", code: "Cod testat",
@@ -254,22 +254,24 @@ const I18N = {
     mFunc: "Funcții apelate", mCall: "Apeluri executate",
     uncoveredLines: "Instrucțiuni neexecutate", missingOutcomes: "Rezultate de decizie lipsă", mcdcTitle: "MC/DC: tabel de adevăr",
     reqMissing: "Cerințe fără test valid", none: "niciuna",
-    failTest: "FAIL · test greșit", failBug: "FAIL · posibil bug",
-    failTestTip: "Rezultatul așteptat contrazice cerințele: corectează testul, nu codul.",
-    failBugTip: "Rezultatul așteptat respectă cerințele, dar codul dă altceva: completează raportul de defect.",
+    failTest: "FAIL · incident – cauză probabilă: testul", failBug: "FAIL · incident – cauză probabilă: codul",
+    failTestTip: "Incident (ISO/IEC/IEEE 29119-1). Rezultatul așteptat contrazice cerințele, deci cauza probabilă e specificația testului: corectează testul, nu codul.",
+    failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomalie, ISO 26262-2, 5.4.3.2). Rezultatul așteptat respectă cerințele, dar codul dă altceva, deci cauza probabilă e obiectul testat: completează raportul de incident.",
+    thrTitle: "Praguri: la limită și peste", thrAt: "la limită", thrOver: "peste", mThr: "Praguri complet testate",
+    target: "100% = ținta de laborator (practică industrială). ISO 26262 cere o valoare-țintă definită și justificată (ISO 26262-6, 9.4.4, NOTA 1).",
     warnTitle: "Avertismente", warnOne: "avertisment", warnMany: "avertismente",
     stale: "Ai modificat testele. Apasă din nou „Rulează testele” ca să vezi rezultatele noi.",
     shown: "demonstrată prin perechea", notShown: "nedemonstrată",
     line: "linia", decision: "decizia", outcome: "rezultat",
     notes: "Observații (apar în raport)",
     asilTitle: "Înainte de teste: ce cere ISO 26262-6 pentru ASIL B?",
-    asilHint: "Alege nivelul de recomandare pentru fiecare metrică la nivel de unitate software. Răspunsul apare în raport.",
+    asilHint: "Alege nivelul de recomandare pentru fiecare metrică la nivel de unitate software (ISO 26262-6, Tabelul 9). Intrările 1a, 1b, 1c sunt alternative: se alege o combinație potrivită pentru ASIL, cu justificare. ISO 26262 nu fixează un procent: cere o valoare-țintă definită și justificată (9.4.4, NOTA 1). În laborator ținta este 100%, ca în practica industrială. Răspunsul apare în raport.",
     hr: "++ puternic recomandat", r: "+ recomandat", nr: "o fără recomandare", choose: "alege",
-    bugTitle: "Raport de defect",
-    bugHint: "Dacă un test pică, descrie defectul. Comparația o faci pe baza cerinței.",
+    bugTitle: "Raport de incident",
+    bugHint: "Un test care pică este un incident (ISO/IEC/IEEE 29119-1), tratat prin procesul de rezolvare a anomaliilor (ISO 26262-2, 5.4.3.2). Analizează-l: dacă rezultatul așteptat respectă cerința, cauza e în cod; descrie defectul și corecția. Comparația o faci pe baza cerinței.",
     bugTest: "Testul care pică", bugLine: "Linia suspectă", bugFix: "Corecția propusă (cod C)", bugDesc: "Descriere: cerință, rezultat obținut, rezultat așteptat",
     justTitle: "Justificarea codului neacoperit",
-    justHint: "Pentru fiecare instrucțiune care rămâne neacoperită: de ce nu poate fi atinsă și de ce e acceptabil (ISO 26262-6 cere fie teste suplimentare, fie o justificare).",
+    justHint: "Pentru fiecare instrucțiune care rămâne neacoperită: de ce nu poate fi atinsă și de ce e acceptabil. ISO 26262-6, 9.4.4 cere fie teste suplimentare, fie o justificare bazată pe alte metode. Pentru ramura default ai ambele variante: justificarea (cod defensiv, MISRA C:2012 regula 16.4) sau un test prin injectare de defecte (fault injection, Tabelul 7, 1l), care forțează o stare coruptă. Spune ce ai ales și de ce.",
     funcTitle: "Acoperirea funcțiilor și a apelurilor", called: "apelată", notCalled: "neapelată", exec: "executat", notExec: "neexecutat",
     reportTitle: "Raport de laborator", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
@@ -277,10 +279,10 @@ const I18N = {
     student: "Student", generated: "Generat", answer: "Răspuns", summary: "Rezumat",
     exampleRow: "exemplu",
     deleteTest: "Șterge testul",
-    t1: ["Citește cerințele SWR-F1 și scrie câte un test pentru fiecare.", "Rulează testele și urmărește acoperirea. Atinge întâi 100% statement.", "Verifică deciziile: au toate rezultatul true și false? Dacă nu, adaugă testul lipsă și spune ce cerință acoperă.", "Notează în observații de ce 100% statement nu era suficient."],
-    t2: ["Atinge 100% decizii pentru sensor_value_plausible.", "Uită-te în tabelul de adevăr de la linia 28: ce condiții nu sunt încă demonstrate?", "Adaugă teste până când fiecare condiție are o pereche de teste care diferă doar în ea și dau rezultate diferite (MC/DC). Ținta minimă: N + 1 teste pentru N condiții.", "Adaugă și testele la limită din cerințe (valori exact la prag și imediat peste)."],
-    t3: ["Scrie testele pornind strict de la cerințele SWR-F3, inclusiv valorile la limită (127/128, 255/256).", "Rulează și verifică acoperirea cerută pentru ASIL B.", "Dacă un test pică, completează raportul de defect: ce cerință e încălcată, pe ce linie e defectul și cum îl corectezi."],
-    t4: ["Scrie teste de integrare pentru can_rx_handler (intrările combină un cadru CAN, contextul senzorului și contoarele de erori).", "Urmărește ce funcții și ce apeluri au fost executate. Ținta: toate funcțiile și toate apelurile.", "Pentru liniile care rămân neacoperite scrie justificarea."]
+    t1: ["Citește cerințele SWR-F1 și scrie câte un test pentru fiecare.", "Rulează testele și urmărește acoperirea. Atinge întâi 100% statement (ținta de laborator).", "Verifică deciziile: au toate rezultatul true și false? Dacă nu, adaugă testul lipsă și spune ce cerință acoperă.", "Notează în observații de ce 100% statement nu era suficient."],
+    t2: ["Atinge 100% decizii pentru sensor_value_plausible.", "Uită-te în tabelul de adevăr de la linia 28: ce condiții nu sunt încă demonstrate?", "Adaugă teste până când fiecare condiție are o pereche de teste care diferă doar în ea și dau rezultate diferite (MC/DC). Minimul teoretic este N + 1 teste pentru N condiții (MC/DC unique-cause, FAA DOT/FAA/AR-01/18), nu o cerință ISO 26262. Aplicația folosește unique-cause cu evaluare short-circuit: o condiție neevaluată contează ca „don't care” (unique-cause + masking, în terminologia FAA).", "Adaugă și testele la limită din cerințe: un prag e testat complet doar cu perechea la limită și imediat peste (ISO 26262-6, Tabelul 8, nota b)."],
+    t3: ["Scrie testele pornind strict de la cerințele SWR-F3, inclusiv perechile la limită și peste (127/128, 255/256). tec și rec sunt uint16_t: dacă ar fi uint8_t, tec > 255 ar fi imposibil și linia 39 ar deveni cod mort.", "Rulează și verifică acoperirea cerută pentru ASIL B.", "Dacă un test pică, analizează incidentul. Dacă testul respectă cerința, completează raportul: ce cerință e încălcată, pe ce linie e defectul și cum îl corectezi."],
+    t4: ["Scrie teste de integrare pentru can_rx_handler (intrările combină un cadru CAN, contextul senzorului și contoarele de erori).", "Urmărește ce funcții și ce apeluri au fost executate. Ținta de laborator: toate funcțiile și toate apelurile (la ASIL B, ISO 26262-6, 10.4.5 le recomandă, nu le impune).", "Pentru liniile care rămân neacoperite scrie justificarea sau descrie testul prin injectare de defecte care le-ar atinge."]
   },
   en: {
     subtitle: "Software test coverage analysis · firmware of a front-radar CAN node",
@@ -290,12 +292,12 @@ const I18N = {
     variantLoaded: "Variant {v} loaded.",
     introTitle: "Software test coverage analysis",
     introP1: "You work on the firmware of a CAN node that transmits the data of a front radar (ASIL B). For every function you write tests from the requirements, run them and see which part of the code they exercised.",
-    introP2: "The app measures statement, decision (branch) and MC/DC coverage, like a real coverage tool. The code you see is exactly the code under test.",
+    introP2: "The app measures statement, decision (branch) and MC/DC coverage, the way a coverage tool does. The code you see is exactly the code under test. It is a teaching simulator: in a real project, coverage comes from a tool evaluated or qualified per ISO 26262-8 clause 11, run on instrumented code.",
     introP3: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
     introSteps: "Exercises",
     s1: "Statements and decisions: why 100% statement coverage is not enough.",
     s2: "MC/DC: every condition must independently affect the outcome.",
-    s3: "Requirement-based tests, boundary values and a defect report.",
+    s3: "Requirement-based tests, boundary values and an incident report.",
     s4: "Integration: function and call coverage, justification of uncovered code.",
     s5: "The final report, to download and hand in.",
     requirements: "Requirements", task: "What to do", code: "Code under test",
@@ -309,22 +311,24 @@ const I18N = {
     mFunc: "Functions called", mCall: "Calls executed",
     uncoveredLines: "Statements not executed", missingOutcomes: "Missing decision outcomes", mcdcTitle: "MC/DC: truth table",
     reqMissing: "Requirements without a valid test", none: "none",
-    failTest: "FAIL · wrong test", failBug: "FAIL · possible bug",
-    failTestTip: "The expected result contradicts the requirements: fix the test, not the code.",
-    failBugTip: "The expected result follows the requirements, but the code returns something else: fill in the defect report.",
+    failTest: "FAIL · incident – probable cause: the test", failBug: "FAIL · incident – probable cause: the code",
+    failTestTip: "Incident (ISO/IEC/IEEE 29119-1). The expected result contradicts the requirements, so the probable cause is the test specification: fix the test, not the code.",
+    failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomaly, ISO 26262-2, 5.4.3.2). The expected result follows the requirements, but the code returns something else, so the probable cause is the test object: fill in the incident report.",
+    thrTitle: "Thresholds: at and beyond the limit", thrAt: "at the limit", thrOver: "beyond", mThr: "Thresholds fully tested",
+    target: "100% = the lab target (industrial practice). ISO 26262 asks for a defined, justified target value (ISO 26262-6, 9.4.4, NOTE 1).",
     warnTitle: "Warnings", warnOne: "warning", warnMany: "warnings",
     stale: "You changed the tests. Press “Run tests” again to see the new results.",
     shown: "shown by the pair", notShown: "not shown",
     line: "line", decision: "decision", outcome: "outcome",
     notes: "Notes (included in the report)",
     asilTitle: "Before testing: what does ISO 26262-6 require for ASIL B?",
-    asilHint: "Choose the recommendation level of each metric at software unit level. Your answer goes into the report.",
+    asilHint: "Choose the recommendation level of each metric at software unit level (ISO 26262-6, Table 9). Entries 1a, 1b, 1c are alternatives: a suitable combination is chosen for the ASIL, with a rationale. ISO 26262 does not fix a percentage: it asks for a defined, justified target value (9.4.4, NOTE 1). In the lab the target is 100%, as in industrial practice. Your answer goes into the report.",
     hr: "++ highly recommended", r: "+ recommended", nr: "o no recommendation", choose: "choose",
-    bugTitle: "Defect report",
-    bugHint: "If a test fails, describe the defect. Compare against the requirement.",
+    bugTitle: "Incident report",
+    bugHint: "A failing test is an incident (ISO/IEC/IEEE 29119-1), handled by the anomaly resolution process (ISO 26262-2, 5.4.3.2). Analyse it: if the expected result follows the requirement, the cause is in the code; describe the defect and the fix. Compare against the requirement.",
     bugTest: "Failing test", bugLine: "Suspected line", bugFix: "Proposed fix (C code)", bugDesc: "Description: requirement, actual result, expected result",
     justTitle: "Justification of uncovered code",
-    justHint: "For every statement that stays uncovered: why it cannot be reached and why that is acceptable (ISO 26262-6 asks for either additional tests or a rationale).",
+    justHint: "For every statement that stays uncovered: why it cannot be reached and why that is acceptable. ISO 26262-6, 9.4.4 asks for either additional test cases or a rationale based on other methods. For the default branch you have both options: the rationale (defensive code, MISRA C:2012 rule 16.4) or a fault injection test (Table 7, 1l) that forces a corrupted state. State what you chose and why.",
     funcTitle: "Function and call coverage", called: "called", notCalled: "not called", exec: "executed", notExec: "not executed",
     reportTitle: "Lab report", download: "Download report (.html)", copy: "Copy report text",
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
@@ -332,10 +336,10 @@ const I18N = {
     student: "Student", generated: "Generated", answer: "Answer", summary: "Summary",
     exampleRow: "example",
     deleteTest: "Delete test",
-    t1: ["Read requirements SWR-F1 and write one test for each.", "Run the tests and watch the coverage. Reach 100% statement coverage first.", "Check the decisions: did each one evaluate to true and to false? If not, add the missing test and state which requirement it covers.", "Write in the notes why 100% statement coverage was not enough."],
-    t2: ["Reach 100% decision coverage for sensor_value_plausible.", "Look at the truth table of line 28: which conditions are not shown yet?", "Add tests until every condition has a pair of tests that differ only in that condition and give different outcomes (MC/DC). Minimum target: N + 1 tests for N conditions.", "Add the boundary tests from the requirements (values exactly at the limit and just beyond)."],
-    t3: ["Write the tests strictly from requirements SWR-F3, including boundary values (127/128, 255/256).", "Run them and check the coverage required for ASIL B.", "If a test fails, fill in the defect report: which requirement is violated, on which line the defect is and how you would fix it."],
-    t4: ["Write integration tests for can_rx_handler (the inputs combine a CAN frame, the sensor context and the error counters).", "Watch which functions and calls were executed. Target: every function and every call.", "Write the justification for the lines that stay uncovered."]
+    t1: ["Read requirements SWR-F1 and write one test for each.", "Run the tests and watch the coverage. Reach 100% statement coverage first (the lab target).", "Check the decisions: did each one evaluate to true and to false? If not, add the missing test and state which requirement it covers.", "Write in the notes why 100% statement coverage was not enough."],
+    t2: ["Reach 100% decision coverage for sensor_value_plausible.", "Look at the truth table of line 28: which conditions are not shown yet?", "Add tests until every condition has a pair of tests that differ only in that condition and give different outcomes (MC/DC). The theoretical minimum is N + 1 tests for N conditions (unique-cause MC/DC, FAA DOT/FAA/AR-01/18), not an ISO 26262 requirement. The app uses unique-cause with short-circuit evaluation: a condition that is not evaluated counts as “don't care” (unique-cause + masking in FAA terms).", "Add the boundary tests from the requirements: a threshold is fully tested only with the pair at the limit and just beyond (ISO 26262-6, Table 8, note b)."],
+    t3: ["Write the tests strictly from requirements SWR-F3, including the pairs at and beyond the limit (127/128, 255/256). tec and rec are uint16_t: if they were uint8_t, tec > 255 could never be true and line 39 would be dead code.", "Run them and check the coverage required for ASIL B.", "If a test fails, analyse the incident. If the test follows the requirement, fill in the report: which requirement is violated, on which line the defect is and how you would fix it."],
+    t4: ["Write integration tests for can_rx_handler (the inputs combine a CAN frame, the sensor context and the error counters).", "Watch which functions and calls were executed. Lab target: every function and every call (for ASIL B, ISO 26262-6, 10.4.5 recommends this, it does not require it).", "For the lines that stay uncovered, write the rationale or describe the fault injection test that would reach them."]
   }
 };
 let LANG = "ro";
@@ -410,7 +414,7 @@ function f3Ops(v) {
 function codeF3(v) {
   const o = f3Ops(v);
   return {
-    ctx: ["#define CAN_PASSIVE_LIMIT  127u", "#define CAN_BUSOFF_LIMIT   255u"],
+    ctx: ["/* tec, rec: uint16_t; bus-off is checked first */", "#define CAN_PASSIVE_LIMIT  127u", "#define CAN_BUSOFF_LIMIT   255u"],
     lines: [
       [35, "/* F3 - ASIL B */"], [36, "can_err_state_t can_error_state(uint16_t tec, uint16_t rec)"], [37, "{"],
       [38, "    if (tec " + o.busoff + " CAN_BUSOFF_LIMIT) {", 1, "F3.38"], [39, "        return CAN_STATE_BUS_OFF;", 1], [40, "    }"],
@@ -625,7 +629,7 @@ function analyse(exKey, v, tests) {
     const chk = checkTest(exKey, v, tst, p.values);
     /* a failing test is either a wrong test (expected contradicts the requirements) or a possible code defect */
     const failKind = verdict === "fail" ? (chk.expOk ? "bug" : "test") : "";
-    return { id: tst.id, actual: actual, verdict: verdict, chk: chk, failKind: failKind, req: tst.req };
+    return { id: tst.id, actual: actual, verdict: verdict, chk: chk, failKind: failKind, req: tst.req, vals: p.values };
   });
   /* decisions */
   const decisions = Object.keys(decDefs).map((id) => {
@@ -652,8 +656,9 @@ function analyse(exKey, v, tests) {
   const traced = new Set(rows.filter((r) => r.chk && r.chk.valid).map((r) => r.req));
   const reqMissing = reqIds.filter((r) => !traced.has(r));
   const warned = rows.filter((r) => r.chk && r.chk.warnings.length);
+  const thr = thresholds(exKey, v, rows, tests);
   return {
-    rows: rows, hits: hits, stmtLines: stmtLines, decisions: decisions, warned: warned,
+    rows: rows, hits: hits, stmtLines: stmtLines, decisions: decisions, warned: warned, thr: thr,
     stmt: [stmtCovered, stmtLines.length], dec: [decCovered, decTotal], mcdc: [condShown, condTotal],
     req: [reqIds.length - reqMissing.length, reqIds.length], reqMissing: reqMissing,
     funcs: funcs, calls: calls
@@ -786,6 +791,38 @@ function checkTest(exKey, v, tst, vals) {
   if (!expOk) w.push(L("rezultatul așteptat (", "the expected result (") + tst.expected +
     L(") nu corespunde cerințelor pentru aceste intrări.", ") does not match the requirements for these inputs.") + o.meaning());
   return { spec: spec, labelOk: labelOk, expOk: expOk, valid: labelOk && !!tst.expected && expOk, warnings: w };
+}
+/* thresholds: ISO 26262-6 Table 8 note b asks for values approaching AND crossing a boundary.
+   A threshold counts as fully tested when one test sits exactly at the limit and one just beyond,
+   both with an expected result that follows the requirements. */
+const THRESH = {
+  f1: () => {
+    const idOk = (i) => i.id <= (i.extended ? 0x1FFFFFFF : 0x7FF);
+    return [
+      ["DLC 8 / 9", (i) => i.dlc === 8 && idOk(i), (i) => i.dlc === 9 && idOk(i)],
+      ["ID std 0x7FF / 0x800", (i) => !i.extended && i.dlc <= 8 && i.id === 0x7FF, (i) => !i.extended && i.dlc <= 8 && i.id === 0x800],
+      ["ID ext 0x1FFFFFFF / 0x20000000", (i) => i.extended && i.dlc <= 8 && i.id === 0x1FFFFFFF, (i) => i.extended && i.dlc <= 8 && i.id === 0x20000000]];
+  },
+  f2: (v) => {
+    const s = SIGNALS[v.sig];
+    const stepOk = (i) => i.first_sample || Math.abs(i.value - i.previous) <= s.step;
+    const inR = (i) => i.value >= s.min && i.value <= s.max;
+    return [
+      ["min " + s.min + " / " + (s.min - 1), (i) => i.value === s.min && stepOk(i), (i) => i.value === s.min - 1],
+      ["max " + s.max + " / " + (s.max + 1), (i) => i.value === s.max && stepOk(i), (i) => i.value === s.max + 1],
+      [L("pas ", "step ") + s.step + " / " + (s.step + 1), (i) => !i.first_sample && inR(i) && Math.abs(i.value - i.previous) === s.step,
+                                                           (i) => !i.first_sample && inR(i) && Math.abs(i.value - i.previous) === s.step + 1]];
+  },
+  f3: () => [
+    ["TEC 255 / 256 (bus-off)", (i) => i.tec === 255, (i) => i.tec === 256],
+    ["TEC 127 / 128 (passive)", (i) => i.tec === 127 && i.rec <= 127, (i) => i.tec === 128],
+    ["REC 127 / 128 (passive)", (i) => i.rec === 127 && i.tec <= 127, (i) => i.rec === 128 && i.tec <= 127]]
+};
+function thresholds(exKey, v, rows, tests) {
+  if (!THRESH[exKey]) return null;
+  const ok = [];
+  rows.forEach((r, k) => { if (r.chk && tests[k].expected && r.chk.expOk) ok.push(r.vals); });
+  return THRESH[exKey](v).map((th) => ({ name: th[0], at: ok.some(th[1]), over: ok.some(th[2]) }));
 }
 /* small reading aids under the numeric inputs: decimal value, physical value and position relative to the limits */
 function relTo(n, lim, label) { return (n < lim ? "< " : n === lim ? "= " : "> ") + label; }
@@ -969,11 +1006,12 @@ function renderResults(exKey, an) {
   if (!an) return '<p class="muted">' + esc(t("notRun")) + "</p>";
   const ex = EX[exKey];
   let html = '<div class="meters">' + meter(t("mStmt"), an.stmt) + meter(t("mDec"), an.dec) + meter(t("mMcdc"), an.mcdc) + meter(t("mReq"), an.req);
+  if (an.thr) html += meter(t("mThr"), [an.thr.filter((x) => x.at && x.over).length, an.thr.length]);
   if (exKey === "int") {
     html += meter(t("mFunc"), [ex.funcs.filter((f) => an.funcs.has(f)).length, ex.funcs.length]);
     html += meter(t("mCall"), [ex.calls.filter((c) => an.calls.has(c[0])).length, ex.calls.length]);
   }
-  html += "</div>";
+  html += '</div><p class="muted" style="font-size:0.8rem;margin:0">' + esc(t("target")) + "</p>";
   const unl = an.stmtLines.filter((n) => an.hits[n] === 0);
   const miss = [];
   an.decisions.forEach((d) => d.missing.forEach((o) => miss.push(t("line") + " " + d.line + ": " + (o === true ? "true" : o === false ? "false" : o))));
@@ -982,6 +1020,8 @@ function renderResults(exKey, an) {
     "<div><h3>" + t("uncoveredLines") + "</h3><ul>" + (unl.length ? unl.map((n) => "<li>" + t("line") + " " + n + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("missingOutcomes") + "</h3><ul>" + (miss.length ? miss.map((m) => "<li>" + esc(m) + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("reqMissing") + "</h3><ul>" + (an.reqMissing.length ? an.reqMissing.map((r) => '<li class="mono">' + r + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
+  if (an.thr) html += "<div><h3>" + t("thrTitle") + "</h3><ul>" + an.thr.map((x) => '<li><span class="mono">' + esc(x.name) + "</span> " +
+    '<span class="chip ' + (x.at ? "ok" : "bad") + '">' + t("thrAt") + (x.at ? " ✓" : " ✗") + '</span> <span class="chip ' + (x.over ? "ok" : "bad") + '">' + t("thrOver") + (x.over ? " ✓" : " ✗") + "</span></li>").join("") + "</ul></div>";
   html += "<div><h3>" + t("warnTitle") + "</h3><ul>" + (an.warned.length ? an.warned.map((r) => '<li><span class="mono">' + esc(r.id) + "</span>: " +
     r.chk.warnings.length + " " + t(r.chk.warnings.length === 1 ? "warnOne" : "warnMany") + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
   if (singles.length) html += "<div><h3>MC/DC · " + t("notShown") + "</h3><ul>" + singles.map((d) => '<li><span class="mono">' + esc(d.conds[0].label) + "</span> (" + t("line") + " " + d.line + ")</li>").join("") + "</ul></div>";
@@ -1108,6 +1148,11 @@ function buildReport() {
     }
     cov += "<li>" + t("uncoveredLines") + ": " + (unl.length ? unl.join(", ") : t("none")) + "</li><li>" + t("missingOutcomes") + ": " + (miss.length ? esc(miss.join(", ")) : t("none")) +
       "</li><li>MC/DC · " + t("notShown") + ": " + (condMiss.length ? esc(condMiss.join("; ")) : t("none")) + "</li><li>" + t("reqMissing") + ": " + (an.reqMissing.length ? an.reqMissing.join(", ") : t("none")) + "</li></ul>";
+    if (an.thr) {
+      const th = an.thr.map((x) => x.name + ": " + t("thrAt") + (x.at ? " ✓" : " ✗") + ", " + t("thrOver") + (x.over ? " ✓" : " ✗"));
+      cov = cov.replace("</ul>", "<li>" + t("thrTitle") + ": " + esc(th.join("; ")) + "</li></ul>");
+      text.push("  " + t("thrTitle") + ": " + th.join("; "));
+    }
     parts.push(cov);
     text.push("  " + t("mStmt") + ": " + pct(an.stmt) + " | " + t("mDec") + ": " + pct(an.dec) + " | " + t("mMcdc") + ": " + pct(an.mcdc) + " | " + t("mReq") + ": " + pct(an.req));
     text.push("  " + t("uncoveredLines") + ": " + (unl.length ? unl.join(", ") : t("none")) + " | " + t("missingOutcomes") + ": " + (miss.length ? miss.join(", ") : t("none")));
