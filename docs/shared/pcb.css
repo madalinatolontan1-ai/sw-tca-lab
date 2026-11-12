@@ -1,0 +1,70 @@
+/* Shared styles for the CAN module drawing (board and schematic), used by the HW TCA and FMEA apps. */
+:root { --pcb: #2F6B4F; --pcb-edge: #24533D; --pad: #C9A44C; --silk: #F4F7F2; --part: #1E2630; --tp: #E0A21B; --cu: #5FA27C; --cu-far: #4A8566; --pour: #3B7F5C; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --pcb: #22553E; --pcb-edge: #183D2C; --pad: #B8933F; --silk: #E8EEE6; --part: #0B1016; --tp: #E8AE32; --cu: #4F8F6B; --cu-far: #3B6E53; --pour: #2E6A4B; }
+}
+:root[data-theme="dark"] { --pcb: #22553E; --pcb-edge: #183D2C; --pad: #B8933F; --silk: #E8EEE6; --part: #0B1016; --tp: #E8AE32; --cu: #4F8F6B; --cu-far: #3B6E53; --pour: #2E6A4B; }
+.board { width: 100%; max-width: 100%; height: auto; display: block; border-radius: var(--radius); }
+.board .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 1.2; }
+.board .silk { fill: var(--silk); font-family: var(--font-mono); font-size: 3px; }
+.board .body { fill: var(--part); }
+.board .pad { fill: var(--pad); }
+.board .tht { fill: var(--pad); stroke: var(--pcb-edge); stroke-width: 0.4; }
+.board .hole { fill: var(--pcb-edge); }
+.board .comp { cursor: pointer; }
+.board .comp.sel .body, .board .comp.sel .outline { stroke: var(--tp); stroke-width: 0.9; }
+.board .outline { fill: none; stroke: transparent; }
+.board .comp.dim { opacity: 0.35; }
+.board .padhit { fill: transparent; stroke: none; cursor: pointer; pointer-events: all; }
+.board .padhit.own { stroke: var(--silk); stroke-width: 0.3; }
+.board .padhit.on { stroke: var(--tp); stroke-width: 0.55; }
+.board .pinno { fill: var(--silk); font-family: var(--font-mono); font-size: 2px; font-weight: 700; pointer-events: none; paint-order: stroke; stroke: var(--part); stroke-width: 0.45px; }
+.sch .pinhit { fill: transparent; stroke: none; cursor: pointer; pointer-events: all; }
+.sch .pinhit.own { stroke: var(--accent); stroke-width: 1.2; }
+.sch .pinhit.on { stroke: var(--tp); stroke-width: 2.4; }
+.board .hit { fill: transparent; stroke: none; pointer-events: all; }
+.board .ghost { fill: none; stroke: var(--silk); stroke-width: 0.3; stroke-dasharray: 0.8 0.6; opacity: 0.45; }
+.board .comp:hover .outline, .board .comp:focus .outline { stroke: var(--silk); stroke-width: 0.35; }
+.board .pin-on { stroke: var(--part); stroke-width: 0.35; }
+.board .comp.linked .outline { stroke: var(--silk); stroke-width: 0.45; stroke-dasharray: 1 0.7; }
+.board .netlbl { font-family: var(--font-mono); font-size: 2.3px; font-weight: 700; paint-order: stroke; stroke: var(--part); stroke-width: 0.5px; }
+.sch.hl .wire line, .sch.hl .gnd line { opacity: 0.25; }
+.sch .wire line.on, .sch .gnd.on line { opacity: 1; stroke-width: 3.2; }
+.sch .gnd.on line { stroke: var(--ink); }
+.sch .nethl { stroke-width: 3; fill: none; }
+.sch .comp.linked .body { stroke-dasharray: 4 2; }
+.board .tpm circle { fill: var(--tp); stroke: var(--part); stroke-width: 0.4; }
+.board .tpm text { fill: var(--tp); font-family: var(--font-mono); font-size: 2.2px; font-weight: 600; }
+.sch { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.sch line, .sch path.nc { stroke: var(--ink); stroke-width: 1.4; }
+.sch .wire line { stroke: var(--muted); }
+.sch .jn { fill: var(--ink); }
+.sch .body { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
+.sch .plate { stroke-width: 2.2; }
+.sch .arrow { fill: none; stroke: var(--warn); stroke-width: 1.2; }
+.sch .pinc { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
+.sch .jbar { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 3 2; }
+.sch text { font-family: var(--font-mono); fill: var(--ink); }
+.sch .ref { font-size: 12px; font-weight: 600; }
+.sch .val, .sch .netsm { font-size: 10px; fill: var(--muted); }
+.sch .pin, .sch .pinl, .sch .pinr { font-size: 10px; fill: var(--muted); }
+.sch .net { font-size: 11px; fill: var(--accent); font-weight: 600; }
+.sch .comp { cursor: pointer; }
+.sch .comp.dim { opacity: 0.4; }
+.sch .comp.sel .body { stroke: var(--tp); stroke-width: 2.6; fill: var(--warn-bg); }
+.sch .tps circle { fill: var(--tp); stroke: var(--ink); stroke-width: 1; }
+.sch .tps text { font-size: 10px; font-weight: 700; fill: var(--warn); }
+.board .trk { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.board .trk.near { stroke: var(--cu); }
+.board .trk.far { stroke: var(--cu-far); stroke-dasharray: 0.9 0.7; opacity: 0.55; }
+.board.hl .trk:not(.on) { opacity: 0.35; }
+.board .trk.on { opacity: 1; filter: drop-shadow(0 0 0.35px var(--part)); }
+.board .trk.far.on { opacity: 0.8; }
+.board .clear { fill: var(--pcb); stroke: var(--pcb); fill-opacity: 1; }
+.board polyline.clear { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.board .pour { fill: var(--pour); stroke: none; }
+.board .pour.on { fill: #6E7C87; }
+.board .via { fill: var(--pad); stroke: var(--pcb-edge); stroke-width: 0.15; pointer-events: none; }
+.board .via.on { stroke-width: 0.35; }
+.board .vhole { fill: var(--pcb-edge); pointer-events: none; }
+.board .pin-on, .board .netlbl, .sch .nethl { pointer-events: none; }

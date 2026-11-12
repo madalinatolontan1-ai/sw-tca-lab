@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../shared/pcb.css">
 <style>
 /* Layout: production-test workbench. Header with student/variant, board view with test points
    beside the reference tables, risk sheet (S/O/D per failure mode) and AP summary below. */
@@ -85,52 +86,32 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .intro { max-width: 72ch; display: flex; flex-direction: column; gap: 12px; }
+.ctxbox { border-left: 3px solid var(--accent); }
+.ctxbox p { margin-top: 4px; max-width: 110ch; }
+details.help summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }
+details.help ol.task { margin: 10px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+table.prov { border-collapse: collapse; font-size: 0.85rem; }
+table.prov th { text-align: left; vertical-align: top; padding: 4px 8px 4px 0; white-space: nowrap; }
+table.prov td { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+table.aiag td { vertical-align: top; font-size: 0.8rem; }
+.aiagnote { font-size: 0.78rem; margin-top: 6px; }
+ul.checks { margin: 0; padding-left: 1.2em; color: var(--warn); }
+td.oc select { max-width: 210px; }
+th[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .stdbox { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 4px; font-size: 0.92rem; }
 .notice { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; }
 .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
 .step { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
 
 /* board */
-.board { width: 100%; max-width: 100%; height: auto; display: block; border-radius: var(--radius); }
-.board .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 1.2; }
-.board .silk { fill: var(--silk); font-family: var(--font-mono); font-size: 3px; }
-.board .body { fill: var(--part); }
-.board .pad { fill: var(--pad); }
-.board .tht { fill: var(--pad); stroke: var(--pcb-edge); stroke-width: 0.4; }
-.board .hole { fill: var(--pcb-edge); }
-.board .comp { cursor: pointer; }
-.board .comp.sel .body, .board .comp.sel .outline { stroke: var(--tp); stroke-width: 0.9; }
-.board .outline { fill: none; stroke: transparent; }
-.board .comp.dim { opacity: 0.35; }
-.board .padhit { fill: transparent; stroke: none; cursor: pointer; pointer-events: all; }
-.board .padhit.own { stroke: var(--silk); stroke-width: 0.3; }
-.board .padhit.on { stroke: var(--tp); stroke-width: 0.55; }
-.board .pinno { fill: var(--silk); font-family: var(--font-mono); font-size: 2px; font-weight: 700; pointer-events: none; paint-order: stroke; stroke: var(--part); stroke-width: 0.45px; }
-.sch .pinhit { fill: transparent; stroke: none; cursor: pointer; pointer-events: all; }
-.sch .pinhit.own { stroke: var(--accent); stroke-width: 1.2; }
-.sch .pinhit.on { stroke: var(--tp); stroke-width: 2.4; }
 .conn .pinrow { display: flex; flex-wrap: wrap; gap: 6px; }
 .pinchip { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; background: var(--surface); cursor: pointer; color: var(--ink); display: inline-flex; gap: 6px; align-items: center; }
 .pinchip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .pinchip.on { border-color: var(--tp); background: var(--warn-bg); font-weight: 700; }
-.board .hit { fill: transparent; stroke: none; pointer-events: all; }
-.board .ghost { fill: none; stroke: var(--silk); stroke-width: 0.3; stroke-dasharray: 0.8 0.6; opacity: 0.45; }
-.board .comp:hover .outline, .board .comp:focus .outline { stroke: var(--silk); stroke-width: 0.35; }
 .pickbtn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .compchip { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; background: var(--surface); cursor: pointer; color: var(--ink); }
 .compchip.on { border-color: var(--tp); background: var(--warn-bg); font-weight: 700; }
 .compchip.out { opacity: 0.55; }
-.board .rat, .board .pin-on, .board .netlbl, .sch .nethl { pointer-events: none; }
-.board .rat { stroke-width: 0.5; stroke-linecap: round; fill: none; opacity: 0.95; }
-.board .rat.sh { stroke: var(--part); stroke-width: 1.1; opacity: 0.55; }
-.board .pin-on { stroke: var(--part); stroke-width: 0.35; }
-.board .comp.linked .outline { stroke: var(--silk); stroke-width: 0.45; stroke-dasharray: 1 0.7; }
-.board .netlbl { font-family: var(--font-mono); font-size: 2.3px; font-weight: 700; paint-order: stroke; stroke: var(--part); stroke-width: 0.5px; }
-.sch.hl .wire line, .sch.hl .gnd line { opacity: 0.25; }
-.sch .wire line.on, .sch .gnd.on line { opacity: 1; stroke-width: 3.2; }
-.sch .gnd.on line { stroke: var(--ink); }
-.sch .nethl { stroke-width: 3; fill: none; }
-.sch .comp.linked .body { stroke-dasharray: 4 2; }
 .conn { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
 .conn .cr { display: grid; grid-template-columns: minmax(70px, auto) auto 1fr; gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px dashed var(--line); }
 .conn .cr:last-child { border-bottom: 0; }
@@ -141,8 +122,6 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .netchip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .netchip.on { border-color: var(--ink); font-weight: 700; }
 .netchips { display: flex; flex-wrap: wrap; gap: 6px; }
-.board .tpm circle { fill: var(--tp); stroke: var(--part); stroke-width: 0.4; }
-.board .tpm text { fill: var(--tp); font-family: var(--font-mono); font-size: 2.2px; font-weight: 600; }
 .nets { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
 .nets label { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 8px; font-family: var(--font-mono); font-size: 0.82rem; cursor: pointer; background: var(--surface); }
 .nets label.on { border-color: var(--tp); background: var(--warn-bg); }
@@ -152,25 +131,6 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 textarea.ftj { width: 100%; min-height: 48px; font-size: 0.8rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); resize: vertical; }
 .ftd { display: flex; gap: 6px; align-items: flex-start; }
 .ftd .why { max-width: 150px; margin-top: 0; }
-.sch { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-.sch line, .sch path.nc { stroke: var(--ink); stroke-width: 1.4; }
-.sch .wire line { stroke: var(--muted); }
-.sch .jn { fill: var(--ink); }
-.sch .body { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
-.sch .plate { stroke-width: 2.2; }
-.sch .arrow { fill: none; stroke: var(--warn); stroke-width: 1.2; }
-.sch .pinc { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
-.sch .jbar { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 3 2; }
-.sch text { font-family: var(--font-mono); fill: var(--ink); }
-.sch .ref { font-size: 12px; font-weight: 600; }
-.sch .val, .sch .netsm { font-size: 10px; fill: var(--muted); }
-.sch .pin, .sch .pinl, .sch .pinr { font-size: 10px; fill: var(--muted); }
-.sch .net { font-size: 11px; fill: var(--accent); font-weight: 600; }
-.sch .comp { cursor: pointer; }
-.sch .comp.dim { opacity: 0.4; }
-.sch .comp.sel .body { stroke: var(--tp); stroke-width: 2.6; fill: var(--warn-bg); }
-.sch .tps circle { fill: var(--tp); stroke: var(--ink); stroke-width: 1; }
-.sch .tps text { font-size: 10px; font-weight: 700; fill: var(--warn); }
 details.pts > summary { font-size: 1.05rem; }
 details.pts ol { margin: 6px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
 table.ptst td { font-size: 0.84rem; }
@@ -265,11 +225,93 @@ textarea { width: 100%; min-height: 96px; border: 1px solid var(--line); border-
 
 <script src="../report-config.js"></script>
 <script src="../report-send.js"></script>
+<script src="../shared/pcb.js"></script>
+<script src="../shared/aiag.js"></script>
 <script>
 "use strict";
 /* ---------------------------------------------------------------- data from the HW TCA library */
 const MODES = [{"ref": "J1", "type": "CON-HDR", "pin": "–", "mode": "Missing", "effect": "missing connection between CAN module and the sensor"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 1 VDD", "mode": "Pin open", "effect": "missing power connection"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 2 TXD", "mode": "Pin open", "effect": "no data transmitted"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 3 RXD", "mode": "Pin open", "effect": "no data received"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 4 GND", "mode": "Pin open", "effect": "no functionality of the CAN"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 1 VDD – pin 2 TXD", "mode": "Pin short", "effect": "no data transmitted; MCU TX output shorted to VDD"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 2 TXD – pin 3 RXD", "mode": "Pin short", "effect": "corrupted communication between CAN and the sensor"}, {"ref": "J1", "type": "CON-HDR", "pin": "Pin 3 RXD – pin 4 GND", "mode": "Pin short", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "–", "mode": "Missing", "effect": "no CAN transceiver: no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 1 TXD", "mode": "Pin open", "effect": "no data transmitted on the CAN bus (reception still works)"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 2 VSS", "mode": "Pin open", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 3 VDD", "mode": "Pin open", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 4 RXD", "mode": "Pin open", "effect": "no data received; the CAN controller sees bit errors on its own frames, so communication fails"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 5 VREF", "mode": "Pin open", "effect": "no effect"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 6 CANL", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 7 CANH", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 8 RS", "mode": "Pin open", "effect": "transceiver may enter standby: no data transmitted"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 1 TXD – pin 2 VSS", "mode": "Pin short", "effect": "no data transmitted; MCU TX output shorted to GND"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 2 VSS – pin 3 VDD", "mode": "Pin short", "effect": "supply short: no functionality of the CAN, supply of the sensor overloaded"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 3 VDD – pin 4 RXD", "mode": "Pin short", "effect": "no data received; RXD output shorted to VDD"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 5 VREF – pin 6 CANL", "mode": "Pin short", "effect": "communication likely unaffected or slightly degraded (loss of robustness)"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 6 CANL – pin 7 CANH", "mode": "Pin short", "effect": "no communication on the whole CAN bus (all nodes affected)"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 7 CANH – pin 8 RS", "mode": "Pin short", "effect": "corrupted communication: CANH loaded to GND through R3, operating mode changed"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 1 TXD", "mode": "Pin wrong functionality", "effect": "no data transmitted"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 2 VSS", "mode": "Pin wrong functionality", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 3 VDD", "mode": "Pin wrong functionality", "effect": "no functionality of the CAN"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 4 RXD", "mode": "Pin wrong functionality", "effect": "no data received"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 5 VREF", "mode": "Pin wrong functionality", "effect": "no effect"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 6 CANL", "mode": "Pin wrong functionality", "effect": "no communication or corrupted communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 7 CANH", "mode": "Pin wrong functionality", "effect": "no communication or corrupted communication on the CAN bus"}, {"ref": "U1", "type": "IC-SOIC", "pin": "Pin 8 RS", "mode": "Pin wrong functionality", "effect": "wrong operating mode: standby (no transmission) or wrong slope (communication errors / EMC out of spec)"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Missing", "effect": "no supply decoupling: possible intermittent corrupted communication under noise (EMC)"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Short", "effect": "supply short: no functionality of the CAN, supply of the sensor overloaded"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Open", "effect": "no supply decoupling: possible intermittent corrupted communication under noise (EMC)"}, {"ref": "C3", "type": "C-MLCC", "pin": "–", "mode": "Wrong value", "effect": "reduced supply filtering, no functional effect expected"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "RS floating: transceiver may enter standby, no data transmitted"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "RS tied directly to GND: high-speed mode, no functional effect (higher EMC emissions)"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "RS floating: transceiver may enter standby, no data transmitted"}, {"ref": "R3", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "changed operating mode: slope-control (slower edges, errors at high bit rates) or standby (no transmission)"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "missing bus termination at this node: signal reflections, possible corrupted communication"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "CANH shorted to CANL (with JP1 fitted): no communication on the whole CAN bus"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "missing bus termination at this node: signal reflections, possible corrupted communication"}, {"ref": "R4", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "wrong bus impedance: reduced differential voltage and reflections, possible corrupted communication"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Missing", "effect": "termination cannot be enabled: reflections, possible corrupted communication"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Short", "effect": "termination permanently enabled: bus overloaded if the node is not at the bus end, reduced differential voltage"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Open", "effect": "termination cannot be enabled: reflections, possible corrupted communication"}, {"ref": "JP1", "type": "JMP", "pin": "–", "mode": "Wrong value", "effect": "termination in the wrong state (enabled / disabled)"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "560 pF directly on the CAN line: slower edges, possible errors at high bit rates, H/L asymmetry"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R1", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "filter characteristic changed: usually no functional effect; very low value behaves like a short"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Short", "effect": "CAN line pulled to GND through 100 Ω: no or corrupted communication on the whole CAN bus"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C1", "type": "C-MLCC", "pin": "–", "mode": "Wrong value", "effect": "larger value: slower edges, errors at high bit rates; smaller value: reduced filtering"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "560 pF directly on the CAN line: slower edges, possible errors at high bit rates, H/L asymmetry"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "R2", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "filter characteristic changed: usually no functional effect; very low value behaves like a short"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Missing", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Short", "effect": "CAN line pulled to GND through 100 Ω: no or corrupted communication on the whole CAN bus"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Open", "effect": "CAN line RC filter disconnected: reduced EMC filtering, no functional effect"}, {"ref": "C2", "type": "C-MLCC", "pin": "–", "mode": "Wrong value", "effect": "larger value: slower edges, errors at high bit rates; smaller value: reduced filtering"}, {"ref": "J2", "type": "CON-HDR", "pin": "–", "mode": "Missing", "effect": "missing connection between CAN module and the CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 1 CAN_H", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 2 CAN_L", "mode": "Pin open", "effect": "no communication on the CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 3 GND", "mode": "Pin open", "effect": "no common ground with the bus: common-mode voltage out of range, corrupted or no communication"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 1 CAN_H – pin 2 CAN_L", "mode": "Pin short", "effect": "CAN_H shorted to CAN_L: no communication on the whole CAN bus"}, {"ref": "J2", "type": "CON-HDR", "pin": "Pin 2 CAN_L – pin 3 GND", "mode": "Pin short", "effect": "CAN_L shorted to GND: corrupted or no communication on the CAN bus"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Missing", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Short", "effect": "LED off, slightly higher supply current through R5, CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Open", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Wrong value", "effect": "wrong indication (color / brightness) or LED off, CAN function not affected"}, {"ref": "LED1", "type": "LED-SMD", "pin": "–", "mode": "Wrong polarity", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Missing", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Short", "effect": "LED overcurrent: LED damaged, supply overloaded, possible brown-out of the transceiver"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Open", "effect": "no power indication (LED off), CAN function not affected"}, {"ref": "R5", "type": "R-CHIP", "pin": "–", "mode": "Wrong value", "effect": "LED brightness changed; very low value causes LED overcurrent"}];
 
+/* Romanian names of the failure modes and effects (as in the lab guide); the English library text stays the key */
+const MODE_RO = {"Missing": "Lipsă", "Open": "Întrerupt", "Short": "Scurtcircuit", "Wrong value": "Valoare greșită", "Wrong polarity": "Polaritate inversată", "Pin open": "Pin întrerupt", "Pin short": "Pini în scurtcircuit", "Pin wrong functionality": "Funcționare greșită a pinului"};
+const EFF_RO = {
+  "560 pF directly on the CAN line: slower edges, possible errors at high bit rates, H/L asymmetry": "560 pF direct pe linia CAN: fronturi mai lente, posibile erori la rate de bit mari, asimetrie H/L",
+  "CAN line RC filter disconnected: reduced EMC filtering, no functional effect": "Filtrul RC al liniei CAN deconectat: filtrare EMC redusă, fără efect funcțional",
+  "CAN line pulled to GND through 100 Ω: no or corrupted communication on the whole CAN bus": "Linia CAN trasă la GND prin 100 Ω: comunicație lipsă sau coruptă pe tot bus-ul CAN",
+  "CANH shorted to CANL (with JP1 fitted): no communication on the whole CAN bus": "CANH în scurtcircuit cu CANL (cu JP1 montat): nicio comunicație pe tot bus-ul CAN",
+  "CAN_H shorted to CAN_L: no communication on the whole CAN bus": "CAN_H în scurtcircuit cu CAN_L: nicio comunicație pe tot bus-ul CAN",
+  "CAN_L shorted to GND: corrupted or no communication on the CAN bus": "CAN_L în scurtcircuit la GND: comunicație coruptă sau lipsă pe bus-ul CAN",
+  "LED brightness changed; very low value causes LED overcurrent": "Luminozitatea LED-ului se schimbă; o valoare foarte mică produce supracurent prin LED",
+  "LED off, slightly higher supply current through R5, CAN function not affected": "LED stins, curent de alimentare puțin mai mare prin R5, funcția CAN neafectată",
+  "LED overcurrent: LED damaged, supply overloaded, possible brown-out of the transceiver": "Supracurent prin LED: LED distrus, alimentare suprasolicitată, posibilă cădere de tensiune la transceiver",
+  "RS floating: transceiver may enter standby, no data transmitted": "RS flotant: transceiverul poate intra în standby, nu se transmit date",
+  "RS tied directly to GND: high-speed mode, no functional effect (higher EMC emissions)": "RS legat direct la GND: mod high-speed, fără efect funcțional (emisii EMC mai mari)",
+  "changed operating mode: slope-control (slower edges, errors at high bit rates) or standby (no transmission)": "mod de funcționare schimbat: slope-control (fronturi mai lente, erori la rate de bit mari) sau standby (fără transmisie)",
+  "communication likely unaffected or slightly degraded (loss of robustness)": "comunicația probabil neafectată sau ușor degradată (pierdere de robustețe)",
+  "corrupted communication between CAN and the sensor": "comunicație coruptă între modulul CAN și senzor",
+  "corrupted communication: CANH loaded to GND through R3, operating mode changed": "comunicație coruptă: CANH încărcat la GND prin R3, mod de funcționare schimbat",
+  "filter characteristic changed: usually no functional effect; very low value behaves like a short": "caracteristica filtrului schimbată: de obicei fără efect funcțional; o valoare foarte mică se comportă ca un scurtcircuit",
+  "larger value: slower edges, errors at high bit rates; smaller value: reduced filtering": "valoare mai mare: fronturi mai lente, erori la rate de bit mari; valoare mai mică: filtrare redusă",
+  "missing bus termination at this node: signal reflections, possible corrupted communication": "terminația bus-ului lipsește la acest nod: reflexii, posibilă comunicație coruptă",
+  "missing connection between CAN module and the CAN bus": "lipsește legătura dintre modulul CAN și bus-ul CAN",
+  "missing connection between CAN module and the sensor": "lipsește legătura dintre modulul CAN și senzor",
+  "missing power connection": "lipsește alimentarea",
+  "no CAN transceiver: no functionality of the CAN": "fără transceiver CAN: funcția CAN lipsește",
+  "no common ground with the bus: common-mode voltage out of range, corrupted or no communication": "fără masă comună cu bus-ul: tensiune de mod comun în afara domeniului, comunicație coruptă sau lipsă",
+  "no communication on the CAN bus": "nicio comunicație pe bus-ul CAN",
+  "no communication on the whole CAN bus (all nodes affected)": "nicio comunicație pe tot bus-ul CAN (toate nodurile afectate)",
+  "no communication or corrupted communication on the CAN bus": "comunicație lipsă sau coruptă pe bus-ul CAN",
+  "no data received": "nu se recepționează date",
+  "no data received; RXD output shorted to VDD": "nu se recepționează date; ieșirea RXD în scurtcircuit cu VDD",
+  "no data received; the CAN controller sees bit errors on its own frames, so communication fails": "nu se recepționează date; controllerul CAN vede erori de bit pe propriile cadre, deci comunicația eșuează",
+  "no data transmitted": "nu se transmit date",
+  "no data transmitted on the CAN bus (reception still works)": "nu se transmit date pe bus-ul CAN (recepția funcționează)",
+  "no data transmitted; MCU TX output shorted to GND": "nu se transmit date; ieșirea TX a MCU în scurtcircuit la GND",
+  "no data transmitted; MCU TX output shorted to VDD": "nu se transmit date; ieșirea TX a MCU în scurtcircuit cu VDD",
+  "no effect": "niciun efect",
+  "no functionality of the CAN": "funcția CAN lipsește",
+  "no power indication (LED off), CAN function not affected": "fără indicație de alimentare (LED stins), funcția CAN neafectată",
+  "no supply decoupling: possible intermittent corrupted communication under noise (EMC)": "fără decuplarea alimentării: posibilă comunicație coruptă intermitent în prezența zgomotului (EMC)",
+  "reduced supply filtering, no functional effect expected": "filtrare redusă a alimentării, fără efect funcțional așteptat",
+  "supply short: no functionality of the CAN, supply of the sensor overloaded": "scurtcircuit pe alimentare: funcția CAN lipsește, alimentarea senzorului suprasolicitată",
+  "termination cannot be enabled: reflections, possible corrupted communication": "terminația nu poate fi activată: reflexii, posibilă comunicație coruptă",
+  "termination in the wrong state (enabled / disabled)": "terminația în starea greșită (activată / dezactivată)",
+  "termination permanently enabled: bus overloaded if the node is not at the bus end, reduced differential voltage": "terminația activată permanent: bus suprasolicitat dacă nodul nu e la capăt, tensiune diferențială redusă",
+  "transceiver may enter standby: no data transmitted": "transceiverul poate intra în standby: nu se transmit date",
+  "wrong bus impedance: reduced differential voltage and reflections, possible corrupted communication": "impedanța bus-ului greșită: tensiune diferențială redusă și reflexii, posibilă comunicație coruptă",
+  "wrong indication (color / brightness) or LED off, CAN function not affected": "indicație greșită (culoare / luminozitate) sau LED stins, funcția CAN neafectată",
+  "wrong operating mode: standby (no transmission) or wrong slope (communication errors / EMC out of spec)": "mod de funcționare greșit: standby (fără transmisie) sau pantă greșită (erori de comunicație / EMC în afara specificației)"
+  };
+const modeTxt = (m) => (LANG === "ro" && MODE_RO[m.mode] ? MODE_RO[m.mode] + " · " + m.mode : m.mode);
+const modeShort = (m) => (LANG === "ro" && MODE_RO[m.mode] ? MODE_RO[m.mode] : m.mode);
+const effTxt = (m) => (LANG === "ro" && EFF_RO[m.effect] ? EFF_RO[m.effect] : m.effect);
+/* typical prevention control on an automotive SMT / THT line per component type and mode, and the O it gives in table P2 (sheet "Ocurență (PFMEA)") */
+const PREV = {
+  missingSMD: [{ ro: "verificarea prezenței piesei pe duza pick & place (vacuum / cameră), monitorizarea feeder-ului", en: "part presence check on the pick & place nozzle (vacuum / camera), feeder monitoring" }, "2"],
+  openSMD: [{ ro: "stencil proiectat după IPC-7525, inspecția pastei (SPI), profil de reflow validat", en: "stencil designed to IPC-7525, solder paste inspection (SPI), validated reflow profile" }, "2"],
+  shortSMD: [{ ro: "stencil și pad-uri după IPC-7351, SPI (volumul pastei)", en: "stencil and pads to IPC-7351, SPI (paste volume)" }, "2"],
+  wrongValue: [{ ro: "scanarea codului de bare al rolei la încărcarea feeder-ului (verificare automată a setup-ului)", en: "reel barcode scan when loading the feeder (automatic setup verification)" }, "2"],
+  polarity: [{ ro: "orientarea verificată de camera pick & place, marcaj de polaritate pe pad", en: "orientation checked by the pick & place camera, polarity mark on the pad" }, "2"],
+  icMissing: [{ ro: "verificarea prezenței piesei pe duză (cameră)", en: "part presence check on the nozzle (camera)" }, "2"],
+  icShort: [{ ro: "stencil cu deschideri reduse la pas fin, SPI", en: "reduced stencil apertures at fine pitch, SPI" }, "2"],
+  icFunc: [{ ro: "protecție ESD în fabrică (EPA, IEC 61340-5-1), componente de la furnizori calificați (AEC-Q100)", en: "ESD protection in the plant (EPA, IEC 61340-5-1), parts from qualified suppliers (AEC-Q100)" }, "2"],
+  thtMissing: [{ ro: "inserție manuală cu instrucțiune de lucru, eventual șablon (fixture)", en: "manual insertion with a work instruction, possibly a fixture" }, "4–5"],
+  thtSolder: [{ ro: "lipire în val / selectivă cu parametri monitorizați, gaură și pad după IPC-2221", en: "wave / selective soldering with monitored parameters, hole and pad to IPC-2221" }, "4–5"],
+  jmpMissing: [{ ro: "montare manuală cu instrucțiune de lucru (control comportamental)", en: "manual fitting with a work instruction (behavioural control)" }, "6–7"],
+  jmpOther: [{ ro: "montare manuală, jumper din lista aprobată", en: "manual fitting, jumper from the approved list" }, "4–5"]
+};
+function prevOf(m) {
+  const ty = m.type, md = m.mode;
+  if (ty === "JMP") return md === "Missing" ? PREV.jmpMissing : PREV.jmpOther;
+  if (ty === "CON-HDR") return md === "Missing" ? PREV.thtMissing : PREV.thtSolder;
+  if (ty === "IC-SOIC") return md === "Missing" ? PREV.icMissing : md === "Pin short" ? PREV.icShort : md === "Pin wrong functionality" ? PREV.icFunc : PREV.openSMD;
+  if (md === "Missing") return PREV.missingSMD;
+  if (md === "Short") return PREV.shortSMD;
+  if (md === "Wrong value") return PREV.wrongValue;
+  if (md === "Wrong polarity") return PREV.polarity;
+  return PREV.openSMD;
+}
+const isDemo = () => S.variant === "H0";
 const VARIANTS = {
   H0: [55, 63, 65, 70, 74, 77],   /* demo variant, worked example in the lab guide */
   H1: [2, 6, 8, 14, 30, 31, 32, 42, 48, 54, 66, 73],
@@ -309,18 +351,7 @@ const RULES = {
     "Wrong value": [1, 1, 10, 1, 5, { ro: "Tipul greșit de jumper e vizibil optic; AXI nu vede diferența.", en: "The wrong jumper type is visible optically; AXI cannot see the difference." }] }
 };
 
-/* nets of every component (schematic of the MCP2551 module, LED1/R5 added) */
-const PIN_NETS = {
-  U1: { 1: "TXD", 2: "GND", 3: "VDD", 4: "RXD", 5: null, 6: "CANL", 7: "CANH", 8: "RS" },
-  J1: { 1: "VDD", 2: "TXD", 3: "RXD", 4: "GND" },
-  J2: { 1: "CANH", 2: "CANL", 3: "GND" }
-};
-const TWO_TERM = {
-  C3: ["VDD", "GND"], R3: ["RS", "GND"], R4: ["CANH", "N_TERM"], JP1: ["N_TERM", "CANL"],
-  R1: ["CANH", "N_F1"], C1: ["N_F1", "GND"], R2: ["CANL", "N_F2"], C2: ["N_F2", "GND"],
-  LED1: ["VDD", "N_LED"], R5: ["N_LED", "GND"]
-};
-const NETS = ["VDD", "GND", "TXD", "RXD", "CANH", "CANL", "RS", "N_TERM", "N_F1", "N_F2", "N_LED", "VREF"];
+const { PIN_NETS, TWO_TERM, NETS } = PCB;  /* shared drawing of the module: ../shared/pcb.js */
 
 /* effect classes of the TCA library, worded after the AIAG-VDA severity scale */
 const SEVERITY = [
@@ -335,44 +366,7 @@ const SEVERITY = [
   ["E2", 2, { ro: "Efect ușor, care nu afectează funcționalitatea produsului", en: "Slight effect that does not affect the product's function" }],
   ["E1", 1, { ro: "Niciun efect perceptibil", en: "No discernible effect" }]
 ];
-/* AIAG-VDA scales, short paraphrase (full tables in the course) */
-const SEV_SCALE = [
-  ["10", { ro: "Afectează siguranța vehiculului, a ocupanților sau a altor participanți la trafic", en: "Affects safe operation of the vehicle, occupants or other road users" }],
-  ["9", { ro: "Neconformitate cu reglementările", en: "Noncompliance with regulations" }],
-  ["8", { ro: "Pierderea unei funcții principale", en: "Loss of a primary function" }],
-  ["7", { ro: "Degradarea unei funcții principale", en: "Degradation of a primary function" }],
-  ["6", { ro: "Pierderea unei funcții secundare", en: "Loss of a secondary function" }],
-  ["5", { ro: "Degradarea unei funcții secundare", en: "Degradation of a secondary function" }],
-  ["4", { ro: "Aspect, zgomot, vibrații sau haptică foarte deranjante", en: "Very objectionable appearance, sound, vibration or haptics" }],
-  ["3", { ro: "Aspect, zgomot, vibrații sau haptică moderat deranjante", en: "Moderately objectionable appearance, sound, vibration or haptics" }],
-  ["2", { ro: "Aspect, zgomot, vibrații sau haptică ușor deranjante", en: "Slightly objectionable appearance, sound, vibration or haptics" }],
-  ["1", { ro: "Niciun efect perceptibil", en: "No discernible effect" }]
-];
-const OCC = [
-  ["10", { ro: "Prima aplicare a unei tehnologii noi; fără experiență, standarde sau bune practici; prevenția nu poate prezice performanța", en: "First application of new technology; no experience, standards or best practices; prevention cannot predict performance" }],
-  ["9", { ro: "Prima utilizare în firmă a unor inovații sau materiale noi; prevenția nu țintește cerințele", en: "First use in the company of innovations or new materials; prevention not targeted to the requirements" }],
-  ["8", { ro: "Inovații folosite într-o aplicație nouă; puține standarde aplicabile; prevenția nu e un indicator fiabil", en: "Innovations used in a new application; few applicable standards; prevention is not a reliable indicator" }],
-  ["7", { ro: "Design nou pe tehnologie similară, aplicație nouă; prevenția dă o indicație limitată", en: "New design on similar technology, new application; prevention gives a limited indication" }],
-  ["6", { ro: "Similar cu designuri anterioare, condiții de utilizare modificate; standardele nu sunt suficiente", en: "Similar to previous designs, changed duty cycle or conditions; standards not sufficient" }],
-  ["5", { ro: "Modificări de detaliu pe un design dovedit; lecțiile învățate sunt aplicate, dar nedovedite", en: "Detail changes to a proven design; lessons learned applied but not proven" }],
-  ["4", { ro: "Design aproape identic, expunere scurtă în teren; conform bunelor practici", en: "Almost identical design, short field exposure; conforms to best practices" }],
-  ["3", { ro: "Modificări de detaliu pe un design cunoscut, cu experiență de test sau teren comparabilă", en: "Detail changes to a known design with comparable test or field experience" }],
-  ["2", { ro: "Design matur, aproape identic, cu expunere lungă în teren", en: "Almost identical mature design with long field exposure" }],
-  ["1", { ro: "Cauza e eliminată prin prevenție; nu e posibilă prin design", en: "Cause eliminated by prevention; not possible by design" }]
-];
-/* AIAG-VDA detection scale, short paraphrase of the DFMEA table (same as in the FMEA lab: the analysis is done on the design) */
-const DET_SCALE = [
-  ["10", { ro: "Procedura de test nu e încă dezvoltată; metodă nedefinită", en: "Test procedure not yet developed; method not defined" }],
-  ["9", { ro: "Metoda de test nu e concepută special pentru acest mod sau această cauză", en: "Test method not designed specifically for this mode or cause" }],
-  ["8", { ro: "Metodă de test nouă, nedovedită", en: "New, unproven test method" }],
-  ["7", { ro: "Metodă dovedită, planificată târziu (pass / fail)", en: "Proven method, planned late (pass / fail)" }],
-  ["6", { ro: "Metodă dovedită, planificată târziu (test până la defectare)", en: "Proven method, planned late (test-to-failure)" }],
-  ["5", { ro: "Metodă dovedită, planificată târziu (test de degradare)", en: "Proven method, planned late (degradation testing)" }],
-  ["4", { ro: "Metodă dovedită, la timp înainte de lansare (pass / fail)", en: "Proven method, in time before release (pass / fail)" }],
-  ["3", { ro: "Metodă dovedită, la timp înainte de lansare (test până la defectare)", en: "Proven method, in time before release (test-to-failure)" }],
-  ["2", { ro: "Metodă dovedită, la timp înainte de lansare (test de degradare)", en: "Proven method, in time before release (degradation testing)" }],
-  ["1", { ro: "Testele anterioare confirmă că defectul nu poate apărea, sau metoda îl detectează mereu", en: "Prior testing confirms the failure cannot occur, or the method always detects it" }]
-];
+/* AIAG-VDA scales: ../shared/aiag.js (S, O DFMEA, D DFMEA, O PFMEA table P2, AP) */
 /* criterion C9: what the functional test can see */
 const C9 = [["1", { ro: "1", en: "1" }], ["5", { ro: "5", en: "5" }], ["10", { ro: "10", en: "10" }]];
 /* functional test list given to the students (sheet "Teste FT"); D FT is their judgement */
@@ -435,7 +429,7 @@ const I18N = {
     introP4: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
     stepsTitle: "Pașii",
     s1: "S: alege clasa de efect. Efectul e dat; severitatea rezultă din clasă.",
-    s2: "O: alege ocurența din scala AIAG-VDA (rezumatul e mai jos).",
+    s2: "O: încadrează controlul de prevenție tipic în tabelul P2 (FMEA de proces) și alege ocurența.",
     s3: "D: citește predicția pentru AOI, AXI, ICT. Pentru FT alegi din lista FT1–FT8 testul potrivit (sau NONE), valoarea D și scrii de ce.",
     s4: "Îmbunătățiri: test point-uri, AOI pe BOTTOM sau teste FT noi. Unde AP rămâne H sau M, documentează riscul rezidual.",
     s5: "Raport: descarcă fișa de evaluare a riscului.",
@@ -452,8 +446,8 @@ const I18N = {
     summary: "Rezumat", mDone: "Moduri completate", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Risc rezidual (H + M)", mCov: "Acoperirea riscului",
     before: "fără îmbunătățiri",
     refTables: "Tabele de referință",
-    detTitle: "Scala de detecție AIAG-VDA (D), rezumat", detNote: "Rezumat orientativ al scalei DFMEA (analiza se face pe design, ca la laboratorul de FMEA). Tabelul complet este în curs și în manualul AIAG-VDA.",
-    sevTitle: "Clase de severitate (S)", occTitle: "Scala de ocurență AIAG-VDA (O), rezumat", occNote: "Rezumat orientativ; tabelele complete sunt în curs și în manualul AIAG-VDA.",
+    detTitle: "Scala de detecție AIAG-VDA (DFMEA)", detNote: "Rezumat orientativ al scalei DFMEA (analiza se face pe design, ca la laboratorul de FMEA). Tabelul complet este în curs și în manualul AIAG-VDA.",
+    sevTitle: "Clase de severitate (S)", occTitle: "Scala de ocurență AIAG-VDA (PFMEA, tabelul P2)", occNote: "Rezumat orientativ; tabelele complete sunt în curs și în manualul AIAG-VDA.",
     ftTitle: "Teste funcționale (FT)", c9Title: "Criteriul C9 pentru D FT",
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
     apTitle: "Tabelul AP (AIAG-VDA)",
@@ -470,7 +464,7 @@ const I18N = {
     ftListTitle: "Lista testelor funcționale (FT1–FT8) · cum alegi D FT", ftHowTitle: "Cum alegi testul și D FT",
     ftHow: ["Citește efectul și tipul modului de defectare (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Caută în listă, la „Ce poate prinde”, un test care se potrivește cu componenta și cu tipul defectului.", "Apasă pe pinul componentei (pe placă sau în SCHEMĂ) și urmărește netul în panoul Conexiuni: dacă ajunge la un pin de conector (J1, J2), testul funcțional îl poate vedea; compară cu semnalul pe care îl măsoară testul.", "Alege testul cel mai potrivit sau NONE dacă niciunul nu se potrivește.", "Alege valoarea D (1–10) din listă: fiecare valoare are descrierea din scala de detecție AIAG-VDA (o găsești și în tabelele de referință). Scrie de ce ai ales-o. NONE înseamnă D = 10."],
     ftColId: "Test", ftColName: "Denumire", ftColMeas: "Ce se măsoară", ftColLim: "Limite", ftColCatch: "Ce poate prinde",
-    mRA: "Risc rezidual documentat", sevScaleTitle: "Scala de severitate AIAG-VDA (rezumat)", newTests: "Teste FT noi", raCol: "Evaluarea riscului"
+    mRA: "Risc rezidual documentat", sevScaleTitle: "Scala de severitate AIAG-VDA (DFMEA)", newTests: "Teste FT noi", raCol: "Evaluarea riscului", prevTyp: "Prevenție tipică", prevTip: "Controlul de prevenție tipic pentru acest tip de defect într-o linie SMT / THT auto. Încadrează-l în tabelul P2 (tipul controlului și cât de eficient e) ca să alegi O.", ctxTitle: "Context", ctx: "Ești în echipa de test a fabricii care asamblează modulul CAN al radarului frontal. Placa trece prin AOI, AXI, ICT și testul funcțional (FT). Analiza se face pe design, înainte de lansarea în producție: pentru fiecare mod de defectare din varianta ta stabilești cât de grav e efectul (S), cât de des poate apărea (O) și cât de sigur îl prinde fiecare test (D). Ce nu e prins se îmbunătățește sau se documentează ca risc rezidual.", howTitle: "Cum se face", how: ["Alege un rând din fișă și apasă pe componentă: placa și schema arată unde se află și pe ce net-uri este legată.", "Clasa de efect: citește efectul și alege clasa din tabelul „Clase de severitate”; S rezultă din clasă. Efectele funcționale sunt cel mult E8, iar cele de EMC E9.", "O: citește prevenția tipică de sub listă și încadreaz-o în tabelul P2 (tipul controlului și cât de eficient e). Într-un proces SMT automat, O este de obicei 2.", "D AOI, AXI, ICT: le calculează aplicația din regulile de detecție; motivul e scris sub fiecare valoare.", "D FT: alege din lista FT1–FT8 testul care vede efectul (sau NONE), apoi D din scala de detecție, și scrie justificarea.", "Citește AP. Pentru H și M propune îmbunătățiri (test point-uri, AOI pe BOTTOM, un test FT nou) și urmărește cum se schimbă AP.", "Unde AP rămâne H sau M, completează evaluarea riscului rezidual. La final scrie concluzia și verifică lista din tab-ul Raport."], howDemo: "Exemplu pe H0: J2 pin 2 (CAN_L), pin întrerupt → clasa E8 (S 8), O 2, D AOI 10, D AXI 3, D ICT 5, FT7 cu D FT 5, D minim 3, AP L.", provTitle: "De unde vin valorile", prov: [["Modurile și efectele", "Biblioteca de moduri de defectare a laboratorului (modelul PCOLA/SOQ), pe componentele din schemă; efectele sunt evaluate la nivel de senzor, din schemă și din fișa tehnică MCP2551."], ["Clasele de efect (S)", "Scala de severitate AIAG-VDA (DFMEA) adaptată la nivel de senzor: efectele funcționale sunt cel mult S 8, pentru că modulul se testează separat de vehicul; efectele EMC sunt S 9 (reglementarea UNECE R10)."], ["O", "Tabelul P2 din manualul AIAG-VDA (FMEA de proces): O depinde de tipul și de eficiența controlului de prevenție. Prevenția tipică afișată este cea a unei linii SMT auto; datele publice de defectare (IPC APEX 2006, Circuits Assembly 2001 și 2008) dau rate de zeci până la sute de ppm pe oportunitate."], ["D AOI, AXI, ICT", "Tabelul de reguli de detecție al laboratorului, după IPC-A-610 (acceptabilitate), IPC-2221 (testabilitate) și IEEE 1149.1. ICT cu TP direct se folosește doar dacă toate net-urile componentei au test point."], ["D FT", "Scala de detecție AIAG-VDA (DFMEA), pentru că analiza se face pe design. Testele FT1–FT8 vin din specificația de test a produsului."], ["AP", "Tabelul Action Priority din manualul AIAG-VDA (2019), cu D minim dintre toate metodele de test."]], tips: {"colComp": "Componenta și pinul la care apare defectul. Apasă pe nume ca să o vezi pe placă și în schemă.", "colMode": "Defectul de fabricație (modelul PCOLA/SOQ): lipsă, întrerupt, scurtcircuit, valoare greșită, polaritate.", "colEffect": "Ce se întâmplă la nivel de senzor dacă defectul ajunge la client.", "colClass": "Clasa de efect, din tabelul „Clase de severitate”; dă valoarea S.", "colS": "Severitatea (1–10); rezultă din clasa de efect.", "colO": "Ocurența (1–10), din tabelul P2: depinde de controlul de prevenție din proces.", "colAOI": "Detecția la inspecția optică automată, calculată din regulile de detecție.", "colAXI": "Detecția la inspecția cu raze X, calculată din regulile de detecție.", "colICT": "Detecția la testul în circuit; depinde de test point-uri.", "colFT": "Testul funcțional ales din FT1–FT8, D FT și justificarea ta.", "colFTnew": "Testul FT nou propus de tine ca îmbunătățire și D-ul lui.", "colD": "D minim dintre AOI, AXI, ICT și FT: toate testele rulează pe fiecare placă.", "colAP": "Prioritatea de acțiune (H, M, L) din tabelul AIAG-VDA, cu îmbunătățirile tale.", "colAP0": "AP pe placa inițială: fără test point-uri, fără AOI pe BOTTOM, fără teste FT noi.", "colRA": "Pentru AP H sau M: risc acceptat sau acțiune propusă, cu motivul.", "mDone": "Câte moduri au S, O și D completate.", "mH": "Moduri cu acțiune necesară.", "mM": "Moduri cu acțiune recomandată.", "mL": "Moduri cu acțiune opțională.", "mRes": "Riscul rezidual: modurile care rămân H sau M.", "mCov": "Procentul modurilor completate care au AP L.", "mRA": "Câte moduri H sau M au evaluarea riscului completată."}, chkTitle: "Verificări înainte de trimitere", chkOk: "Nicio problemă găsită.", c_cls: "{n}: lipsește clasa de efect.", c_o: "{n}: lipsește O.", c_ft: "{n}: nu ai ales testul FT (sau NONE).", c_ftd: "{n}: lipsește D FT.", c_ftj: "{n}: lipsește justificarea pentru FT.", c_ra: "{n}: AP {ap}; completează evaluarea riscului rezidual.", c_raTxt: "{n}: evaluarea riscului nu are motivul scris.", c_concl: "Lipsește concluzia (logica folosită pentru O, îmbunătățirile propuse)."
   },
   en: {
     subtitle: "Production test coverage analysis · MCP2551 CAN module of the front radar",
@@ -486,7 +480,7 @@ const I18N = {
     introP4: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
     stepsTitle: "Steps",
     s1: "S: choose the effect class. The effect is given; the severity follows from the class.",
-    s2: "O: choose the occurrence from the AIAG-VDA scale (summary below).",
+    s2: "O: place the typical prevention control in table P2 (process FMEA) and choose the occurrence.",
     s3: "D: read the prediction for AOI, AXI, ICT. For FT choose the matching test from the FT1–FT8 list (or NONE), the D value, and write why.",
     s4: "Improvements: test points, AOI on BOTTOM or new FT tests. Where the AP stays H or M, document the residual risk.",
     s5: "Report: download the risk assessment sheet.",
@@ -503,8 +497,8 @@ const I18N = {
     summary: "Summary", mDone: "Modes completed", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Residual risk (H + M)", mCov: "Risk coverage",
     before: "without improvements",
     refTables: "Reference tables",
-    detTitle: "AIAG-VDA detection scale (D), summary", detNote: "Indicative summary of the DFMEA scale (the analysis is done on the design, as in the FMEA lab). The full table is in the course and in the AIAG-VDA handbook.",
-    sevTitle: "Severity classes (S)", occTitle: "AIAG-VDA occurrence scale (O), summary", occNote: "Indicative summary; the full tables are in the course and in the AIAG-VDA handbook.",
+    detTitle: "AIAG-VDA detection scale (DFMEA)", detNote: "Indicative summary of the DFMEA scale (the analysis is done on the design, as in the FMEA lab). The full table is in the course and in the AIAG-VDA handbook.",
+    sevTitle: "Severity classes (S)", occTitle: "AIAG-VDA occurrence scale (PFMEA, table P2)", occNote: "Indicative summary; the full tables are in the course and in the AIAG-VDA handbook.",
     ftTitle: "Functional tests (FT)", c9Title: "Criterion C9 for D FT",
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
     apTitle: "AP table (AIAG-VDA)",
@@ -521,7 +515,7 @@ const I18N = {
     ftListTitle: "Functional test list (FT1–FT8) · how to choose D FT", ftHowTitle: "How to choose the test and D FT",
     ftHow: ["Read the effect and the type of the failure mode (missing, open, short, wrong value, wrong polarity, wrong functionality).", "Look in the list, under “What it can catch”, for a test that matches the component and the defect type.", "Click the pin of the component (on the board or in the SCHEMATIC) and follow its net in the Connections panel: if it reaches a connector pin (J1, J2), the functional test can see it; compare with the signal the test measures.", "Choose the most suitable test, or NONE if no test fits.", "Choose the D value (1–10) from the list: each value carries its description from the AIAG-VDA detection scale (also in the reference tables). Write why you chose it. NONE means D = 10."],
     ftColId: "Test", ftColName: "Name", ftColMeas: "What is measured", ftColLim: "Limits", ftColCatch: "What it can catch",
-    mRA: "Residual risk documented", sevScaleTitle: "AIAG-VDA severity scale (summary)", newTests: "New FT tests", raCol: "Risk assessment"
+    mRA: "Residual risk documented", sevScaleTitle: "AIAG-VDA severity scale (DFMEA)", newTests: "New FT tests", raCol: "Risk assessment", prevTyp: "Typical prevention", prevTip: "The typical prevention control for this defect type on an automotive SMT / THT line. Place it in table P2 (type of control and how effective it is) to choose O.", ctxTitle: "Context", ctx: "You are in the test team of the plant that assembles the front radar's CAN module. The board goes through AOI, AXI, ICT and the functional test (FT). The analysis is done on the design, before production release: for every failure mode of your variant you decide how severe the effect is (S), how often it can occur (O) and how reliably each test catches it (D). What is not caught is improved or documented as residual risk.", howTitle: "How to do it", how: ["Pick a row of the sheet and click the component: the board and the schematic show where it is and which nets it is on.", "Effect class: read the effect and choose the class from the \"Severity classes\" table; S follows from the class. Functional effects are at most E8, EMC effects E9.", "O: read the typical prevention under the list and place it in table P2 (type of control and how effective it is). On an automatic SMT process, O is usually 2.", "D AOI, AXI, ICT: the app computes them from the detection rules; the reason is written under each value.", "D FT: choose from FT1–FT8 the test that sees the effect (or NONE), then D from the detection scale, and write the justification.", "Read AP. For H and M propose improvements (test points, AOI on BOTTOM, a new FT test) and watch how AP changes.", "Where AP stays H or M, fill in the residual risk assessment. At the end write the conclusion and check the list on the Report tab."], howDemo: "Example on H0: J2 pin 2 (CAN_L), pin open → class E8 (S 8), O 2, D AOI 10, D AXI 3, D ICT 5, FT7 with D FT 5, minimum D 3, AP L.", provTitle: "Where the values come from", prov: [["Failure modes and effects", "The lab's failure mode library (PCOLA/SOQ model), on the parts of the schematic; effects are rated at sensor level, from the schematic and the MCP2551 datasheet."], ["Effect classes (S)", "AIAG-VDA severity scale (DFMEA) adapted to sensor level: functional effects are at most S 8 because the module is tested apart from the vehicle; EMC effects are S 9 (UNECE R10)."], ["O", "Table P2 of the AIAG-VDA handbook (process FMEA): O depends on the type and effectiveness of the prevention control. The typical prevention shown is that of an automotive SMT line; public defect data (IPC APEX 2006, Circuits Assembly 2001 and 2008) give tens to hundreds of ppm per opportunity."], ["D AOI, AXI, ICT", "The lab's detection rule table, after IPC-A-610 (acceptability), IPC-2221 (testability) and IEEE 1149.1. ICT with a direct TP is used only if every net of the part has a test point."], ["D FT", "AIAG-VDA detection scale (DFMEA), because the analysis is done on the design. Tests FT1–FT8 come from the product test specification."], ["AP", "The Action Priority table of the AIAG-VDA handbook (2019), with the minimum D of all test methods."]], tips: {"colComp": "The part and pin where the defect occurs. Click the name to see it on the board and in the schematic.", "colMode": "The manufacturing defect (PCOLA/SOQ model): missing, open, short, wrong value, polarity.", "colEffect": "What happens at sensor level if the defect reaches the customer.", "colClass": "The effect class, from the \"Severity classes\" table; it gives S.", "colS": "Severity (1–10); follows from the effect class.", "colO": "Occurrence (1–10), from table P2: depends on the prevention control in the process.", "colAOI": "Detection at automated optical inspection, computed from the detection rules.", "colAXI": "Detection at X-ray inspection, computed from the detection rules.", "colICT": "Detection at in-circuit test; depends on test points.", "colFT": "The functional test chosen from FT1–FT8, D FT and your justification.", "colFTnew": "The new FT test you propose as an improvement, and its D.", "colD": "Minimum D of AOI, AXI, ICT and FT: every test runs on every board.", "colAP": "Action priority (H, M, L) from the AIAG-VDA table, with your improvements.", "colAP0": "AP on the initial board: no test points, no AOI on BOTTOM, no new FT tests.", "colRA": "For AP H or M: risk accepted or action proposed, with the reason.", "mDone": "How many modes have S, O and D.", "mH": "Modes needing action.", "mM": "Modes where action is recommended.", "mL": "Modes where action is optional.", "mRes": "Residual risk: modes still H or M.", "mCov": "Share of completed modes with AP L.", "mRA": "How many H or M modes have a risk assessment."}, chkTitle: "Checks before sending", chkOk: "No issues found.", c_cls: "{n}: effect class missing.", c_o: "{n}: O missing.", c_ft: "{n}: no FT test chosen (or NONE).", c_ftd: "{n}: D FT missing.", c_ftj: "{n}: FT justification missing.", c_ra: "{n}: AP {ap}; fill in the residual risk assessment.", c_raTxt: "{n}: the risk assessment has no reason written.", c_concl: "Conclusion missing (the logic used for O, the proposed improvements)."
   }
 };
 let LANG = "ro";
@@ -548,7 +542,7 @@ function detection(m, env) {
   const cat = CATEGORY[m.type];
   const r = RULES[cat][m.mode];
   const aoi = env.aoiBottom ? r[1] : r[0], axi = r[2];
-  const aoiWhy = [CAT_LABEL[cat] + " · " + m.mode];
+  const aoiWhy = [CAT_LABEL[cat] + " · " + modeShort(m)];
   if (r[0] !== r[1]) aoiWhy.push(env.aoiBottom ? t("whyAOIb") : t("whyAOItop"));
   aoiWhy.push(tr(r[5]));
   const nets = netsFor(m);
@@ -556,7 +550,7 @@ function detection(m, env) {
   const access = !noNet && nets.length > 0 && nets.every((n) => env.tps[n]);
   const ict = access ? r[3] : r[4];
   const ictWhy = noNet ? t("whyNoNet") : (access ? t("whyTP") : t("whyNoTP")) + ": " + nets.join(", ");
-  return { aoi: aoi, axi: axi, ict: ict, aoiWhy: aoiWhy.join(" · "), axiWhy: CAT_LABEL[cat] + " · " + m.mode, ictWhy: ictWhy };
+  return { aoi: aoi, axi: axi, ict: ict, aoiWhy: aoiWhy.join(" · "), axiWhy: CAT_LABEL[cat] + " · " + modeShort(m), ictWhy: ictWhy };
 }
 const newTest = (id) => (S.newTests || []).find((x) => x.id === id);
 function evalRow(idx, env) {
@@ -582,238 +576,20 @@ function summary(env) {
   return { n: idxs.length, done: done, H: h, M: mm, L: l, res: h + mm, ra: ra, cov: done ? Math.round(100 * l / done) : 0 };
 }
 
-/* ---------------------------------------------------------------- board drawing (units: 1 = 1 mm) */
-const PARTS = {
-  J1:   { x: 4,  y: 15, w: 5.4, h: 21.4, tht: true, pins: 4, vertical: true },
-  LED1: { x: 15, y: 6,  w: 4,   h: 2.2 },
-  R5:   { x: 31, y: 6,  w: 4,   h: 2.2 },
-  C3:   { x: 24, y: 17, w: 4,   h: 2.2 },
-  U1:   { x: 37, y: 19, w: 10,  h: 12, soic: true },
-  R3:   { x: 51, y: 10, w: 4,   h: 2.2 },
-  R1:   { x: 51, y: 20, w: 4,   h: 2.2 },
-  C1:   { x: 51, y: 26, w: 4,   h: 2.2 },
-  R2:   { x: 51, y: 32, w: 4,   h: 2.2 },
-  C2:   { x: 51, y: 38, w: 4,   h: 2.2 },
-  R4:   { x: 71, y: 21, w: 4,   h: 2.2 },
-  JP1:  { x: 70, y: 6,  w: 7.9, h: 3.4, tht: true, pins: 2, vertical: false },
-  J2:   { x: 84, y: 17, w: 5.4, h: 16.3, tht: true, pins: 3, vertical: true }
-};
-const TP_POS = { VDD: [17, 14], GND: [20, 43], TXD: [31, 24], RXD: [31, 31], RS: [65, 10], CANH: [65, 20], N_F1: [65, 26], CANL: [65, 32], N_F2: [65, 38],
-  N_TERM: [79, 14], N_LED: [24, 11] };
-/* ---------------------------------------------------------------- connectivity (which pins share a net) */
-const NET_COLOR = { VDD: "#FF6B5A", GND: "#C9D1D9", TXD: "#FFD23F", RXD: "#3EC1D3", RS: "#FF9F1C", CANH: "#F15BB5", CANL: "#4D96FF", N_TERM: "#B983FF", N_F1: "#9BE564", N_F2: "#2EC4B6", N_LED: "#FFE66D" };
-const PIN_NAMES = { U1: { 1: "TXD", 2: "VSS", 3: "VDD", 4: "RXD", 5: "VREF", 6: "CANL", 7: "CANH", 8: "RS" }, J1: { 1: "VDD", 2: "TXD", 3: "RXD", 4: "GND" }, J2: { 1: "CAN_H", 2: "CAN_L", 3: "GND" } };
-/* every pin of the module: { ref, pin, net } (two-terminal parts: pin 1 = first net, pin 2 = second net; LED1: A / K) */
-const PINS = (() => {
-  const out = [];
-  Object.keys(PIN_NETS).forEach((ref) => Object.keys(PIN_NETS[ref]).forEach((pin) => { if (PIN_NETS[ref][pin]) out.push({ ref: ref, pin: pin, net: PIN_NETS[ref][pin] }); }));
-  Object.keys(TWO_TERM).forEach((ref) => TWO_TERM[ref].forEach((net, i) => out.push({ ref: ref, pin: ref === "LED1" ? (i ? "K" : "A") : String(i + 1), net: net })));
-  return out;
-})();
-const pinsOn = (net) => PINS.filter((x) => x.net === net);
-const netsOf = (ref) => PINS.filter((x) => x.ref === ref);
-const CONNECTORS = { J1: true, J2: true };
-/* pad centre in board coordinates (TOP view, mm) */
-function padXY(ref, pin) {
-  const p = PARTS[ref];
-  if (p.tht) {
-    const n = p.pins, i = (ref === "JP1" ? (pin === "1" ? 0 : 1) : +pin - 1), step = 2.54;
-    return p.vertical ? [p.x + p.w / 2, p.y + 2 + i * (p.h - 4) / Math.max(1, n - 1)] : [p.x + 1.7 + i * step * 1.4, p.y + p.h / 2];
-  }
-  if (p.soic) {
-    const k = +pin;
-    return k <= 4 ? [p.x - 0.7, p.y + 1.95 + (k - 1) * 3] : [p.x + p.w + 0.7, p.y + 1.95 + (8 - k) * 3];
-  }
-  const first = pin === "1" || pin === "A";
-  return [first ? p.x + 0.55 : p.x + p.w - 0.55, p.y + p.h / 2];
-}
-/* nets to highlight: those of the selected part, or the selected net */
+/* ---------------------------------------------------------------- board and schematic (shared with the FMEA app: ../shared/pcb.js) */
+const { PARTS, TP_POS, NET_COLOR, PIN_NAMES, PINS, pinsOn, netsOf, CONNECTORS, padXY } = PCB;
+/* nets to highlight: those of the selected pin, or the selected net */
 const selPin = () => { if (!S.pin) return null; const k = S.pin.split(":"); return PINS.find((q) => q.ref === k[0] && q.pin === k[1]) || null; };
 function hlNets() {
   if (S.net) return [S.net];
   const sp = selPin();
   return sp ? [sp.net] : [];
 }
-/* minimum spanning tree over the points of one net, so the airwires read like a ratsnest */
-function mst(pts) {
-  const inT = [0], edges = [];
-  while (inT.length < pts.length) {
-    let best = null;
-    inT.forEach((a) => pts.forEach((b, j) => {
-      if (inT.includes(j)) return;
-      const d = Math.hypot(pts[a][0] - b[0], pts[a][1] - b[1]);
-      if (!best || d < best[2]) best = [a, j, d];
-    }));
-    edges.push([pts[best[0]], pts[best[1]]]); inT.push(best[1]);
-  }
-  return edges;
-}
 function boardSVG(sideTop, selRef, refsInVariant) {
-  const W = 94, H = 50;
-  const HL = hlNets();
-  let g = '<rect class="pcb" x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="2"/>';
-  g += '<text class="silk" text-anchor="' + (sideTop ? "end" : "start") + '" x="' + (sideTop ? W - 3 : 3) + '" y="' + (H - 3) + '">MCP2551 CAN · ' + (sideTop ? "TOP" : "BOTTOM") + "</text>";
-  Object.keys(PARTS).forEach((ref) => {
-    const p = PARTS[ref];
-    const x = sideTop ? p.x : W - p.x - p.w;
-    const linked = HL.length && ref !== selRef && PINS.some((q) => q.ref === ref && HL.includes(q.net));
-    const cls = "comp" + (ref === selRef ? " sel" : "") + (linked ? " linked" : "") + (refsInVariant.has(ref) || linked || ref === selRef ? "" : " dim");
-    let inner = "";
-    if (p.tht) {
-      const n = p.pins; const step = 2.54;
-      for (let i = 0; i < n; i++) {
-        const cx = p.vertical ? x + p.w / 2 : x + 1.7 + i * step * 1.4;
-        const cy = p.vertical ? p.y + 2 + i * (p.h - 4) / Math.max(1, n - 1) : p.y + p.h / 2;
-        inner += '<circle class="tht" cx="' + cx + '" cy="' + cy + '" r="1.05"/><circle class="hole" cx="' + cx + '" cy="' + cy + '" r="0.45"/>';
-      }
-      if (sideTop) inner = '<rect class="body" x="' + x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="0.6" opacity="0.92"/>' + inner;
-      inner += '<rect class="outline" x="' + (x - 0.6) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 1.2) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
-    } else if (sideTop) {
-      if (p.soic) {
-        for (let i = 0; i < 4; i++) {
-          const py = p.y + 1.5 + i * 3;
-          inner += '<rect class="pad" x="' + (x - 1.8) + '" y="' + py + '" width="2.2" height="0.9"/><rect class="pad" x="' + (x + p.w - 0.4) + '" y="' + py + '" width="2.2" height="0.9"/>';
-        }
-        inner += '<rect class="body" x="' + x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="0.4"/><circle cx="' + (x + 1.3) + '" cy="' + (p.y + 1.3) + '" r="0.5" fill="var(--silk)"/>';
-      } else {
-        inner += '<rect class="pad" x="' + x + '" y="' + p.y + '" width="1.1" height="' + p.h + '"/><rect class="pad" x="' + (x + p.w - 1.1) + '" y="' + p.y + '" width="1.1" height="' + p.h + '"/>' +
-          '<rect class="body" x="' + (x + 1.1) + '" y="' + p.y + '" width="' + (p.w - 2.2) + '" height="' + p.h + '"/>';
-      }
-      inner += '<rect class="outline" x="' + (x - 2) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 4) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
-    } else {
-      /* SMD part seen from BOTTOM: it sits on the other side, show its place so it can still be clicked */
-      inner += '<rect class="ghost" x="' + x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="0.4"/>' +
-        '<rect class="outline" x="' + (x - 2) + '" y="' + (p.y - 0.6) + '" width="' + (p.w + 4) + '" height="' + (p.h + 1.2) + '" rx="0.8"/>';
-    }
-    /* label: above THT parts, centred in the IC, to the right of small SMD parts */
-    let lx, ly, anchor = "start";
-    if (p.soic) { lx = x + p.w / 2; ly = p.y + p.h / 2 + 1; anchor = "middle"; }
-    else if (p.tht) { lx = x + p.w / 2; ly = p.y - 1.4; anchor = "middle"; }
-    else { lx = x + p.w + 0.8; ly = p.y + p.h / 2 + 1.05; }
-    const hx = p.soic ? x - 2.5 : x - 2.2, hw = p.soic ? p.w + 5 : p.w + (p.tht ? 4.4 : 9);
-    const hy = p.tht ? p.y - 4.4 : p.y - 1.2, hh = p.tht ? p.h + 5.6 : p.h + 2.4;
-    const hit = '<rect class="hit" x="' + hx + '" y="' + hy + '" width="' + hw + '" height="' + hh + '"/>';
-    g += '<g class="' + cls + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + hit + inner +
-      '<text class="silk" text-anchor="' + anchor + '" x="' + lx + '" y="' + ly + '">' + ref + "</text></g>";
-  });
-  Object.keys(TP_POS).forEach((n) => {
-    if (!S.tps[n]) return;
-    const pt = TP_POS[n]; const x = sideTop ? pt[0] : W - pt[0];
-    g += '<g class="tpm"><circle cx="' + x + '" cy="' + pt[1] + '" r="1.2"/><text text-anchor="middle" x="' + x + '" y="' + (pt[1] + 3.6) + '">' + n + "</text></g>";
-  });
-  const X = (x) => (sideTop ? x : W - x);
-  HL.forEach((net) => {
-    const col = NET_COLOR[net] || "#fff";
-    const pts = pinsOn(net).map((q) => padXY(q.ref, q.pin));
-    if (S.tps[net] && TP_POS[net]) pts.push(TP_POS[net]);
-    const lines = mst(pts).map((e) => '<line x1="' + X(e[0][0]) + '" y1="' + e[0][1] + '" x2="' + X(e[1][0]) + '" y2="' + e[1][1] + '"/>').join("");
-    g += '<g class="rat sh">' + lines + '</g><g class="rat" stroke="' + col + '">' + lines + "</g>";
-    g += pts.map((pt) => '<circle class="pin-on" cx="' + X(pt[0]) + '" cy="' + pt[1] + '" r="0.85" fill="' + col + '"/>').join("");
-    if (selRef) {
-      const own = selPin();
-      if (own && own.net === net) {
-        const pt = padXY(own.ref, own.pin), pp = PARTS[own.ref];
-        /* pins on the left half of the part get their label on the left, the others on the right (mirrored on BOTTOM) */
-        let left = pt[0] < pp.x + pp.w / 2; if (!sideTop) left = !left;
-        const dy = pp.tht && pp.vertical ? 0.8 : (pp.soic ? 0.8 : -1.3);
-        const off = pp.soic || (pp.tht && pp.vertical) ? 4.3 : 1.3;
-        /* keep the label on the board: near an edge it goes to the other side */
-        if (left && X(pt[0]) - off < 9) left = false; else if (!left && X(pt[0]) + off > W - 9) left = true;
-        g += '<text class="netlbl" fill="' + col + '" text-anchor="' + (left ? "end" : "start") + '" x="' + (X(pt[0]) + (left ? -off : off)) + '" y="' + (pt[1] + dy) + '">' + net + "</text>";
-      }
-    }
-  });
-  /* pads of every part are clickable; the selected part shows its pin numbers */
-  PINS.forEach((q) => {
-    const pt = padXY(q.ref, q.pin), pp = PARTS[q.ref];
-    if (!sideTop && !pp.tht) return;  /* SMD pads are on the other side */
-    const on = S.pin === q.ref + ":" + q.pin;
-    g += '<circle class="padhit' + (on ? " on" : "") + (q.ref === selRef ? " own" : "") + '" data-pin="' + q.ref + ":" + q.pin + '" cx="' + X(pt[0]) + '" cy="' + pt[1] + '" r="1.25"><title>' + q.ref + " " + q.pin + " · " + q.net + "</title></circle>";
-    if (q.ref === selRef) {
-      let left = pt[0] < pp.x + pp.w / 2; if (!sideTop) left = !left;
-      const vert = pp.tht && pp.vertical;
-      g += '<text class="pinno" text-anchor="middle" x="' + (X(pt[0]) + (vert ? (left ? -2.6 : 2.6) : 0)) + '" y="' + (pt[1] + (vert ? 0.8 : (pp.soic ? 0.8 : 3.4))) + '"' + (pp.soic ? ' dx="' + (left ? -2.4 : 2.4) + '"' : "") + ">" + q.pin + "</text>";
-    }
-  });
-  return '<svg class="board" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + t("board") + '">' + g + "</svg>";
+  return PCB.board({ top: sideTop, sel: selRef, refs: refsInVariant, hl: hlNets(), pin: S.pin, tps: S.tps, label: t("board") });
 }
-
-/* ---------------------------------------------------------------- schematic of the module (simplified, for reading nets and test points) */
 function schSVG(selRef, refsInVariant) {
-  let g = "";
-  const ln = (x1, y1, x2, y2) => '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
-  const dot = (x, y) => '<circle class="jn" cx="' + x + '" cy="' + y + '" r="3"/>';
-  const txt = (x, y, s, cls, anchor) => '<text class="' + (cls || "lbl") + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : "") + ">" + s + "</text>";
-  const gnd = (x, y) => '<g class="gnd">' + ln(x, y, x, y + 8) + ln(x - 9, y + 8, x + 9, y + 8) + ln(x - 6, y + 12, x + 6, y + 12) + ln(x - 3, y + 16, x + 3, y + 16) + "</g>";
-  const comp = (ref, inner) => { const lk = hlNets().length && ref !== selRef && PINS.some((q) => q.ref === ref && hlNets().includes(q.net));
-    return '<g class="comp' + (ref === selRef ? " sel" : "") + (lk ? " linked" : "") + (refsInVariant.has(ref) || lk || ref === selRef ? "" : " dim") + '" data-ref="' + ref + '" tabindex="0" role="button" aria-label="' + ref + '">' + inner + "</g>"; };
-  /* vertical resistor between y1 and y2 at x */
-  const res = (ref, val, x, y1, y2) => comp(ref, ln(x, y1, x, y1 + 10) + '<rect class="body" x="' + (x - 6) + '" y="' + (y1 + 10) + '" width="12" height="' + (y2 - y1 - 20) + '"/>' + ln(x, y2 - 10, x, y2) +
-    txt(x + 11, (y1 + y2) / 2 - 2, ref, "ref") + txt(x + 11, (y1 + y2) / 2 + 11, val, "val"));
-  /* vertical capacitor */
-  const cap = (ref, val, x, y1, y2) => { const m = (y1 + y2) / 2; return comp(ref, ln(x, y1, x, m - 4) + '<line class="plate" x1="' + (x - 10) + '" y1="' + (m - 4) + '" x2="' + (x + 10) + '" y2="' + (m - 4) + '"/><line class="plate" x1="' + (x - 10) + '" y1="' + (m + 4) + '" x2="' + (x + 10) + '" y2="' + (m + 4) + '"/>' + ln(x, m + 4, x, y2) +
-    txt(x + 13, m - 2, ref, "ref") + txt(x + 13, m + 11, val, "val")); };
-  /* power rail and nets */
-  const HL = hlNets();
-  const WIRES = {
-    VDD: [[70, 130, 95, 130], [95, 130, 95, 40], [95, 40, 320, 40], [320, 40, 320, 120], [140, 40, 140, 52], [200, 40, 200, 56]],
-    TXD: [[70, 170, 260, 170]], RXD: [[70, 210, 260, 210]], RS: [[225, 250, 260, 250]],
-    GND: [[70, 250, 82, 250], [82, 250, 82, 262], [300, 300, 300, 318], [640, 315, 652, 315], [652, 315, 652, 330]],
-    CANH: [[380, 170, 640, 170], [430, 170, 430, 180], [560, 170, 560, 180]], CANL: [[380, 280, 640, 280], [480, 280, 480, 290], [560, 256, 560, 280]]
-  };
-  /* short nets that only exist between two parts: drawn as a marker when highlighted */
-  const SPOTS = { N_F1: [430, 215], N_F2: [480, 325], N_TERM: [560, 222], N_LED: [140, 84] };
-  g += '<g class="wire">';
-  Object.keys(WIRES).forEach((net) => {
-    const on = HL.includes(net);
-    g += WIRES[net].map((w) => '<line' + (on ? ' class="on" style="stroke:' + (net === "GND" ? "var(--ink)" : NET_COLOR[net]) + '"' : "") + ' x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>').join("");
-  });
-  g += "</g>";
-  g += dot(140, 40) + dot(200, 40) + dot(430, 170) + dot(560, 170) + dot(480, 280) + dot(560, 280);
-  const gOn = HL.includes("GND");
-  const gndH = (x, y) => gnd(x, y).replace('<g class="gnd">', '<g class="gnd' + (gOn ? " on" : "") + '">');
-  g += gndH(82, 262) + gndH(300, 318) + gndH(652, 330);
-  /* J1, J2 connectors */
-  g += comp("J1", '<rect class="body" x="20" y="110" width="50" height="160" rx="3"/>' + txt(45, 102, "J1", "ref", "middle") +
-    [["1", "VDD", 130], ["2", "TXD", 170], ["3", "RXD", 210], ["4", "GND", 250]].map((p) => txt(28, p[2] + 4, p[0], "pin") + txt(64, p[2] + 4, p[1], "pinr", "end")).join(""));
-  g += comp("J2", '<rect class="body" x="640" y="150" width="50" height="185" rx="3"/>' + txt(665, 142, "J2", "ref", "middle") +
-    [["1", "CAN_H", 170], ["2", "CAN_L", 280], ["3", "GND", 315]].map((p) => txt(683, p[2] + 4, p[0], "pin", "end") + txt(645, p[2] + 4, p[1], "pinl")).join(""));
-  /* U1 */
-  g += comp("U1", '<rect class="body" x="260" y="120" width="120" height="180" rx="3"/>' + txt(320, 205, "U1", "ref", "middle") + txt(320, 220, "MCP2551", "val", "middle") +
-    txt(266, 174, "1 TXD", "pinl") + txt(266, 214, "4 RXD", "pinl") + txt(266, 254, "8 RS", "pinl") + txt(320, 136, "3 VDD", "pin", "middle") +
-    txt(374, 174, "CANH 7", "pinr", "end") + txt(374, 284, "CANL 6", "pinr", "end") + txt(300, 294, "2 VSS", "pin", "middle") + txt(352, 294, "5 VREF", "pin", "middle") +
-    ln(352, 300, 352, 312) + '<path class="nc" d="M346,306 l12,12 M358,306 l-12,12"/>');
-  /* passives */
-  g += comp("LED1", ln(140, 52, 140, 60) + '<path class="body" d="M131,60 h18 l-9,14 z"/>' + ln(131, 74, 149, 74) + ln(140, 74, 140, 84) +
-    '<path class="arrow" d="M151,62 l9,-6 M155,56 l5,0 l0,5 M153,70 l9,-6 M157,64 l5,0 l0,5"/>' + txt(112, 70, "LED1", "ref", "end") + txt(112, 82, "verde", "val", "end"));
-  g += res("R5", "1 kΩ", 140, 84, 140);
-  g += gndH(140, 140);
-  g += cap("C3", "100 nF", 200, 56, 104) + gndH(200, 104);
-  g += res("R3", "4,7 kΩ", 225, 250, 300) + gndH(225, 300);
-  g += res("R1", "100 Ω", 430, 180, 215) + cap("C1", "560 pF", 430, 215, 237) + gndH(430, 237);
-  g += res("R2", "100 Ω", 480, 290, 325) + cap("C2", "560 pF", 480, 325, 347) + gndH(480, 347);
-  g += res("R4", "120 Ω", 560, 180, 222);
-  g += comp("JP1", ln(560, 222, 560, 230) + '<circle class="pinc" cx="560" cy="234" r="4"/><circle class="pinc" cx="560" cy="252" r="4"/><rect class="jbar" x="553" y="229" width="14" height="28" rx="3"/>' + ln(560, 256, 560, 280) + txt(574, 247, "JP1", "ref"));
-  /* net labels */
-  g += txt(210, 34, "VDD", "net") + txt(160, 165, "TXD", "net") + txt(160, 205, "RXD", "net") + txt(232, 245, "RS", "net") +
-    txt(600, 165, "CANH", "net") + txt(600, 275, "CANL", "net") + txt(422, 219, "N_F1", "netsm", "end") + txt(472, 329, "N_F2", "netsm", "end") + txt(552, 226, "N_TERM", "netsm", "end") + txt(146, 90, "N_LED", "netsm");
-  /* test points chosen by the student */
-  Object.keys(SPOTS).forEach((net) => { if (!HL.includes(net)) return; const p = SPOTS[net]; g += '<circle class="nethl" cx="' + p[0] + '" cy="' + p[1] + '" r="7" style="stroke:' + NET_COLOR[net] + '"/>'; });
-  const SCH_PIN = {
-    "J1:1": [70, 130], "J1:2": [70, 170], "J1:3": [70, 210], "J1:4": [70, 250], "J2:1": [640, 170], "J2:2": [640, 280], "J2:3": [640, 315],
-    "U1:1": [260, 170], "U1:4": [260, 210], "U1:8": [260, 250], "U1:3": [320, 120], "U1:7": [380, 170], "U1:6": [380, 280], "U1:2": [300, 300],
-    "LED1:A": [140, 52], "LED1:K": [140, 84], "R5:1": [140, 84], "R5:2": [140, 140], "C3:1": [200, 56], "C3:2": [200, 104], "R3:1": [225, 250], "R3:2": [225, 300],
-    "R1:1": [430, 180], "R1:2": [430, 215], "C1:1": [430, 215], "C1:2": [430, 237], "R2:1": [480, 290], "R2:2": [480, 325], "C2:1": [480, 325], "C2:2": [480, 347],
-    "R4:1": [560, 180], "R4:2": [560, 222], "JP1:1": [560, 222], "JP1:2": [560, 280]
-  };
-  /* two pins at the same point (R5/LED1, R1/C1...): the selected part's pin wins, so draw the others first */
-  Object.keys(SCH_PIN).sort((a, b) => (a.split(":")[0] === selRef) - (b.split(":")[0] === selRef)).forEach((k) => {
-    const pt = SCH_PIN[k], ref = k.split(":")[0];
-    g += '<circle class="pinhit' + (S.pin === k ? " on" : "") + (ref === selRef ? " own" : "") + '" data-pin="' + k + '" cx="' + pt[0] + '" cy="' + pt[1] + '" r="6"><title>' + k.replace(":", " ") + "</title></circle>";
-  });
-  const TP_SCH = { VDD: [260, 40], TXD: [120, 170], RXD: [120, 210], RS: [245, 250], CANH: [520, 170], CANL: [520, 280], GND: [300, 318], N_F1: [430, 215], N_F2: [480, 325], N_TERM: [560, 222], N_LED: [140, 84] };
-  Object.keys(TP_SCH).forEach((n) => { if (!S.tps[n]) return; const p = TP_SCH[n]; g += '<g class="tps"><circle cx="' + p[0] + '" cy="' + p[1] + '" r="5"/><text x="' + (p[0] + 7) + '" y="' + (p[1] - 6) + '">TP</text></g>'; });
-  return '<svg class="sch' + (HL.length ? " hl" : "") + '" viewBox="0 0 700 372" role="img" aria-label="' + t("schematic") + '">' + g + "</svg>";
+  return PCB.sch({ sel: selRef, refs: refsInVariant, hl: hlNets(), pin: S.pin, tps: S.tps, label: t("schematic"), ledColor: LANG === "ro" ? "verde" : "green" });
 }
 
 /* ---------------------------------------------------------------- rendering */
@@ -851,18 +627,14 @@ function dCell(v, why) {
 function apCell(ap) { return '<td class="num"><span class="ap ' + (ap || "na") + '">' + (ap || "–") + "</span></td>"; }
 function refTables() {
   const sev = '<table class="mini"><tr><th>' + t("colClass") + "</th><th>S</th><th></th></tr>" + SEVERITY.map((x) => '<tr><td class="c">' + x[0] + '</td><td class="c">' + x[1] + "</td><td>" + esc(tr(x[2])) + "</td></tr>").join("") + "</table>";
-  const scale = '<table class="mini"><tr><th>S</th><th></th></tr>' + SEV_SCALE.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + '</table><p class="muted" style="margin-top:6px;font-size:0.85rem">' + esc(t("occNote")) + "</p>";
-  const occ = '<table class="mini"><tr><th>O</th><th></th></tr>' + OCC.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + '</table><p class="muted" style="margin-top:6px;font-size:0.85rem">' + esc(t("occNote")) + "</p>";
-  const ft = '<table class="mini">' + FT_TESTS.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") +
-    (S.newTests || []).map((x) => '<tr><td class="c">' + esc(x.id) + "</td><td>" + esc(x.desc) + ' <span class="chip neutral">' + esc(t("newTag")) + "</span></td></tr>").join("") + "</table>";
-  const c9 = '<ul style="margin:0;padding-left:1.1em;font-size:0.9rem">' + t("c9").map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>";
-  const apRows = ["9-10", "7-8", "4-6", "2-3", "1"].map((sb) => ["8-10", "6-7", "4-5", "2-3", "1"].map((ob) => "<tr><td class=\"c\">S " + sb + '</td><td class="c">O ' + ob + "</td>" +
-    AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("")).join("");
-  const ap = '<table class="mini"><tr><th>S</th><th>O</th><th>D 7–10</th><th>D 5–6</th><th>D 2–4</th><th>D 1</th></tr>' + apRows + "</table>";
-  const det = '<table class="mini"><tr><th>D</th><th></th></tr>' + DET_SCALE.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + '</table><p class="muted" style="margin-top:6px;font-size:0.85rem">' + esc(t("detNote")) + "</p>";
-  return [["sevTitle", sev, true], ["sevScaleTitle", scale, false], ["occTitle", occ, false], ["detTitle", det, false], ["apTitle", ap, false]]
-    .map((x) => '<details class="ref"' + (x[2] ? " open" : "") + "><summary>" + esc(t(x[0])) + "</summary><div>" + x[1] + "</div></details>").join("");
+  const tabs = [["sevTitle", sev, true], ["sevScaleTitle", AIAG.table("S", LANG, esc), false], ["occTitle", AIAG.table("OP", LANG, esc), false],
+    ["detTitle", AIAG.table("D", LANG, esc), false], ["apTitle", AIAG.table("AP", LANG, esc), false]];
+  const prov = '<table class="prov">' + t("prov").map((x) => "<tr><th>" + esc(x[0]) + "</th><td>" + esc(x[1]) + "</td></tr>").join("") + "</table>";
+  return tabs.map((x) => '<details class="ref"' + (x[2] ? " open" : "") + "><summary>" + esc(t(x[0])) + "</summary><div>" + x[1] + "</div></details>").join("") +
+    '<details class="ref"><summary>' + esc(t("provTitle")) + "</summary><div>" + prov + "</div></details>";
 }
+const TIP = (k) => { const x = t("tips"); return x && x[k] ? x[k] : ""; };
+const thT = (k) => '<th title="' + esc(TIP(k)) + '">' + t(k) + "</th>";
 function ftPanel() {
   const rows = FT_LIST.map((x) => '<tr><td class="mono"><b>' + x.id + "</b></td><td>" + esc(tr(x.name)) + "</td><td>" + esc(tr(x.meas)) + "</td><td>" + esc(tr(x.lim)) + "</td><td>" + esc(tr(x.catches)) + "</td></tr>").join("") +
     (S.newTests || []).map((x) => '<tr><td class="mono"><b>' + esc(x.id) + '</b></td><td colspan="3">' + esc(x.desc) + ' <span class="chip neutral">' + esc(t("newTag")) + "</span></td><td>–</td></tr>").join("");
@@ -909,15 +681,16 @@ function renderAnalysis(view) {
     const na = n === "VREF";
     return '<label class="' + (S.tps[n] ? "on" : "") + (na ? " na" : "") + '"><input type="checkbox" data-tp="' + n + '"' + (S.tps[n] ? " checked" : "") + (na ? " disabled" : "") + "> " + n + (na ? " (" + t("nc") + ")" : "") + "</label>";
   }).join("") + "</div>";
-  const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>" + t("colS") + "</th><th>" + t("colO") +
-    "</th><th>" + t("colAOI") + "</th><th>" + t("colAXI") + "</th><th>" + t("colICT") + "</th><th>" + t("colFT") + "</th>" + (hasNew ? "<th>" + t("colFTnew") + "</th>" : "") +
-    "<th>" + t("colD") + "</th><th>" + t("colAP") + "</th><th>" + t("colAP0") + "</th><th>" + t("colRA") + "</th></tr>";
+  const head = "<tr><th>#</th>" + ["colComp", "colMode", "colEffect", "colClass", "colS", "colO", "colAOI", "colAXI", "colICT", "colFT"].map(thT).join("") + (hasNew ? thT("colFTnew") : "") +
+    ["colD", "colAP", "colAP0", "colRA"].map(thT).join("") + "</tr>";
   const body = idxs.map((i, k) => {
     const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
     const sel = (name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"><option value="">' + t("choose") + "</option>" +
       opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
-    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const dOpts = DET_SCALE.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[1])]);
+    const dOpts = AIAG.D.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[1]) + (tr(x[3]) ? " · " + tr(x[3]) : "")]);
+    const oOpts = AIAG.OP.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[2])]);
+    const pv = prevOf(r.m);
+    const oHint = '<span class="why" title="' + esc(t("prevTip")) + '">' + esc(t("prevTyp")) + ": " + esc(tr(pv[0])) + (isDemo() ? " → O " + pv[1] : "") + "</span>";
     const c9opts = dOpts;
     const ftCell = '<td><div class="ftc">' + sel("fttest", FT_LIST.map((x) => [x.id, x.id + " · " + tr(x.name)]).concat([["none", t("ftNone")]]), u.fttest, t("colFTtest")) +
       (u.fttest && u.fttest !== "none" ? sel("ft", dOpts, u.ft, t("colFTd")) : "") +
@@ -928,17 +701,20 @@ function renderAnalysis(view) {
         '<textarea data-ra="' + i + '" placeholder="' + esc(t("raPh")) + '" aria-label="' + esc(t("raPh")) + '">' + esc(u.ra || "") + "</textarea></td>"
       : '<td class="num muted">–</td>';
     return '<tr class="' + (S.sel === r.m.ref ? "sel" : "") + '"><td class="num">' + (k + 1) + '</td><td class="ref" data-sel="' + r.m.ref + '">' + esc(r.m.ref) + '<span class="why">' + esc(r.m.pin === "–" ? "" : r.m.pin) + "</span></td>" +
-      "<td>" + esc(r.m.mode) + '</td><td class="eff">' + esc(r.m.effect) + "</td>" +
-      "<td>" + sel("cls", SEVERITY.map((x) => x[0]), u.cls) + '</td><td class="num">' + (r.s || "–") + "</td><td>" + sel("o", nums, u.o) + "</td>" +
+      "<td>" + esc(modeTxt(r.m)) + '</td><td class="eff">' + esc(effTxt(r.m)) + "</td>" +
+      "<td>" + sel("cls", SEVERITY.map((x) => x[0]), u.cls) + '</td><td class="num">' + (r.s || "–") + '</td><td class="oc">' + sel("o", oOpts, u.o, "O") + oHint + "</td>" +
       dCell(r.det.aoi, r.det.aoiWhy) + dCell(r.det.axi, r.det.axiWhy) + dCell(r.det.ict, r.det.ictWhy) +
       ftCell + ftNewCell + '<td class="num">' + (r.d || "–") + "</td>" + apCell(r.ap) + apCell(r0.ap) + raCell + "</tr>";
   }).join("");
   const testsPanel = '<div class="stack"><h3>' + t("newTestsTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("newTestsHint") + "</p>" +
     ((S.newTests || []).length ? '<ul class="tests">' + S.newTests.map((x) => '<li><span class="mono">' + esc(x.id) + "</span><span>" + esc(x.desc) + '</span><button class="x" type="button" data-rmtest="' + esc(x.id) + '" aria-label="' + esc(t("del")) + '">×</button></li>').join("") + "</ul>" : "") +
     '<form class="addtest" id="addTest"><input id="newTestDesc" placeholder="' + esc(t("newTestPh")) + '" aria-label="' + esc(t("newTestsTitle")) + '"><button class="btn" type="submit">' + t("addTest") + "</button></form></div>";
-  const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
+  const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '" title="' + esc(TIP(Object.keys(I18N[LANG]).find((k) => I18N[LANG][k] === label) || "")) + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
   view.innerHTML =
     '<div class="row" style="justify-content:space-between"><h2>' + t("sheet") + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
+    '<div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(t("ctx")) + "</p></div>" +
+    '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + t("howTitle") + '</summary><ol class="task">' + t("how").map((x) => "<li>" + esc(x) + "</li>").join("") +
+      (isDemo() ? "<li><b>" + esc(t("howDemo")) + "</b></li>" : "") + "</ol></details>" +
     '<div class="grid2"><div class="panel stack"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side === "bottom") + '">' + t("bottom") + '</button><button type="button" id="sideSch" aria-pressed="' + (S.side === "sch") + '">' + t("schematic") + "</button></div></div>" +
       '<div id="boardBox">' + (S.side === "sch" ? schSVG(S.sel, refs) : boardSVG(S.side === "top", S.sel, refs)) + "</div>" +
       connPanel() +
@@ -1013,11 +789,11 @@ function buildReport() {
   const head = "<tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th><th>" + t("colEffect") + "</th><th>" + t("colClass") + "</th><th>S</th><th>O</th><th>AOI</th><th>AXI</th><th>ICT</th><th>" + t("colFT") + "</th><th>" + t("colFTnew") + "</th><th>D</th><th>AP</th><th>" + t("colAP0") + "</th><th>" + t("raCol") + "</th></tr>";
   const rows = idxs.map((i, k) => {
     const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
-    text.push((k + 1) + ". " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " | " + r.m.mode + " | " + r.m.effect + " | " + (u.cls || "–") + " S=" + (r.s || "–") + " O=" + (r.o || "–") +
+    text.push((k + 1) + ". " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " | " + modeTxt(r.m) + " | " + effTxt(r.m) + " | " + (u.cls || "–") + " S=" + (r.s || "–") + " O=" + (r.o || "–") +
       " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft0 || "–") + " (" + ftLabel(u) + (u.ftj ? ": " + u.ftj : "") + ")" + (r.ftN ? " FTnew=" + r.ftN + " (" + u.nfttest + ")" : "") + " | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")" +
       (needsRA(r.ap) ? " | RA: " + (u.rad ? t(u.rad === "acc" ? "raAcc" : "raAct") : "–") + " – " + (u.ra || "–") : ""));
     const raTxt = needsRA(r.ap) ? (u.rad ? "<b>" + esc(t(u.rad === "acc" ? "raAcc" : "raAct")) + "</b><br>" : "") + esc(u.ra || "–") : "–";
-    return "<tr><td>" + (k + 1) + "</td><td>" + esc(r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin)) + "</td><td>" + esc(r.m.mode) + "</td><td>" + esc(r.m.effect) + "</td><td>" + esc(u.cls || "–") + "</td><td>" + (r.s || "–") +
+    return "<tr><td>" + (k + 1) + "</td><td>" + esc(r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin)) + "</td><td>" + esc(modeTxt(r.m)) + "</td><td>" + esc(effTxt(r.m)) + "</td><td>" + esc(u.cls || "–") + "</td><td>" + (r.s || "–") +
       "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(ftLabel(u)) + " · " + (r.ft0 || "–") + (u.ftj ? "<br><i>" + esc(u.ftj) + "</i>" : "") + "</td><td>" + (r.ftN ? esc(u.nfttest) + " · " + r.ftN : "–") + "</td><td>" + (r.d || "–") +
       '</td><td class="ap-' + (r.ap || "na") + '">' + (r.ap || "–") + "</td><td>" + (r0.ap || "–") + "</td><td>" + raTxt + "</td></tr>";
   }).join("");
@@ -1032,10 +808,25 @@ function buildReport() {
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>HW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
   return { html: html, body: parts.join("\n"), text: text.join("\n") };
 }
+function checks() {
+  const out = [];
+  V().forEach((i, k) => {
+    const r = evalRow(i, ENV_NOW()); const u = S.rows[i] || {};
+    const n = "#" + (k + 1) + " " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " · " + modeTxt(r.m);
+    const f = (key, extra) => out.push(fmtT(key, Object.assign({ n: n }, extra || {})));
+    if (!u.cls) f("c_cls"); if (!u.o) f("c_o");
+    if (!u.fttest) f("c_ft"); else if (u.fttest !== "none" && !u.ft) f("c_ftd");
+    if (u.fttest && !(u.ftj || "").trim()) f("c_ftj");
+    if (needsRA(r.ap)) { if (!u.rad) f("c_ra", { ap: r.ap }); else if (!(u.ra || "").trim()) f("c_raTxt"); }
+  });
+  if (!(S.conclusion || "").trim()) out.push(t("c_concl"));
+  return out;
+}
 function renderReport(view) {
   const r = buildReport();
+  const ck = checks();
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + t("download") +
-    '</button><button class="btn" id="cp" type="button">' + t("copy") + '</button></div></div><p class="muted">' + t("reportHint") + '</p><div id="sendBox"></div><div class="report-frame">' + r.body + '</div><textarea id="reportText" readonly hidden></textarea>';
+    '</button><button class="btn" id="cp" type="button">' + t("copy") + '</button></div></div><p class="muted">' + t("reportHint") + '</p><div class="panel stack"><h3>' + t("chkTitle") + "</h3>" + (ck.length ? '<ul class="checks">' + ck.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : '<p class="muted">' + t("chkOk") + "</p>") + '</div><div id="sendBox"></div><div class="report-frame">' + r.body + '</div><textarea id="reportText" readonly hidden></textarea>';
   if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "HW-TCA", lang: LANG, getPayload: () => {
     const x = buildReport(); const s = summary(ENV_NOW());
     return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text,
