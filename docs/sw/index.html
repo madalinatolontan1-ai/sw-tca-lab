@@ -187,6 +187,10 @@ table.tests tr.warnrow td div { background: var(--warn-bg); border-radius: 4px; 
 .bar > i { display: block; height: 100%; background: var(--warn); }
 .meter.full .bar > i { background: var(--ok); }
 .meter.full .val { color: var(--ok); }
+.meter.part .val { color: var(--warn); }
+.meter.zero .val { color: var(--bad); }
+.meter.zero { border-color: var(--bad); }
+.thrwarn { border: 1px solid var(--warn); background: var(--warn-bg); color: var(--text); border-radius: var(--radius); padding: 10px 14px; margin: 12px 0 0; font-size: 0.92rem; }
 .findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
 .findings ul { margin: 6px 0 0; padding-left: 1.1em; font-size: 0.9rem; display: flex; flex-direction: column; gap: 3px; }
 table.tt { border-collapse: collapse; font-family: var(--font-mono); font-size: 0.82rem; margin-top: 6px; }
@@ -264,7 +268,7 @@ const I18N = {
     colId: "Test", colExpected: "Rezultat așteptat", colReq: "Cerință", colActual: "Rezultat obținut", colVerdict: "Verdict",
     pass: "PASS", fail: "FAIL", noExp: "fără așteptat", invalid: "intrare invalidă",
     results: "Rezultatul rulării", notRun: "Testele nu au fost încă rulate. Apasă „Rulează testele”.",
-    mStmt: "Statement", mDec: "Decizii (branch)", mMcdc: "MC/DC (condiții)", mReq: "Cerințe testate",
+    mStmt: "Statement", mDec: "Decizii (branch)", mMcdc: "MC/DC (condiții)", mReq: "Cerințe cu cel puțin un test",
     mFunc: "Funcții apelate", mCall: "Apeluri executate",
     uncoveredLines: "Instrucțiuni neexecutate", missingOutcomes: "Rezultate de decizie lipsă", mcdcTitle: "MC/DC: tabel de adevăr",
     reqMissing: "Cerințe fără test valid", none: "niciuna",
@@ -272,6 +276,8 @@ const I18N = {
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). Rezultatul așteptat contrazice cerințele, deci cauza probabilă e specificația testului: corectează testul, nu codul.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomalie, ISO 26262-2, 5.4.3.2). Rezultatul așteptat respectă cerințele, dar codul dă altceva, deci cauza probabilă e obiectul testat: completează raportul de incident.",
     ctxTitle: "Context: ce face funcția", howTitle: "Cum se face", provTitle: "De unde vin valorile",
+    thrWarn: "Acoperirea codului e completă, dar testarea nu e: {n} din {m} praguri nu au ambele teste (exact la limită și imediat peste). Greșelile de tip > în loc de >= stau exact acolo, iar acoperirea nu le poate vedea.",
+    thrWarnF3: "Greșeala variantei tale este în această funcție.",
     thrHidden: "Pe varianta voastră aplicația arată doar câte praguri sunt testate complet. Care sunt pragurile și ce valori testați la limită și imediat peste le scoateți din cerințe.",
     histTitle: "Istoricul lucrului", histNote: "Pentru fiecare funcție: de câte ori s-au rulat testele, câte versiuni de test au primit avertisment pe parcurs și câte avertismente au rămas la final.", histResets: "Reporniri de la zero în acest browser",
     histRuns: "Rulări", histWarned: "Versiuni de test cu avertisment, cumulat", histLeft: "Avertismente rămase",
@@ -325,7 +331,7 @@ const I18N = {
     colId: "Test", colExpected: "Expected result", colReq: "Requirement", colActual: "Actual result", colVerdict: "Verdict",
     pass: "PASS", fail: "FAIL", noExp: "no expected", invalid: "invalid input",
     results: "Run result", notRun: "The tests have not been run yet. Press “Run tests”.",
-    mStmt: "Statement", mDec: "Decision (branch)", mMcdc: "MC/DC (conditions)", mReq: "Requirements tested",
+    mStmt: "Statement", mDec: "Decision (branch)", mMcdc: "MC/DC (conditions)", mReq: "Requirements with a test",
     mFunc: "Functions called", mCall: "Calls executed",
     uncoveredLines: "Statements not executed", missingOutcomes: "Missing decision outcomes", mcdcTitle: "MC/DC: truth table",
     reqMissing: "Requirements without a valid test", none: "none",
@@ -333,6 +339,8 @@ const I18N = {
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). The expected result contradicts the requirements, so the probable cause is the test specification: fix the test, not the code.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomaly, ISO 26262-2, 5.4.3.2). The expected result follows the requirements, but the code returns something else, so the probable cause is the test object: fill in the incident report.",
     ctxTitle: "Context: what the function does", howTitle: "How to do it", provTitle: "Where the values come from",
+    thrWarn: "Code coverage is complete, but testing is not: {n} of {m} thresholds do not have both tests (exactly at the limit and just beyond). Defects like > instead of >= sit exactly there, and coverage cannot see them.",
+    thrWarnF3: "The defect of your variant is in this function.",
     thrHidden: "On your variant the app shows only how many thresholds are fully tested. Which thresholds there are, and which values to test at and just beyond the limit, you derive from the requirements.",
     histTitle: "Work history", histNote: "For every function: how many times the tests were run, how many test versions drew a warning along the way, and how many warnings remain at the end.", histResets: "Start-overs in this browser",
     histRuns: "Runs", histWarned: "Test versions with a warning, cumulative", histLeft: "Warnings remaining",
@@ -1235,7 +1243,8 @@ function renderTests(exKey, an) {
 
 function meter(label, frac, tipKey) {
   const pct = frac[1] ? Math.round(100 * frac[0] / frac[1]) : 0;
-  return '<div class="meter' + (frac[1] && frac[0] === frac[1] ? " full" : "") + '"' + (tipKey ? ' title="' + tip(tipKey) + '"' : "") + '><span class="label">' + esc(label) + '</span>' +
+  const st = !frac[1] ? "" : frac[0] === frac[1] ? " full" : frac[0] === 0 ? " zero" : " part";
+  return '<div class="meter' + st + '"' + (tipKey ? ' title="' + tip(tipKey) + '"' : "") + '><span class="label">' + esc(label) + '</span>' +
     '<span class="val">' + pct + '%</span><div class="bar"><i style="width:' + pct + '%"></i></div><span class="frac">' + frac[0] + " / " + frac[1] + "</span></div>";
 }
 
@@ -1259,7 +1268,17 @@ function renderResults(exKey, an) {
     html += meter(t("mFunc"), [ex.funcs.filter((f) => an.funcs.has(f)).length, ex.funcs.length], "mFunc");
     html += meter(t("mCall"), [ex.calls.filter((c) => an.calls.has(c[0])).length, ex.calls.length], "mCall");
   }
-  html += '</div><p class="muted" style="font-size:0.8rem;margin:0">' + esc(t("target")) + "</p>";
+  html += "</div>";
+  /* coverage complete but limits not: the most misleading state, say it plainly */
+  if (an.thr) {
+    const done = an.thr.filter((x) => x.at && x.over).length;
+    const covFull = an.stmt[0] === an.stmt[1] && an.dec[0] === an.dec[1];
+    if (done < an.thr.length && covFull) {
+      html += '<p class="thrwarn">⚠ ' + esc(t("thrWarn").replace("{n}", an.thr.length - done).replace("{m}", an.thr.length)) +
+        (!isDemo() && exKey === "f3" ? " " + esc(t("thrWarnF3")) : "") + "</p>";
+    }
+  }
+  html += '<p class="muted" style="font-size:0.8rem;margin:8px 0 0">' + esc(t("target")) + "</p>";
   const unl = an.stmtLines.filter((n) => an.hits[n] === 0);
   const miss = [];
   an.decisions.forEach((d) => d.missing.forEach((o) => miss.push(t("line") + " " + d.line + ": " + (o === true ? "true" : o === false ? "false" : o))));
