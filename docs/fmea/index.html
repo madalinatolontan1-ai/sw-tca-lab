@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../shared/pcb.css">
 <style>
 /* Layout: FMEA workbench in the APIS spirit. Header with student/variant; one tab per analysis (HW signal, SW function);
    inside each, three steps: structure + functions, failure net (effects | modes | causes, linked by dragging), risk + optimization. */
@@ -193,6 +194,22 @@ pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line);
 .ap.M { background: var(--warn-bg); color: var(--warn); }
 .ap.L { background: var(--ok-bg); color: var(--ok); }
 .ap.na { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+.seg button { border: 0; background: transparent; padding: 0 10px; height: 32px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.netchip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; background: var(--surface); color: var(--ink); }
+.netchip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.netchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.boardbox { max-width: 1000px; }
+.ctxbox { border-left: 3px solid var(--accent); }
+.ctxbox p { margin-top: 4px; max-width: 110ch; }
+details.help summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }
+details.help ol.task { margin: 10px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+table.aiag td { vertical-align: top; font-size: 0.8rem; }
+.aiagnote { font-size: 0.78rem; margin-top: 6px; }
+table.prov { border-collapse: collapse; font-size: 0.85rem; }
+table.prov th { text-align: left; vertical-align: top; padding: 4px 8px 4px 0; white-space: nowrap; }
+table.prov td { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.rate select, .fcard .meta select { max-width: 13em; }
 details.ref { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 details.ref > summary { cursor: pointer; padding: 10px 14px; font-family: var(--font-display); font-weight: 600; }
 details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
@@ -243,6 +260,8 @@ details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
 <main><div class="wrap" id="view"></div></main>
 <div class="toast" id="toast" hidden></div>
 
+<script src="../shared/pcb.js"></script>
+<script src="../shared/aiag.js"></script>
 <script src="../report-config.js"></script>
 <script src="../report-send.js"></script>
 <script>
@@ -284,7 +303,7 @@ const HW_SIGNALS = {
   },
   CAN: {
     name: L("Semnalul diferențial CANH / CANL", "CANH / CANL differential signal"),
-    path: L("U1 pin 7 CANH și pin 6 CANL → J2 pin 1 și 2; rețele RC R1/C1 (CANH) și R2/C2 (CANL), 100 Ω / 560 pF spre GND.", "U1 pin 7 CANH and pin 6 CANL → J2 pins 1 and 2; RC networks R1/C1 (CANH) and R2/C2 (CANL), 100 Ω / 560 pF to GND."),
+    path: L("U1 pin 7 CANH și pin 6 CANL → pereche diferențială pe placă → J2 pin 1 și 2. Rețelele RC R1/C1 și R2/C2 sunt pe aceleași linii, dar se analizează separat (demo F0).", "U1 pin 7 CANH and pin 6 CANL → differential pair on the board → J2 pins 1 and 2. The RC networks R1/C1 and R2/C2 sit on the same lines but are analysed separately (demo F0)."),
     reqs: [
       ["HWR-CAN-01", L("Recesiv: CANH și CANL în jur de VDD/2 (2,0–3,0 V); dominant: tensiune diferențială 1,5–3,0 V pe sarcina de 60 Ω (ISO 11898-2).", "Recessive: CANH and CANL around VDD/2 (2.0–3.0 V); dominant: differential voltage 1.5–3.0 V on the 60 Ω load (ISO 11898-2).")],
       ["HWR-CAN-02", L("Fronturile semnalului permit comunicația la 500 kbit/s.", "The signal edges allow communication at 500 kbit/s.")],
@@ -310,6 +329,17 @@ const HW_SIGNALS = {
       ["HWR-TERM-02", L("Terminația acestui nod se activează cu JP1 doar dacă nodul e la capătul bus-ului.", "This node's termination is enabled with JP1 only if the node is at the end of the bus.")],
       ["HWR-TERM-03", L("R4 suportă puterea disipată în starea dominantă.", "R4 withstands the power dissipated in the dominant state.")],
       ["HWR-TERM-04", L("Reflexiile pe bus rămân suficient de mici pentru 500 kbit/s.", "Reflections on the bus stay small enough for 500 kbit/s.")]
+    ]
+  },
+  FILT: {
+    name: L("Filtrele RC de pe CANH / CANL", "RC filters on CANH / CANL"),
+    path: L("CANH → R1 100 Ω → N_F1 → C1 560 pF → GND; CANL → R2 100 Ω → N_F2 → C2 560 pF → GND. Rețelele sunt între U1 și J2, cu via de GND lângă C1 și C2.", "CANH → R1 100 Ω → N_F1 → C1 560 pF → GND; CANL → R2 100 Ω → N_F2 → C2 560 pF → GND. The networks sit between U1 and J2, with a GND via next to C1 and C2."),
+    reqs: [
+      ["HWR-FILT-01", L("Fiecare rețea RC atenuează perturbațiile de înaltă frecvență de pe linia ei (emisii și imunitate EMC).", "Each RC network attenuates the high-frequency disturbances on its line (EMC emissions and immunity).")],
+      ["HWR-FILT-02", L("Rețelele nu afectează comunicația la 500 kbit/s: fronturile și tensiunea diferențială dominantă (1,5–3,0 V) rămân conforme ISO 11898-2.", "The networks do not affect communication at 500 kbit/s: the edges and the dominant differential voltage (1.5–3.0 V) stay ISO 11898-2 compliant.")],
+      ["HWR-FILT-03", L("R1 = R2 și C1 = C2 (valoare, toleranță, dielectric), ca CANH și CANL să rămână simetrice; o asimetrie transformă zgomotul de mod comun în zgomot diferențial.", "R1 = R2 and C1 = C2 (value, tolerance, dielectric) so that CANH and CANL stay symmetrical; an asymmetry turns common-mode noise into differential noise.")],
+      ["HWR-FILT-04", L("C1 și C2 suportă tensiunile de pe bus, inclusiv supratensiunile din specificația senzorului, cu marjă (derating).", "C1 and C2 withstand the bus voltages, including the overvoltages in the sensor specification, with margin (derating).")],
+      ["HWR-FILT-05", L("C1 și C2 au retur scurt la GND (via lângă pad).", "C1 and C2 have a short return to GND (via next to the pad).")]
     ]
   }
 };
@@ -364,74 +394,179 @@ const SW_FUNCS = {
       ["SWR-INT-03", "A frame that is not accepted shall return RX_REJECTED."]] }
 };
 
+/* F0 = demo variant done together in the lab (SW part of F0 still to be settled) */
 const VARIANTS = {
+  F0: { hw: "FILT", sw: "F2", sig: "dist", demo: true },
   F1: { hw: "TXD", sw: "F3" }, F2: { hw: "RXD", sw: "F2", sig: "dist" }, F3: { hw: "VDD", sw: "F1" },
   F4: { hw: "CAN", sw: "INT" }, F5: { hw: "RS", sw: "F2", sig: "vrel" }, F6: { hw: "TERM", sw: "F2", sig: "lat" }
 };
 
 /* structure elements: level 1 effect, level 2 focus (mode), level 3 cause */
 const L1_NAME = L("Radar frontal (ASIL B)", "Front radar (ASIL B)");
-const HW_L3 = [["C1", L("Alegerea componentelor", "Component selection")], ["C2", L("Dimensionarea componentelor", "Component dimensioning")],
-  ["C3", L("Definiția semnalului (niveluri, temporizare)", "Signal definition (levels, timing)")], ["C4", L("Schema electrică", "Schematic")], ["C5", L("Layout PCB", "PCB layout")]];
+/* HW cause level (N3): the components on the analysed signal, plus its PCB traces (same drawing as HW TCA: ../shared/pcb.js).
+   Each element: ref (board / schematic), pins (pins on this signal), fn (function suggestions), fc (cause suggestions, design causes). */
+const HW_NETS = { TXD: ["TXD"], RXD: ["RXD"], VDD: ["VDD", "N_LED"], CAN: ["CANH", "CANL"], RS: ["RS"], TERM: ["N_TERM", "CANH", "CANL"], FILT: ["N_F1", "N_F2"] };
+const PCB_FN = L("Conduce semnalul între componente fără întreruperi și fără cuplaj cu alte semnale", "Carries the signal between the components without interruptions or coupling to other signals");
+const PCB_FC = [L("Lățimea traseului sau distanța față de alte trasee sub regulile de design (întrerupere sau scurt)", "Track width or clearance to other tracks below the design rules (open or short)"),
+  L("Traseu rutat lângă marginea plăcii (deteriorare la separarea panoului)", "Track routed next to the board edge (damage at depaneling)")];
+const HW_L3 = {
+  TXD: [
+    { ref: "J1", pins: ["2"], name: L("J1 pin 2 · conector spre MCU (TXD)", "J1 pin 2 · connector to the MCU (TXD)"),
+      fn: [L("Transmite TXD de la MCU la modul cu contact sigur, fără întreruperi la vibrații", "Carries TXD from the MCU to the module with a reliable contact, without interruptions under vibration"),
+        L("Respectă alocarea pinilor din interfața cu MCU (pin 2 = TXD)", "Follows the pin assignment of the MCU interface (pin 2 = TXD)")],
+      fc: [L("Alocarea pinilor J1 în schemă diferă de interfața MCU (TXD și RXD inversate)", "J1 pin assignment in the schematic differs from the MCU interface (TXD and RXD swapped)"),
+        L("Conector ales fără specificație de vibrații auto (contact intermitent)", "Connector chosen without an automotive vibration specification (intermittent contact)"),
+        L("Placarea contactelor nepotrivită (coroziune, rezistență de contact crescută)", "Unsuitable contact plating (corrosion, increased contact resistance)")] },
+    { ref: "U1", pins: ["1"], name: L("U1 MCP2551 pin 1 TXD", "U1 MCP2551 pin 1 TXD"),
+      fn: [L("Recunoaște nivelurile logice TXD ale MCU (VIL / VIH din datasheet)", "Recognises the TXD logic levels of the MCU (VIL / VIH from the datasheet)"),
+        L("Dezactivează driverele de bus la TXD dominant permanent (TXD timeout)", "Disables the bus drivers on a permanently dominant TXD (TXD timeout)")],
+      fc: [L("Transceiver ales cu praguri de intrare incompatibile cu logica MCU (MCU 3,3 V pe intrare de 5 V)", "Transceiver chosen with input thresholds incompatible with the MCU logic (3.3 V MCU on a 5 V input)"),
+        L("Variantă de temperatură greșită aleasă (I în loc de E, −40…+125 °C)", "Wrong temperature grade chosen (I instead of E, −40…+125 °C)"),
+        L("TXD flotant cât timp MCU e în reset (pull-up-ul intern nu e luat în calcul)", "TXD floating while the MCU is in reset (internal pull-up not taken into account)")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale TXD", "TXD PCB tracks"), fn: [PCB_FN],
+      fc: [L("Traseu TXD paralel și apropiat de CANH / CANL (diafonie)", "TXD track parallel and close to CANH / CANL (crosstalk)")].concat(PCB_FC) }
+  ],
+  RXD: [
+    { ref: "U1", pins: ["4"], name: L("U1 MCP2551 pin 4 RXD", "U1 MCP2551 pin 4 RXD"),
+      fn: [L("Generează nivelurile RXD (VOL / VOH) compatibile cu intrarea MCU", "Produces RXD levels (VOL / VOH) compatible with the MCU input"),
+        L("Reflectă starea bus-ului cu întârzierea din datasheet", "Follows the bus state with the delay given in the datasheet")],
+      fc: [L("Ieșire RXD de 5 V conectată la un MCU de 3,3 V fără adaptare de nivel", "5 V RXD output connected to a 3.3 V MCU without level shifting"),
+        L("Încărcare capacitivă prea mare pe RXD (fronturi lente)", "Too much capacitive load on RXD (slow edges)"),
+        L("Transceiver ales cu întârziere de buclă prea mare pentru 500 kbit/s", "Transceiver chosen with too long a loop delay for 500 kbit/s")] },
+    { ref: "J1", pins: ["3"], name: L("J1 pin 3 · conector spre MCU (RXD)", "J1 pin 3 · connector to the MCU (RXD)"),
+      fn: [L("Transmite RXD de la modul la MCU cu contact sigur", "Carries RXD from the module to the MCU with a reliable contact"),
+        L("Respectă alocarea pinilor din interfața cu MCU (pin 3 = RXD)", "Follows the pin assignment of the MCU interface (pin 3 = RXD)")],
+      fc: [L("Alocarea pinilor J1 în schemă diferă de interfața MCU (TXD și RXD inversate)", "J1 pin assignment in the schematic differs from the MCU interface (TXD and RXD swapped)"),
+        L("Conector ales fără specificație de vibrații auto (contact intermitent)", "Connector chosen without an automotive vibration specification (intermittent contact)")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale RXD", "RXD PCB tracks"), fn: [PCB_FN],
+      fc: [L("Traseu RXD lung, paralel cu CANH / CANL (zgomot cuplat pe RXD)", "Long RXD track parallel to CANH / CANL (noise coupled onto RXD)")].concat(PCB_FC) }
+  ],
+  VDD: [
+    { ref: "J1", pins: ["1"], name: L("J1 pin 1 · intrarea de 5 V", "J1 pin 1 · 5 V input"),
+      fn: [L("Aduce 5 V la modul cu cădere de tensiune neglijabilă la 75 mA", "Brings 5 V to the module with negligible voltage drop at 75 mA")],
+      fc: [L("Contact subdimensionat pentru curentul maxim", "Contact undersized for the maximum current"),
+        L("Fără protecție la inversarea polarității, deși pinii VDD / GND pot fi inversați la conectare", "No reverse-polarity protection although VDD / GND can be swapped at connection")] },
+    { ref: "U1", pins: ["3"], name: L("U1 MCP2551 pin 3 VDD", "U1 MCP2551 pin 3 VDD"),
+      fn: [L("Funcționează corect în domeniul 4,5–5,5 V", "Works correctly within 4.5–5.5 V"),
+        L("Pune driverele în înaltă impedanță sub pragul de brown-out", "Puts the drivers in high impedance below the brown-out threshold")],
+      fc: [L("Domeniul de alimentare al componentei nu acoperă toleranța sursei de 5 V", "The supply range of the part does not cover the tolerance of the 5 V source"),
+        L("Pragul de brown-out nu e verificat față de căderile de tensiune ale sursei", "The brown-out threshold is not checked against the source voltage drops")] },
+    { ref: "C3", pins: [], name: L("C3 100 nF · decuplare", "C3 100 nF · decoupling"),
+      fn: [L("Decuplează VDD lângă U1 (100 nF)", "Decouples VDD close to U1 (100 nF)"),
+        L("Suportă tensiunea de alimentare cu marjă (derating)", "Withstands the supply voltage with margin (derating)")],
+      fc: [L("Capacitate prea mică pentru vârfurile de curent din starea dominantă", "Capacitance too small for the current peaks in the dominant state"),
+        L("Dielectric nepotrivit (Y5V: pierde capacitate cu temperatura și tensiunea)", "Unsuitable dielectric (Y5V: loses capacitance with temperature and voltage)"),
+        L("Tensiune nominală prea mică (derating ignorat)", "Rated voltage too low (derating ignored)"),
+        L("MLCC plasat în zona de flexare a plăcii (fisuri → VDD la GND)", "MLCC placed in the board flex zone (cracks → VDD to GND)")] },
+    { ref: "LED1", pins: [], name: L("LED1 · indicator de alimentare", "LED1 · power indicator"),
+      fn: [L("Se aprinde cât timp VDD e prezent", "Lights while VDD is present")],
+      fc: [L("LED ales cu curent nominal sau tensiune directă nepotrivite", "LED chosen with unsuitable rated current or forward voltage"),
+        L("Anod și catod inversate în simbolul din schemă", "Anode and cathode swapped in the schematic symbol")] },
+    { ref: "R5", pins: [], name: L("R5 1 kΩ · limitarea curentului prin LED", "R5 1 kΩ · LED current limit"),
+      fn: [L("Limitează curentul prin LED1 la câțiva mA", "Limits the LED1 current to a few mA")],
+      fc: [L("Valoare R5 prea mică (consum crescut, LED supraîncărcat)", "R5 too small (higher current, LED overloaded)"),
+        L("Valoare R5 prea mare (LED prea slab, nu se vede)", "R5 too large (LED too dim to see)"),
+        L("Putere nominală R5 insuficientă", "R5 power rating insufficient")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale VDD", "VDD PCB tracks"),
+      fn: [L("Distribuie VDD cu cădere mică de tensiune și buclă de decuplare scurtă", "Distributes VDD with low voltage drop and a short decoupling loop")],
+      fc: [L("C3 plasat departe de pinul 3 al U1 (inductanță mare a buclei)", "C3 placed far from U1 pin 3 (high loop inductance)"),
+        L("Traseu VDD prea subțire pentru 75 mA", "VDD track too thin for 75 mA"),
+        L("Via spre VDD / GND insuficiente lângă C3", "Not enough VDD / GND vias close to C3")].concat(PCB_FC.slice(0, 1)) }
+  ],
+  CAN: [
+    { ref: "U1", pins: ["7", "6"], name: L("U1 MCP2551 pinii 7 CANH și 6 CANL", "U1 MCP2551 pins 7 CANH and 6 CANL"),
+      fn: [L("Generează dominantul (1,5–3,0 V diferențial pe 60 Ω) și recesivul (~VDD/2)", "Produces the dominant (1.5–3.0 V differential on 60 Ω) and the recessive level (~VDD/2)"),
+        L("Se protejează la scurtcircuit pe bus și la supratemperatură", "Protects itself against bus shorts and overtemperature")],
+      fc: [L("Transceiver ales fără conformitate ISO 11898-2 la 500 kbit/s", "Transceiver chosen without ISO 11898-2 conformance at 500 kbit/s"),
+        L("Protecție la tranzienți (ISO 7637) și ESD pe pinii de bus insuficientă pentru aplicație", "Transient (ISO 7637) and ESD protection on the bus pins insufficient for the application"),
+        L("Sarcina totală a bus-ului peste capacitatea driverelor (prea multe terminații)", "Total bus load above the driver capability (too many terminations)")] },
+    { ref: "J2", pins: ["1", "2"], name: L("J2 pinii 1 CAN_H și 2 CAN_L · conector bus", "J2 pins 1 CAN_H and 2 CAN_L · bus connector"),
+      fn: [L("Conectează CANH și CANL la cablajul vehiculului cu contact sigur", "Connects CANH and CANL to the vehicle harness with a reliable contact")],
+      fc: [L("CAN_H și CAN_L inversate față de cablajul vehiculului", "CAN_H and CAN_L swapped with respect to the vehicle harness"),
+        L("Conector fără blocare mecanică (se deconectează la vibrații)", "Connector without mechanical locking (disconnects under vibration)")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale CANH / CANL", "CANH / CANL PCB tracks"),
+      fn: [L("Rutează CANH și CANL ca pereche diferențială simetrică, cu lungimi egale", "Routes CANH and CANL as a symmetrical differential pair of equal lengths")],
+      fc: [L("Lungimi diferite pentru CANH și CANL (asimetrie, conversie mod comun → diferențial)", "Different CANH and CANL lengths (asymmetry, common-mode to differential conversion)"),
+        L("CANH și CANL rutate pe straturi diferite pe o porțiune (pereche ruptă, emisii)", "CANH and CANL routed on different layers over a section (broken pair, emissions)"),
+        L("Distanță prea mare între CANH și CANL (buclă mare, emisii)", "Too large a gap between CANH and CANL (large loop, emissions)")].concat(PCB_FC.slice(0, 1)) }
+  ],
+  RS: [
+    { ref: "U1", pins: ["8"], name: L("U1 MCP2551 pin 8 RS", "U1 MCP2551 pin 8 RS"),
+      fn: [L("Selectează modul după tensiunea / curentul de pe RS (high-speed, slope-control, standby)", "Selects the mode from the RS voltage / current (high-speed, slope-control, standby)")],
+      fc: [L("Pragurile RS din datasheet interpretate greșit (rezistor ales în afara zonei slope-control)", "RS thresholds in the datasheet misread (resistor chosen outside the slope-control range)")] },
+    { ref: "R3", pins: [], name: L("R3 4,7 kΩ · RS la GND", "R3 4.7 kΩ · RS to GND"),
+      fn: [L("Fixează modul slope-control, cu panta aleasă pentru EMC și 500 kbit/s", "Sets slope-control mode with the slope chosen for EMC and 500 kbit/s")],
+      fc: [L("Valoare R3 prea mare (pantă prea lentă pentru 500 kbit/s)", "R3 too large (slope too slow for 500 kbit/s)"),
+        L("Valoare R3 prea mică (practic high-speed, emisii mai mari)", "R3 too small (practically high-speed, higher emissions)"),
+        L("R3 lipsește din schemă (RS flotant, mod instabil)", "R3 missing from the schematic (floating RS, unstable mode)")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale RS", "RS PCB tracks"),
+      fn: [L("Conectează R3 aproape de pinul 8, cu retur scurt la GND", "Connects R3 close to pin 8 with a short return to GND")],
+      fc: [L("Traseu RS lung, sensibil la perturbații (mod instabil)", "Long RS track, sensitive to disturbances (unstable mode)")].concat(PCB_FC.slice(0, 1)) }
+  ],
+  TERM: [
+    { ref: "R4", pins: [], name: L("R4 120 Ω · rezistența de terminație", "R4 120 Ω · termination resistor"),
+      fn: [L("Asigură 120 Ω ±1 % între CANH și CANL când JP1 e închis", "Provides 120 Ω ±1 % between CANH and CANL when JP1 is closed"),
+        L("Suportă puterea disipată în starea dominantă, cu marjă", "Withstands the power dissipated in the dominant state, with margin")],
+      fc: [L("Valoare R4 greșită în BOM (12 Ω, 1,2 kΩ)", "Wrong R4 value in the BOM (12 Ω, 1.2 kΩ)"),
+        L("Putere nominală R4 prea mică (capsulă prea mică)", "R4 power rating too low (package too small)"),
+        L("Toleranță R4 prea mare", "R4 tolerance too wide")] },
+    { ref: "JP1", pins: [], name: L("JP1 · jumper de terminație", "JP1 · termination jumper"),
+      fn: [L("Conectează R4 la CANL doar la nodurile de la capătul bus-ului", "Connects R4 to CANL only on the nodes at the end of the bus")],
+      fc: [L("Jumper fără reținere sigură (se desprinde la vibrații)", "Jumper without reliable retention (comes off under vibration)"),
+        L("Poziția JP1 pentru fiecare variantă de montaj nu e specificată în documentație", "The JP1 position for each assembly variant is not specified in the documentation")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale terminației", "Termination PCB tracks"),
+      fn: [L("Leagă R4 și JP1 de CANH / CANL cu ramuri scurte", "Connects R4 and JP1 to CANH / CANL with short branches")],
+      fc: [L("Ramura de terminație lungă (stub, reflexii)", "Long termination branch (stub, reflections)")].concat(PCB_FC.slice(0, 1)) }
+  ],
+  FILT: [
+    { ref: "R1", pins: [], name: L("R1 100 Ω · filtrul RC pe CANH", "R1 100 Ω · RC filter on CANH"),
+      fn: [L("Amortizează rețeaua RC de pe CANH și limitează curentul prin C1", "Damps the RC network on CANH and limits the current through C1"),
+        L("Are aceeași valoare și toleranță ca R2 (simetrie)", "Has the same value and tolerance as R2 (symmetry)")],
+      fc: [L("Valoare R1 diferită de R2 în schemă sau în BOM", "R1 value different from R2 in the schematic or the BOM"),
+        L("Toleranță R1 prea mare (asimetrie față de R2)", "R1 tolerance too wide (asymmetry with R2)"),
+        L("Valoare R1 prea mică (rețeaua încarcă prea mult linia)", "R1 too small (the network loads the line too much)")] },
+    { ref: "C1", pins: [], name: L("C1 560 pF · filtrul RC pe CANH", "C1 560 pF · RC filter on CANH"),
+      fn: [L("Derivă spre GND perturbațiile de înaltă frecvență de pe CANH", "Shunts the high-frequency disturbances on CANH to GND"),
+        L("Suportă tensiunile de pe bus (tensiune nominală cu marjă)", "Withstands the bus voltages (rated voltage with margin)")],
+      fc: [L("Capacitate C1 prea mare (fronturi CANH prea lente pentru 500 kbit/s)", "C1 too large (CANH edges too slow for 500 kbit/s)"),
+        L("Capacitate C1 prea mică (atenuare EMC insuficientă)", "C1 too small (insufficient EMC attenuation)"),
+        L("Dielectric nepotrivit (X7R în loc de C0G: variație cu tensiunea și temperatura)", "Unsuitable dielectric (X7R instead of C0G: varies with voltage and temperature)"),
+        L("Tensiune nominală C1 prea mică (străpungere la supratensiune pe bus → CANH la GND prin R1)", "C1 rated voltage too low (breakdown on a bus overvoltage → CANH to GND through R1)")] },
+    { ref: "R2", pins: [], name: L("R2 100 Ω · filtrul RC pe CANL", "R2 100 Ω · RC filter on CANL"),
+      fn: [L("Amortizează rețeaua RC de pe CANL și limitează curentul prin C2", "Damps the RC network on CANL and limits the current through C2"),
+        L("Are aceeași valoare și toleranță ca R1 (simetrie)", "Has the same value and tolerance as R1 (symmetry)")],
+      fc: [L("Valoare R2 diferită de R1 în schemă sau în BOM", "R2 value different from R1 in the schematic or the BOM"),
+        L("Toleranță R2 prea mare (asimetrie față de R1)", "R2 tolerance too wide (asymmetry with R1)")] },
+    { ref: "C2", pins: [], name: L("C2 560 pF · filtrul RC pe CANL", "C2 560 pF · RC filter on CANL"),
+      fn: [L("Derivă spre GND perturbațiile de înaltă frecvență de pe CANL", "Shunts the high-frequency disturbances on CANL to GND"),
+        L("Are aceeași valoare, toleranță și dielectric ca C1 (simetrie)", "Has the same value, tolerance and dielectric as C1 (symmetry)")],
+      fc: [L("Capacitate C2 diferită de C1 (asimetrie, zgomotul de mod comun devine diferențial)", "C2 different from C1 (asymmetry, common-mode noise turns differential)"),
+        L("Capacitate C2 prea mare (fronturi CANL prea lente)", "C2 too large (CANL edges too slow)"),
+        L("Tensiune nominală C2 prea mică (străpungere → CANL la GND prin R2)", "C2 rated voltage too low (breakdown → CANL to GND through R2)")] },
+    { ref: "", pins: [], name: L("Traseele PCB ale filtrelor", "Filter PCB tracks"),
+      fn: [L("Leagă filtrele de CANH / CANL și de GND cu trasee scurte și simetrice", "Connects the filters to CANH / CANL and to GND with short, symmetrical tracks")],
+      fc: [L("Via de GND departe de C1 / C2 (inductanță mare, filtrare slabă la înaltă frecvență)", "GND via far from C1 / C2 (high inductance, poor filtering at high frequency)"),
+        L("Trasee diferite ca lungime spre cele două filtre (asimetrie)", "Different track lengths to the two filters (asymmetry)")].concat(PCB_FC.slice(0, 1)) }
+  ]
+};
 const SW_L3 = [["C1", L("Cerințele software (SWR)", "Software requirements (SWR)")], ["C2", L("Constante și parametri (#define)", "Constants and parameters (#define)")],
   ["C3", L("Logica de decizie (condiții, operatori)", "Decision logic (conditions, operators)")], ["C4", L("Tipuri de date și domenii de valori", "Data types and value ranges")],
   ["C5", L("Interfața (apeluri, valori returnate)", "Interface (calls, return values)")]];
 function elements(kind) {
   const v = VARIANTS[S.variant];
   const l2 = kind === "hw" ? HW_SIGNALS[v.hw].name : L("Funcția " + SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + SW_SIG[v.sig].lbl.ro : ""), "Function " + SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + SW_SIG[v.sig].lbl.en : ""));
-  const l3 = kind === "hw" ? HW_L3 : SW_L3;
-  return [{ id: "L1", lvl: 1, name: L1_NAME }, { id: "L2", lvl: 2, name: l2 }].concat(l3.map((x) => ({ id: x[0], lvl: 3, name: x[1] })));
+  const l3 = kind === "hw" ? HW_L3[v.hw].map((x) => ({ id: x.ref || "PCB", lvl: 3, name: x.name, ref: x.ref, pins: x.pins, fn: x.fn, fc: x.fc }))
+    : SW_L3.map((x) => ({ id: x[0], lvl: 3, name: x[1] }));
+  return [{ id: "L1", lvl: 1, name: L1_NAME }, { id: "L2", lvl: 2, name: l2 }].concat(l3);
 }
 
-/* rating tables: short paraphrase of the AIAG-VDA DFMEA scales (full tables in the course) */
-const SEV = [
-  [10, L("Afectează siguranța vehiculului, a ocupanților sau a altor participanți la trafic", "Affects safe operation of the vehicle, occupants or other road users")],
-  [9, L("Neconformitate cu reglementările", "Noncompliance with regulations")],
-  [8, L("Pierderea unei funcții principale a vehiculului", "Loss of a primary vehicle function")],
-  [7, L("Degradarea unei funcții principale a vehiculului", "Degradation of a primary vehicle function")],
-  [6, L("Pierderea unei funcții secundare", "Loss of a secondary vehicle function")],
-  [5, L("Degradarea unei funcții secundare", "Degradation of a secondary vehicle function")],
-  [4, L("Aspect, zgomot, vibrații sau haptică foarte deranjante", "Very objectionable appearance, sound, vibration or haptics")],
-  [3, L("Aspect, zgomot, vibrații sau haptică moderat deranjante", "Moderately objectionable appearance, sound, vibration or haptics")],
-  [2, L("Aspect, zgomot, vibrații sau haptică ușor deranjante", "Slightly objectionable appearance, sound, vibration or haptics")],
-  [1, L("Niciun efect perceptibil", "No discernible effect")]
-];
-const OCC = [
-  [10, L("Prima aplicare a unei tehnologii noi; fără experiență, standarde sau bune practici; prevenția nu poate prezice performanța", "First application of new technology; no experience, standards or best practices; prevention cannot predict performance")],
-  [9, L("Prima utilizare în firmă a unor inovații sau materiale noi; prevenția nu țintește cerințele", "First use in the company of innovations or new materials; prevention not targeted to the requirements")],
-  [8, L("Inovații folosite într-o aplicație nouă; puține standarde aplicabile; prevenția nu e un indicator fiabil", "Innovations used in a new application; few applicable standards; prevention is not a reliable indicator")],
-  [7, L("Design nou pe tehnologie similară, aplicație nouă; prevenția dă o indicație limitată", "New design on similar technology, new application; prevention gives a limited indication")],
-  [6, L("Similar cu designuri anterioare, condiții de utilizare modificate; standardele nu sunt suficiente", "Similar to previous designs, changed duty cycle or conditions; standards not sufficient")],
-  [5, L("Modificări de detaliu pe un design dovedit; lecțiile învățate sunt aplicate, dar nedovedite", "Detail changes to a proven design; lessons learned applied but not proven")],
-  [4, L("Design aproape identic, expunere scurtă în teren; conform bunelor practici", "Almost identical design, short field exposure; conforms to best practices")],
-  [3, L("Modificări de detaliu pe un design cunoscut, cu experiență de test sau teren comparabilă", "Detail changes to a known design with comparable test or field experience")],
-  [2, L("Design matur, aproape identic, cu expunere lungă în teren", "Almost identical mature design with long field exposure")],
-  [1, L("Cauza e eliminată prin prevenție; nu e posibilă prin design", "Cause eliminated by prevention; not possible by design")]
-];
-const DET = [
-  [10, L("Procedura de test nu e încă dezvoltată; metodă nedefinită", "Test procedure not yet developed; method not defined")],
-  [9, L("Metoda de test nu e concepută special pentru acest mod sau această cauză", "Test method not designed specifically for this mode or cause")],
-  [8, L("Metodă de test nouă, nedovedită", "New, unproven test method")],
-  [7, L("Metodă dovedită, planificată târziu (pass / fail)", "Proven method, planned late (pass / fail)")],
-  [6, L("Metodă dovedită, planificată târziu (test până la defectare)", "Proven method, planned late (test-to-failure)")],
-  [5, L("Metodă dovedită, planificată târziu (test de degradare)", "Proven method, planned late (degradation testing)")],
-  [4, L("Metodă dovedită, la timp înainte de lansare (pass / fail)", "Proven method, in time before release (pass / fail)")],
-  [3, L("Metodă dovedită, la timp înainte de lansare (test până la defectare)", "Proven method, in time before release (test-to-failure)")],
-  [2, L("Metodă dovedită, la timp înainte de lansare (test de degradare)", "Proven method, in time before release (degradation testing)")],
-  [1, L("Testele anterioare confirmă că defectul nu poate apărea, sau metoda îl detectează mereu", "Prior testing confirms the failure cannot occur, or the method always detects it")]
-];
-const AP = {
-  "9-10": { "8-10": "HHHH", "6-7": "HHHH", "4-5": "HHHM", "2-3": "HMLL", "1": "LLLL" },
-  "7-8":  { "8-10": "HHHH", "6-7": "HHHM", "4-5": "HMMM", "2-3": "MMLL", "1": "LLLL" },
-  "4-6":  { "8-10": "HHMM", "6-7": "MMML", "4-5": "MLLL", "2-3": "LLLL", "1": "LLLL" },
-  "2-3":  { "8-10": "MMLL", "6-7": "LLLL", "4-5": "LLLL", "2-3": "LLLL", "1": "LLLL" },
-  "1":    { "8-10": "LLLL", "6-7": "LLLL", "4-5": "LLLL", "2-3": "LLLL", "1": "LLLL" }
-};
+/* rating tables: AIAG-VDA DFMEA S (D1), O (D2), D (D3) and AP, from ../shared/aiag.js */
+const AP = AIAG.AP;
 const SB = ["9-10", "7-8", "4-6", "2-3", "1"], OB = ["8-10", "6-7", "4-5", "2-3", "1"], DB = ["7-10", "5-6", "2-4", "1"];
 const sBand = (s) => (s >= 9 ? "9-10" : s >= 7 ? "7-8" : s >= 4 ? "4-6" : s >= 2 ? "2-3" : "1");
 const oBand = (o) => (o >= 8 ? "8-10" : o >= 6 ? "6-7" : o >= 4 ? "4-5" : o >= 2 ? "2-3" : "1");
 const dIdx = (d) => (d >= 7 ? 0 : d >= 5 ? 1 : d >= 2 ? 2 : 3);
-function apOf(s, o, d) { if (!s || !o || !d) return null; return AP[sBand(s)][oBand(o)][dIdx(d)]; }
+const apOf = (s, o, d) => AIAG.apOf(s, o, d);
 
 /* function suggestions per structure level (effect level, signal / function, design elements) */
 const SUG_FN = {
@@ -457,6 +592,9 @@ const SUG_FN = {
       L("Stabilește panta fronturilor pentru compromisul EMC / rată de bit", "Sets the edge slope for the EMC / bit rate trade-off")],
     TERM: [L("Asigură 120 Ω între CANH și CANL la capătul bus-ului", "Provides 120 Ω between CANH and CANL at the end of the bus"), L("Permite activarea și dezactivarea terminației (JP1)", "Allows the termination to be enabled and disabled (JP1)"),
       L("Limitează reflexiile la 500 kbit/s", "Limits reflections at 500 kbit/s"), L("Suportă puterea disipată în starea dominantă", "Withstands the power dissipated in the dominant state")],
+    FILT: [L("Atenuează perturbațiile de înaltă frecvență de pe CANH și CANL (EMC)", "Attenuates the high-frequency disturbances on CANH and CANL (EMC)"),
+      L("Nu afectează comunicația la 500 kbit/s (fronturi, tensiune diferențială)", "Does not affect communication at 500 kbit/s (edges, differential voltage)"), L("Păstrează simetria dintre CANH și CANL", "Keeps CANH and CANL symmetrical"),
+      L("Suportă tensiunile de pe bus fără să scurtcircuiteze liniile la GND", "Withstands the bus voltages without shorting the lines to GND")],
     F1: [L("Respinge cadrele cu DLC mai mare decât 8", "Rejects frames with DLC greater than 8"), L("Respinge identificatorii în afara domeniului (standard / extins)", "Rejects identifiers out of range (standard / extended)"), L("Acceptă toate cadrele valide", "Accepts every valid frame")],
     F2: [L("Respinge valorile din afara domeniului [MIN, MAX]", "Rejects values outside [MIN, MAX]"), L("Acceptă prima detecție a unui obiect aflată în domeniu", "Accepts the first in-range detection of an object"),
       L("Respinge salturile mai mari decât pasul maxim între cicluri", "Rejects steps larger than the maximum step between cycles")],
@@ -464,13 +602,6 @@ const SUG_FN = {
     INT: [L("Aruncă cadrele în starea bus-off și returnează RX_BUS_OFF", "Discards frames in bus-off and returns RX_BUS_OFF"), L("Acceptă doar cadrele valide și plauzibile", "Accepts only valid and plausible frames"), L("Returnează RX_REJECTED pentru celelalte cadre", "Returns RX_REJECTED for all other frames")]
   },
   L3: {
-    hw: {
-      C1: [L("Asigură alegerea unei componente compatibile cu cerințele semnalului (niveluri, rată de bit)", "Ensures a component compatible with the signal requirements (levels, bit rate) is selected"), L("Asigură alegerea componentelor calificate auto (AEC-Q)", "Ensures automotive-qualified components (AEC-Q) are selected")],
-      C2: [L("Asigură dimensionarea corectă a rezistențelor și condensatoarelor (valoare, toleranță, putere)", "Ensures resistors and capacitors are correctly dimensioned (value, tolerance, power)"), L("Asigură dimensionarea pentru worst case (temperatură, îmbătrânire)", "Ensures dimensioning for the worst case (temperature, ageing)")],
-      C3: [L("Asigură definirea corectă a nivelurilor logice și a temporizării", "Ensures the logic levels and timing are correctly defined"), L("Asigură definirea corectă a interfeței cu MCU", "Ensures the interface with the MCU is correctly defined")],
-      C4: [L("Asigură conectarea corectă a semnalului (pini, net-uri)", "Ensures the signal is correctly connected (pins, nets)"), L("Asigură prezența componentelor de protecție și filtrare necesare", "Ensures the required protection and filtering components are present")],
-      C5: [L("Asigură rutarea corectă a semnalului (lungime, pereche diferențială)", "Ensures the signal is correctly routed (length, differential pair)"), L("Asigură plasarea decuplării aproape de pinul de alimentare", "Ensures the decoupling is placed close to the supply pin"), L("Asigură distanțele și ecranarea necesare pentru EMC", "Ensures the clearances and shielding needed for EMC")]
-    },
     sw: {
       C1: [L("Asigură definirea completă și corectă a cerințelor funcției", "Ensures the function requirements are complete and correct"), L("Asigură trasabilitatea cerințelor față de cerințele de sistem", "Ensures traceability to the system requirements")],
       C2: [L("Asigură valori corecte ale limitelor (#define), conform specificației", "Ensures the limit values (#define) match the specification"), L("Asigură unitățile de măsură corecte ale constantelor", "Ensures the constants use the correct units")],
@@ -484,7 +615,8 @@ function fnSuggestions(kind, el) {
   const v = V();
   if (el === "L1") return SUG_FN.L1.common.concat(SUG_FN.L1[kind]);
   if (el === "L2") return SUG_FN.L2[kind === "hw" ? v.hw : v.sw];
-  return (SUG_FN.L3[kind][el] || []);
+  if (kind === "hw") { const e = elements("hw").find((x) => x.id === el); return e && e.fn ? e.fn : []; }
+  return (SUG_FN.L3.sw[el] || []);
 }
 /* failure suggestions for the effect level (radar) and the mode level (signal / function) */
 const SUG_EFFECT = {
@@ -523,6 +655,9 @@ const SUG_MODE = {
     L("Panta fronturilor prea lentă pentru 500 kbit/s", "Edge slope too slow for 500 kbit/s"), L("Mod de funcționare instabil (RS flotant)", "Unstable operating mode (floating RS)")],
   TERM: [L("Terminația lipsește la capătul bus-ului", "Termination missing at the end of the bus"), L("Terminația e activă deși nodul nu e la capătul bus-ului", "Termination active although the node is not at the end of the bus"),
     L("Valoare greșită a terminației", "Wrong termination value"), L("Rezistența de terminație se supraîncălzește", "The termination resistor overheats"), L("Reflexii pe bus", "Reflections on the bus")],
+  FILT: [L("Atenuare insuficientă a perturbațiilor (emisii sau imunitate EMC în afara limitelor)", "Insufficient attenuation of disturbances (EMC emissions or immunity out of limits)"),
+    L("Linia CAN încărcată prea mult (fronturi lente, erori de bit)", "CAN line loaded too much (slow edges, bit errors)"), L("Asimetrie între filtrele de pe CANH și CANL", "Asymmetry between the CANH and CANL filters"),
+    L("Linie CAN legată la GND prin filtru (condensator străpuns)", "CAN line tied to GND through the filter (capacitor breakdown)"), L("Filtrul nu acționează (rețea întreruptă)", "The filter has no effect (open network)")],
   F1: [L("Acceptă un cadru cu DLC mai mare decât 8", "Accepts a frame with DLC greater than 8"), L("Respinge un cadru valid", "Rejects a valid frame"),
     L("Aplică limita de ID standard unui cadru extins", "Applies the standard ID limit to an extended frame"), L("Acceptă un identificator în afara domeniului", "Accepts an identifier out of range"),
     L("Decizie greșită la limită (DLC = 8, ID = 0x7FF)", "Wrong decision at the boundary (DLC = 8, ID = 0x7FF)")],
@@ -541,8 +676,11 @@ const CTRL = {
   hw: {
     pc: [L("Recomandările din datasheet-ul furnizorului", "Supplier datasheet recommendations"), L("Calcul worst case", "Worst-case calculation"), L("Simulare de circuit", "Circuit simulation"),
       L("Simulare power integrity", "Power integrity simulation"), L("Analiza toleranțelor", "Tolerance analysis"), L("Reguli de design (design guidelines)", "Design guidelines"),
-      L("Componente din lista aprobată", "Components from the approved list"), L("Lecții învățate din proiecte anterioare", "Lessons learned from previous projects")],
-    dc: [L("Schematic review", "Schematic review"), L("Layout review", "Layout review"), L("Validarea modulului", "Module validation"), L("Test de validare a designului", "Design validation test"),
+      L("Componente din lista aprobată", "Components from the approved list"), L("Lecții învățate din proiecte anterioare", "Lessons learned from previous projects"),
+      L("Calculul filtrului RC (constantă de timp, încărcarea liniei)", "RC filter calculation (time constant, line loading)"), L("Reguli de derating (tensiune, putere, temperatură)", "Derating rules (voltage, power, temperature)"),
+      L("Reguli de layout pentru perechi diferențiale (lungimi egale, același strat)", "Differential pair layout rules (equal lengths, same layer)")],
+    dc: [L("Verificarea BOM față de schemă", "BOM check against the schematic"), L("DRC în tool-ul de layout", "DRC in the layout tool"), L("Test de imunitate prin injecție (BCI / DPI)", "Injection immunity test (BCI / DPI)"),
+      L("Măsurarea fronturilor CAN la 500 kbit/s", "CAN edge measurement at 500 kbit/s"), L("Schematic review", "Schematic review"), L("Layout review", "Layout review"), L("Validarea modulului", "Module validation"), L("Test de validare a designului", "Design validation test"),
       L("Test EMC (emisii și imunitate)", "EMC test (emissions and immunity)"), L("Test de conformitate CAN (ISO 11898-2)", "CAN conformance test (ISO 11898-2)"),
       L("Măsurători cu osciloscopul pe prototip", "Oscilloscope measurements on the prototype"), L("Test de mediu și anduranță", "Environmental and endurance test")]
   },
@@ -574,7 +712,7 @@ const I18N = {
     vTiming: "Faza de design: după schemă și cod, înainte de validarea designului și de lansarea în producție.",
     vTeam: "{name} (analist FMEA). Roluri pe care le reprezinți: proiectant HW, dezvoltator SW, inginer de test și validare, inginer de siguranță funcțională.",
     vTask: "Pașii 2–6 pentru fiecare analiză; pasul 7 este raportul generat de aplicație.",
-    vTools: "Această aplicație, schema modulului, datasheet-ul MCP2551, codul și cerințele software, tabelele AIAG-VDA (S, O, D, AP).",
+    vTools: "Această aplicație, schema și layout-ul modulului, datasheet-ul MCP2551, codul și cerințele software, tabelele AIAG-VDA (S, O, D, AP).",
     youGet: "Varianta ta", hwAnalysis: "Analiza HW", swAnalysis: "Analiza SW",
     howTitle: "Cum lucrezi",
     how: ["Pașii 2–3: în arborele de structură selectezi fiecare element și îi scrii funcțiile (ce trebuie să facă).", "Pasul 4: scrii defectările fiecărei funcții și legi efectele (stânga) de modurile de defectare (mijloc) și de cauze (dreapta), trăgând o linie de la un punct la o defectare.",
@@ -594,8 +732,8 @@ const I18N = {
     actions: "Acțiuni", addAct: "+ acțiune", type: "Tip", resp: "Responsabil", due: "Termen", status: "Stare", stPlanned: "planificat", stProg: "în lucru", stDone: "finalizat", result: "Rezultat",
     oNew: "O nou", dNew: "D nou", extraNeed: "Necesar: după revizie riscul rămâne H sau M. Propune un test care să detecteze modul sau cauza.", extraNo: "Nu e necesar.",
     extraPh: "test propus (metodă, condiții, criteriu de acceptare)", dExp: "D estimat", resid: "Justificarea riscului rezidual (riscul rămâne H sau M)",
-    refTables: "Tabele de referință (rezumat AIAG-VDA DFMEA)", sevT: "Severitate (S)", occT: "Ocurență (O)", detT: "Detecție (D)", apT: "Prioritate de acțiune (AP)",
-    refNote: "Rezumat orientativ; tabelele complete sunt în curs și în manualul AIAG-VDA.",
+    refTables: "Tabele de referință AIAG-VDA DFMEA", sevT: "Severitate (S) · tabelul D1", occT: "Ocurență (O) · tabelul D2", detT: "Detecție (D) · tabelul D3", apT: "Prioritate de acțiune (AP)",
+    refNote: "Criteriile din manualul AIAG-VDA (2019), traduse în română.",
     checks: "Verificări", noIssues: "Nicio problemă găsită.", err: "lipsă", warn: "atenție",
     c_noFn: "Elementul „{el}” nu are funcții.", c_noFail: "Nu există moduri de defectare la nivelul mod.", c_modeNoEff: "Modul „{m}” nu e legat de niciun efect.", c_modeNoCause: "Modul „{m}” nu e legat de nicio cauză.",
     c_noS: "Efectul „{e}” nu are S.", c_orphanE: "Efectul „{e}” nu e legat de niciun mod.", c_orphanC: "Cauza „{c}” nu e legată de niciun mod.",
@@ -605,7 +743,34 @@ const I18N = {
     reportTitle: "Raport DFMEA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.", student: "Student", generated: "Generat", structure: "Structură și funcții", netR: "Rețeaua de defectare", form: "Formularul DFMEA",
     matrix: "Matricea de risc (număr de legături mod–cauză: inițial / final)", sumR: "Rezumat AP", initial: "inițial", final: "final", fe: "Efect (FE)", fm: "Mod (FM)", fc: "Cauză (FC)",
-    revActs: "Acțiuni (revizie)", apFinal: "AP final", none: "–", conclusion: "Concluzii (apar în raport)"
+    revActs: "Acțiuni (revizie)", apFinal: "AP final", none: "–", conclusion: "Concluzii (apar în raport)",
+    boardT: "Placa și schema", top: "TOP", bottom: "BOTTOM", schematic: "Schemă",
+    boardHint: "Net-urile semnalului analizat sunt evidențiate, componentele lui sunt în prim-plan. Dă clic pe o componentă ca s-o selectezi la nivelul cauză (N3).",
+    notInSig: "{r} nu face parte din semnalul analizat.", selected: "Selectat: {r}.",
+    demoNote: "F0 este varianta demo: o facem împreună la laborator, pe filtrele RC de pe CANH / CANL. Acasă lucrezi pe varianta primită (F1–F6).",
+    ctxTitle: "Context",
+    ctxHw: "Ești în echipa de design a nodului CAN. Analizezi semnalul din varianta ta: nivelul efect (N1) e radarul, nivelul mod (N2) e semnalul, iar nivelul cauză (N3) sunt componentele de pe semnal și traseele lor, evidențiate pe placă și în schemă. Cauzele DFMEA sunt cauze de design: alegerea, dimensionarea, schema și layout-ul. Defectele de fabricație ale acelorași componente (lipituri, componentă lipsă sau inversată) țin de PFMEA și de laboratorul TCA HW.",
+    ctxSw: "Ești în echipa de design a nodului CAN. Analizezi funcția software din varianta ta: nivelul efect (N1) e radarul, nivelul mod (N2) e funcția, iar nivelul cauză (N3) sunt elementele de design software (cerințe, constante, logică, tipuri de date, interfață).",
+    howStep: "Cum se face",
+    how_s23: ["Selectează N1 (radarul) și scrie funcțiile lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 și scrie funcțiile elementului analizat, pornind de la cerințele din dreapta.",
+      "Selectează pe rând fiecare element de la N3 (la HW poți da clic pe componentă pe placă sau în schemă) și scrie ce trebuie să facă pentru N2: valoare, toleranță, niveluri, plasare.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
+    how_s4: ["La N1 scrii efectele: pierderea sau degradarea funcțiilor radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcțiilor (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
+      "La N3 scrii cauzele: de ce nu își face elementul funcția (alegere, dimensionare, schemă, layout).", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
+    how_s56: ["Pentru fiecare legătură mod–cauză adaugi prevenția existentă (ce împiedică apariția cauzei) și alegi O din tabelul D2.", "Adaugi detecția existentă (testul sau analiza care găsește cauza sau modul înainte de lansare) și alegi D din tabelul D3.",
+      "AP rezultă din S, O și D. La H și M propui acțiuni cu responsabil și termen, apoi evaluezi O nou și D nou.", "Dacă riscul rămâne H sau M, propui un test suplimentar și justifici riscul rezidual."],
+    demo_s23: "Demo F0: la N3 ai R1, C1, R2, C2 și traseele filtrelor. Exemplu pentru C1: „Derivă spre GND perturbațiile de înaltă frecvență de pe CANH” și „Suportă tensiunile de pe bus (tensiune nominală cu marjă)”.",
+    demo_s4: "Demo F0: efect „Emisii electromagnetice peste limitele reglementate (EMC)”, S 9 (neconformitate cu reglementările); mod „Asimetrie între filtrele de pe CANH și CANL”; cauză la C2 „Capacitate C2 diferită de C1”.",
+    demo_s56: "Demo F0: prevenție „Calculul filtrului RC” și „Componente din lista aprobată”; detecție „Verificarea BOM față de schemă” și „Test EMC”. Pentru D, gândește-te când se face testul față de lansare și ce găsește (tabelul D3).",
+    provTitle: "De unde vin valorile",
+    prov: [["S", "Tabelul D1 (AIAG-VDA DFMEA), pe efectul de la nivelul vehiculului (N1). Modul preia S max din efectele legate de el."],
+      ["O", "Tabelul D2, pe cauză, cu prevenția existentă: cât de nou e designul, câtă experiență există și cât de dovedite sunt controalele de prevenție."],
+      ["D", "Tabelul D3, pe cauză sau mod, cu detecția existentă: maturitatea metodei de detecție și oportunitatea (cât de devreme se face, pass / fail, test până la defectare, test de degradare)."],
+      ["AP", "Tabelul AP, același la DFMEA și PFMEA: H, M sau L din combinația S, O, D."],
+      ["TCA HW", "Defectele de fabricație ale acelorași componente se evaluează în laboratorul TCA HW, unde O vine din tabelul de proces P2."]],
+    tips: { S: "S se dă pe efectul de la nivelul vehiculului (N1), din tabelul D1.", smax: "Severitatea maximă dintre efectele legate de acest mod.",
+      O: "O: cât de probabil apare cauza, ținând cont de prevenția existentă (tabelul D2).", D: "D: cât de bine găsește detecția existentă cauza sau modul înainte de lansare (tabelul D3).",
+      AP: "AP rezultă din S, O și D (tabelul AP); nu se alege." },
+    c_noFnL3: "Elementul „{el}” (N3) nu are funcții."
   },
   en: {
     subtitle: "DFMEA with the 7-step AIAG-VDA method · CAN node of the front radar",
@@ -625,7 +790,7 @@ const I18N = {
     vTiming: "Design phase: after schematic and code, before design validation and production release.",
     vTeam: "{name} (FMEA analyst). Roles you represent: HW designer, SW developer, test and validation engineer, functional safety engineer.",
     vTask: "Steps 2–6 for each analysis; step 7 is the report generated by the app.",
-    vTools: "This app, the module schematic, the MCP2551 datasheet, the software code and requirements, the AIAG-VDA tables (S, O, D, AP).",
+    vTools: "This app, the module schematic and layout, the MCP2551 datasheet, the software code and requirements, the AIAG-VDA tables (S, O, D, AP).",
     youGet: "Your variant", hwAnalysis: "HW analysis", swAnalysis: "SW analysis",
     howTitle: "How to work",
     how: ["Steps 2–3: in the structure tree select each element and write its functions (what it has to do).", "Step 4: write the failures of each function and link the effects (left) to the failure modes (middle) and the causes (right) by dragging a line from a dot to a failure.",
@@ -645,8 +810,8 @@ const I18N = {
     actions: "Actions", addAct: "+ action", type: "Type", resp: "Responsible", due: "Due date", status: "Status", stPlanned: "planned", stProg: "in progress", stDone: "completed", result: "Result",
     oNew: "New O", dNew: "New D", extraNeed: "Required: after the revision the risk is still H or M. Propose a test that detects the mode or the cause.", extraNo: "Not required.",
     extraPh: "proposed test (method, conditions, acceptance criterion)", dExp: "Expected D", resid: "Residual risk justification (the risk stays H or M)",
-    refTables: "Reference tables (AIAG-VDA DFMEA summary)", sevT: "Severity (S)", occT: "Occurrence (O)", detT: "Detection (D)", apT: "Action priority (AP)",
-    refNote: "Indicative summary; the full tables are in the course and in the AIAG-VDA handbook.",
+    refTables: "AIAG-VDA DFMEA reference tables", sevT: "Severity (S) · table D1", occT: "Occurrence (O) · table D2", detT: "Detection (D) · table D3", apT: "Action priority (AP)",
+    refNote: "The criteria of the AIAG-VDA handbook (2019).",
     checks: "Checks", noIssues: "No issues found.", err: "missing", warn: "warning",
     c_noFn: "Element “{el}” has no functions.", c_noFail: "There are no failure modes at mode level.", c_modeNoEff: "Mode “{m}” is not linked to any effect.", c_modeNoCause: "Mode “{m}” is not linked to any cause.",
     c_noS: "Effect “{e}” has no S.", c_orphanE: "Effect “{e}” is not linked to any mode.", c_orphanC: "Cause “{c}” is not linked to any mode.",
@@ -656,7 +821,34 @@ const I18N = {
     reportTitle: "DFMEA report", download: "Download report (.html)", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.", student: "Student", generated: "Generated", structure: "Structure and functions", netR: "Failure net", form: "DFMEA form",
     matrix: "Risk matrix (number of mode–cause links: initial / final)", sumR: "AP summary", initial: "initial", final: "final", fe: "Effect (FE)", fm: "Mode (FM)", fc: "Cause (FC)",
-    revActs: "Actions (revision)", apFinal: "Final AP", none: "–", conclusion: "Conclusions (included in the report)"
+    revActs: "Actions (revision)", apFinal: "Final AP", none: "–", conclusion: "Conclusions (included in the report)",
+    boardT: "Board and schematic", top: "TOP", bottom: "BOTTOM", schematic: "Schematic",
+    boardHint: "The nets of the analysed signal are highlighted and its components are in focus. Click a component to select it at cause level (N3).",
+    notInSig: "{r} is not part of the analysed signal.", selected: "Selected: {r}.",
+    demoNote: "F0 is the demo variant: we do it together in the lab, on the RC filters on CANH / CANL. At home you work on the variant you received (F1–F6).",
+    ctxTitle: "Context",
+    ctxHw: "You are in the design team of the CAN node. You analyse the signal of your variant: the effect level (N1) is the radar, the mode level (N2) is the signal, and the cause level (N3) is the components on the signal and their tracks, highlighted on the board and in the schematic. DFMEA causes are design causes: selection, dimensioning, schematic and layout. Manufacturing defects of the same components (solder joints, missing or reversed part) belong to PFMEA and to the HW TCA lab.",
+    ctxSw: "You are in the design team of the CAN node. You analyse the software function of your variant: the effect level (N1) is the radar, the mode level (N2) is the function, and the cause level (N3) is the software design elements (requirements, constants, logic, data types, interface).",
+    howStep: "How to do it",
+    how_s23: ["Select N1 (the radar) and write its vehicle-level functions: what the ADAS ECU receives from the radar.", "Select N2 and write the functions of the analysed element, starting from the requirements on the right.",
+      "Select each N3 element in turn (for HW you can click the component on the board or in the schematic) and write what it has to do for N2: value, tolerance, levels, placement.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
+    how_s4: ["At N1 write the effects: loss or degradation of the radar functions. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the functions (none, partial, intermittent, unintended, out of limits).",
+      "At N3 write the causes: why the element does not perform its function (selection, dimensioning, schematic, layout).", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
+    how_s56: ["For every mode–cause link add the existing prevention (what keeps the cause from occurring) and choose O from table D2.", "Add the existing detection (the test or analysis that finds the cause or the mode before release) and choose D from table D3.",
+      "The AP follows from S, O and D. For H and M propose actions with owner and due date, then rate the new O and new D.", "If the risk stays H or M, propose an additional test and justify the residual risk."],
+    demo_s23: "Demo F0: at N3 you have R1, C1, R2, C2 and the filter tracks. Example for C1: “Shunts the high-frequency disturbances on CANH to GND” and “Withstands the bus voltages (rated voltage with margin)”.",
+    demo_s4: "Demo F0: effect “Electromagnetic emissions above the regulated limits (EMC)”, S 9 (noncompliance with regulations); mode “Asymmetry between the CANH and CANL filters”; cause at C2 “C2 different from C1”.",
+    demo_s56: "Demo F0: prevention “RC filter calculation” and “Components from the approved list”; detection “BOM check against the schematic” and “EMC test”. For D, think about when the test runs relative to release and what it finds (table D3).",
+    provTitle: "Where the values come from",
+    prov: [["S", "Table D1 (AIAG-VDA DFMEA), on the vehicle-level effect (N1). The mode takes the S max of its linked effects."],
+      ["O", "Table D2, on the cause, with the existing prevention: how new the design is, how much experience exists and how proven the prevention controls are."],
+      ["D", "Table D3, on the cause or mode, with the existing detection: detection method maturity and opportunity (how early, pass / fail, test-to-failure, degradation test)."],
+      ["AP", "The AP table, the same for DFMEA and PFMEA: H, M or L from the S, O, D combination."],
+      ["HW TCA", "Manufacturing defects of the same components are rated in the HW TCA lab, where O comes from the process table P2."]],
+    tips: { S: "S is rated on the vehicle-level effect (N1), from table D1.", smax: "The highest severity among the effects linked to this mode.",
+      O: "O: how likely the cause is, given the existing prevention (table D2).", D: "D: how well the existing detection finds the cause or the mode before release (table D3).",
+      AP: "The AP follows from S, O and D (AP table); it is not chosen." },
+    c_noFnL3: "Element “{el}” (N3) has no functions."
   }
 };
 let LANG = "ro";
@@ -665,13 +857,14 @@ const tr = (o) => (o && typeof o === "object" ? o[LANG] : o);
 const fmt = (s, o) => s.replace(/\{(\w+)\}/g, (m, k) => (o[k] !== undefined ? o[k] : m));
 
 /* ================================================================ state */
-const STORE_KEY = "fmea-lab-v1";
-const blankA = () => ({ fns: [], fails: [], links: [], risk: {}, step: "s23", selEl: "L1", selMode: "" });
+const STORE_KEY = "fmea-lab-v2";
+const blankA = () => ({ fns: [], fails: [], links: [], risk: {}, step: "s23", selEl: "L1", selMode: "", side: "top" });
 let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", hw: blankA(), sw: blankA(), conclusion: "", seq: 1 };
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
 const nid = (p) => p + (S.seq++);
 const V = () => VARIANTS[S.variant];
+const isDemo = () => !!(V() && V().demo);
 
 /* ================================================================ model helpers */
 const fnById = (A, id) => A.fns.find((f) => f.id === id);
@@ -730,7 +923,7 @@ function checks(kind) {
   const A = S[kind]; const out = [];
   const add = (sev, key, o) => out.push({ sev: sev, msg: fmt(t(key), o || {}) });
   const short = (s) => (s.length > 48 ? s.slice(0, 46) + "…" : s);
-  elements(kind).filter((e) => e.lvl < 3).forEach((e) => { if (!A.fns.some((f) => f.el === e.id)) add("err", "c_noFn", { el: tr(e.name) }); });
+  elements(kind).forEach((e) => { if (!A.fns.some((f) => f.el === e.id)) add(e.lvl < 3 ? "err" : "warn", e.lvl < 3 ? "c_noFn" : "c_noFnL3", { el: tr(e.name) }); });
   const modes = failsAt(A, 2);
   if (!modes.length) add("err", "c_noFail");
   modes.forEach((m) => {
@@ -794,7 +987,7 @@ function render() {
 function renderStart(view) {
   const v = V();
   let h = '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p>" +
-    '<p class="notice">' + esc(v ? t("variantLoaded").replace("{v}", S.variant) : t("introP3")) + "</p></section>";
+    '<p class="notice">' + esc(v ? t("variantLoaded").replace("{v}", S.variant) : t("introP3")) + "</p>" + (isDemo() ? '<p class="notice">' + esc(t("demoNote")) + "</p>" : "") + "</section>";
   h += '<div class="grid-start"><div class="panel stack"><h3>' + esc(t("sysTitle")) + "</h3>" + t("sys").map((p) => "<p>" + esc(p) + "</p>").join("") + "</div>";
   h += '<div class="panel stack"><h3>' + esc(t("howTitle")) + '</h3><ol style="margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px">' + t("how").map((p) => "<li>" + esc(p) + "</li>").join("") + "</ol></div></div>";
   if (v) {
@@ -810,12 +1003,46 @@ function renderStart(view) {
 
 /* ---------------------------------------------------------------- reference tables */
 function refTables() {
-  const tbl = (rows) => '<table class="mini">' + rows.map((x) => '<tr><td class="c">' + x[0] + "</td><td>" + esc(tr(x[1])) + "</td></tr>").join("") + "</table>";
-  const apRows = SB.map((sb) => OB.map((ob) => '<tr><td class="c">S ' + sb + '</td><td class="c">O ' + ob + "</td>" + AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("")).join("");
-  const ap = '<table class="mini"><tr><th>S</th><th>O</th><th>D 7–10</th><th>D 5–6</th><th>D 2–4</th><th>D 1</th></tr>' + apRows + "</table>";
   const d = (k, body) => '<details class="ref"><summary>' + esc(t(k)) + "</summary><div>" + body + "</div></details>";
+  const prov = '<table class="prov">' + t("prov").map((x) => "<tr><th>" + esc(x[0]) + "</th><td>" + esc(x[1]) + "</td></tr>").join("") + "</table>";
   return '<div class="stack"><div class="row between"><span class="label">' + esc(t("refTables")) + '</span><span class="muted small">' + esc(t("refNote")) + '</span></div><div class="refs">' +
-    d("sevT", tbl(SEV)) + d("occT", tbl(OCC)) + d("detT", tbl(DET)) + d("apT", ap) + "</div></div>";
+    d("sevT", AIAG.table("S", LANG, esc)) + d("occT", AIAG.table("O", LANG, esc)) + d("detT", AIAG.table("D", LANG, esc)) + d("apT", AIAG.table("AP", LANG, esc)) + d("provTitle", prov) + "</div></div>";
+}
+const TIP = (k) => { const x = t("tips"); return x && x[k] ? x[k] : ""; };
+/* help for the current step: context, how-to (open on the demo variant), demo example */
+function helpPanel(kind, step) {
+  const demo = isDemo() && kind === "hw" ? t("demo_" + step) : "";
+  return '<div class="panel ctxbox"><span class="label">' + esc(t("ctxTitle")) + "</span><p>" + esc(t(kind === "hw" ? "ctxHw" : "ctxSw")) + "</p></div>" +
+    '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + esc(t("howStep")) + '</summary><ol class="task">' + t("how_" + step).map((x) => "<li>" + esc(x) + "</li>").join("") +
+    (demo ? "<li><b>" + esc(demo) + "</b></li>" : "") + "</ol></details>";
+}
+/* board / schematic of the module with the analysed signal highlighted (same drawing as HW TCA) */
+function boardPanel(wrap) {
+  const A = S.hw; const v = V(); const els = elements("hw").filter((e) => e.lvl === 3);
+  const refs = new Set(els.filter((e) => e.ref).map((e) => e.ref));
+  const cur = els.find((e) => e.id === A.selEl);
+  const sel = cur && cur.ref ? cur.ref : ""; const pin = cur && cur.ref && cur.pins && cur.pins.length ? cur.ref + ":" + cur.pins[0] : "";
+  const side = A.side || "top"; const hl = HW_NETS[v.hw];
+  const svg = side === "sch" ? PCB.sch({ sel: sel, refs: refs, hl: hl, pin: pin, tps: {}, label: t("schematic"), ledColor: LANG === "ro" ? "verde" : "green" })
+    : PCB.board({ top: side === "top", sel: sel, refs: refs, hl: hl, pin: pin, tps: {}, label: t("boardT") });
+  const chips = hl.map((n) => '<span class="netchip"><i style="background:' + (PCB.NET_COLOR[n] || "#999") + '"></i>' + n + "</span>").join("");
+  const seg = '<div class="seg" role="group" aria-label="' + esc(t("boardT")) + '">' + [["top", "top"], ["bottom", "bottom"], ["sch", "schematic"]].map((x) => '<button type="button" data-side="' + x[0] + '" aria-pressed="' + (side === x[0]) + '">' + esc(t(x[1])) + "</button>").join("") + "</div>";
+  const inner = '<div class="row between">' + (wrap ? "" : '<span class="label">' + esc(t("boardT")) + "</span>") + seg + '<div class="netchips">' + chips + "</div></div>" +
+    '<div class="boardbox" id="boardBox">' + svg + '</div><p class="muted small">' + esc(t("boardHint")) + "</p>";
+  return wrap ? '<details class="ref boardpanel" id="boardPanel"' + (A.openBoard ? " open" : "") + "><summary>" + esc(t("boardT")) + "</summary><div class=\"stack\">" + inner + "</div></details>"
+    : '<div class="panel stack boardpanel" id="boardPanel">' + inner + "</div>";
+}
+function wireBoard(root) {
+  const A = S.hw; const p = root.querySelector("#boardPanel"); if (!p) return;
+  p.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => { A.side = b.dataset.side; save(); render(); }));
+  if (p.tagName === "DETAILS") p.addEventListener("toggle", () => { A.openBoard = p.open; save(); });
+  p.querySelector("#boardBox").addEventListener("click", (e) => {
+    const n = e.target.closest("[data-ref], [data-pin]"); if (!n) return;
+    const ref = n.dataset.ref || n.dataset.pin.split(":")[0];
+    const el = elements("hw").find((x) => x.lvl === 3 && x.ref === ref);
+    if (!el) { toast(fmt(t("notInSig"), { r: ref })); return; }
+    A.selEl = el.id; if (A.step !== "s23") toast(fmt(t("selected"), { r: tr(el.name) })); save(); render();
+  });
 }
 function checksPanel(kind) {
   const c = checks(kind);
@@ -832,6 +1059,7 @@ function renderAnalysis(view, kind) {
   const steps = [["s23", "2–3", t("st23")], ["s4", "4", t("st4")], ["s56", "5–6", t("st56")]];
   let h = '<div class="row between"><h2>' + esc(kind === "hw" ? t("hwAnalysis") + " · " + hwLabel() : t("swAnalysis") + " · " + swLabel()) + '</h2><span class="chip">' + esc(S.variant) + " · ASIL B</span></div>";
   h += '<nav class="steps" aria-label="Steps">' + steps.map((s) => '<button type="button" data-step="' + s[0] + '"' + (A.step === s[0] ? ' aria-current="step"' : "") + '><span class="n">' + (LANG === "ro" ? "Pașii " : "Steps ") + s[1] + '</span><span class="tt">' + esc(s[2]) + "</span></button>").join("") + "</nav>";
+  h += helpPanel(kind, A.step);
   h += checksPanel(kind);
   h += '<div id="stepBody"></div>';
   view.innerHTML = h;
@@ -869,7 +1097,8 @@ function renderStructure(body, kind) {
     '<div class="panel stack"><span class="label">' + esc(lvlName(sel.lvl)) + "</span><h3>" + esc(tr(sel.name)) + "</h3><h4>" + esc(t("fnOf")) + "</h4>" + list +
     '<datalist id="dl-fn">' + fnSuggestions(kind, sel.id).map((x) => '<option value="' + esc(tr(x)) + '"></option>').join("") + "</datalist>" +
     '<form class="addrow" id="addFn"><input class="in" id="fnText" list="dl-fn" placeholder="' + esc(t("fnPh")) + '" aria-label="' + esc(t("fnOf")) + '"><button class="btn primary" type="submit">' + esc(t("add")) + '</button></form><p class="muted small">' + esc(t("fnHint")) + "</p></div>" +
-    contextPanel(kind) + "</div>";
+    contextPanel(kind) + "</div>" + (kind === "hw" ? boardPanel(false) : "");
+  if (kind === "hw") wireBoard(body);
   body.querySelectorAll("[data-el]").forEach((b) => b.addEventListener("click", () => { A.selEl = b.dataset.el; save(); render(); }));
   body.querySelectorAll("[data-delfn]").forEach((b) => b.addEventListener("click", () => { removeFn(A, b.dataset.delfn); save(); render(); }));
   body.querySelector("#addFn").addEventListener("submit", (e) => {
@@ -885,8 +1114,8 @@ function renderNet(body, kind) {
   const card = (f, lvl) => {
     const isMode = lvl === 2; const on = sel && (f.id === sel || linked(A, sel, f.id));
     let meta = "";
-    if (lvl === 1) meta = '<label>' + esc(t("sev")) + ' <select data-sev="' + f.id + '" aria-label="S"><option value="">–</option>' + [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => '<option value="' + n + '"' + (String(f.s) === String(n) ? " selected" : "") + ">" + n + "</option>").join("") + "</select></label>";
-    if (isMode) { const s = sMax(A, f.id); meta = "<span>" + esc(t("smax")) + " = <b>" + (s || "–") + "</b></span>"; }
+    if (lvl === 1) meta = '<label title="' + esc(TIP("S")) + '">' + esc(t("sev")) + ' <select data-sev="' + f.id + '" aria-label="S"><option value="">–</option>' + AIAG.options.S(LANG).map((x) => '<option value="' + x[0] + '"' + (String(f.s) === String(x[0]) ? " selected" : "") + ">" + esc(x[1]) + "</option>").join("") + "</select></label>";
+    if (isMode) { const s = sMax(A, f.id); meta = '<span title="' + esc(TIP("smax")) + '">' + esc(t("smax")) + " = <b>" + (s || "–") + "</b></span>"; }
     if (!isMode && sel) meta += '<button type="button" class="lk' + (linked(A, sel, f.id) ? " on" : "") + '" data-tlink="' + f.id + '">' + esc(linked(A, sel, f.id) ? t("unlink") : t("link")) + "</button>";
     const hds = (lvl === 1 ? '<span class="hd r" data-h="' + f.id + '"></span>' : lvl === 3 ? '<span class="hd l" data-h="' + f.id + '"></span>' : '<span class="hd l" data-h="' + f.id + '"></span><span class="hd r" data-h="' + f.id + '"></span>');
     return '<div class="fcard' + (isMode ? " mode" : "") + (isMode && f.id === sel ? " sel" : "") + (on && !isMode ? " linked" : "") + '" data-fid="' + f.id + '" data-lvl="' + lvl + '"' + (isMode ? ' tabindex="0" role="button"' : "") + ">" +
@@ -902,7 +1131,7 @@ function renderNet(body, kind) {
       inner += '<div class="grp">' + (lvl === 3 ? '<span class="el">' + esc(tr(e.name)) + "</span>" : "");
       fns.forEach((fn) => {
         inner += '<span class="fn">' + esc(fn.text) + "</span>" + A.fails.filter((f) => f.fn === fn.id).map((f) => card(f, lvl)).join("") +
-          '<form class="addf" data-addf="' + fn.id + '"><input class="in"' + (lvl < 3 ? ' list="dl-net-' + lvl + '"' : "") + ' placeholder="' + esc(lvl < 3 ? t("failPhSug") : t("failPh")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
+          '<form class="addf" data-addf="' + fn.id + '"><input class="in"' + (lvl < 3 ? ' list="dl-net-' + lvl + '"' : e.fc ? ' list="dl-c-' + e.id + '"' : "") + ' placeholder="' + esc(lvl < 3 || e.fc ? t("failPhSug") : t("failPh")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
       });
       inner += "</div>";
     });
@@ -910,9 +1139,11 @@ function renderNet(body, kind) {
     return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span></div>" + inner + "</div>";
   };
   const v = V(); const opts = (arr) => arr.map((x) => '<option value="' + esc(tr(x)) + '"></option>').join("");
-  const dls = '<datalist id="dl-net-1">' + opts(SUG_EFFECT.common.concat(SUG_EFFECT[kind])) + '</datalist><datalist id="dl-net-2">' + opts(SUG_MODE[kind === "hw" ? v.hw : v.sw]) + "</datalist>";
+  const dls = '<datalist id="dl-net-1">' + opts(SUG_EFFECT.common.concat(SUG_EFFECT[kind])) + '</datalist><datalist id="dl-net-2">' + opts(SUG_MODE[kind === "hw" ? v.hw : v.sw]) + "</datalist>" +
+    els.filter((e) => e.fc).map((e) => '<datalist id="dl-c-' + e.id + '">' + opts(e.fc) + "</datalist>").join("");
   body.innerHTML = dls + '<div class="stack"><p class="muted">' + esc(t("netHelp")) + '</p><div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
-    column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + refTables() + "</div>";
+    column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + (kind === "hw" ? boardPanel(true) : "") + refTables() + "</div>";
+  if (kind === "hw") wireBoard(body);
 
   const net = body.querySelector("#net");
   body.querySelectorAll("[data-sev]").forEach((n) => n.addEventListener("change", () => { const f = failById(A, n.dataset.sev); f.s = n.value; save(); render(); }));
@@ -968,7 +1199,11 @@ window.addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTi
 
 /* ---------------------------------------------------------------- risk + optimization */
 function apChip(ap) { return '<span class="ap ' + (ap || "na") + '">' + (ap || "–") + "</span>"; }
-function sel10(key, val, label) { return '<label class="row" style="gap:6px">' + esc(label) + ' <select class="in" data-r="' + key + '" aria-label="' + esc(label) + '"><option value="">–</option>' + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => '<option value="' + n + '"' + (String(val) === String(n) ? " selected" : "") + ">" + n + "</option>").join("") + "</select></label>"; }
+function sel10(key, val, label, scale) {
+  const opts = scale ? AIAG.options[scale](LANG) : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => [n, String(n)]);
+  return '<label class="row" style="gap:6px" title="' + esc(TIP(scale || "")) + '">' + esc(label) + ' <select class="in" data-r="' + key + '" aria-label="' + esc(label) + '"><option value="">–</option>' +
+    opts.map((x) => '<option value="' + x[0] + '"' + (String(val) === String(x[0]) ? " selected" : "") + ">" + esc(x[1]) + "</option>").join("") + "</select></label>";
+}
 function ctlBlock(kind, k, list, field) {
   const dl = "dl-" + kind + "-" + field;
   return '<div class="stack" style="gap:6px"><span class="label">' + esc(t(field)) + '</span><div class="ctl">' + list.map((c, i) => '<span class="c"><span>' + esc(c) + '</span><button class="x" type="button" data-rmctl="' + k + "|" + field + "|" + i + '" aria-label="' + esc(t("del")) + '">×</button></span>').join("") + "</div>" +
@@ -995,14 +1230,14 @@ function renderRisk(body, kind) {
         (a.status === "done" ? '<select class="in res-' + (a.result || "none") + '" data-act="' + k + "|" + i + '|result" aria-label="' + esc(t("result")) + '"><option value="">' + esc(t("result")) + "…</option>" +
           [["pass", "PASS"], ["fail", "FAIL"]].map((o) => '<option value="' + o[0] + '"' + (a.result === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" : "") +
         '<button class="x" type="button" data-rmact="' + k + "|" + i + '" aria-label="' + esc(t("del")) + '">×</button></div></div>').join("");
-      h += '<div class="risk" data-k="' + k + '"><div><span class="label">' + esc(t("fc")) + '</span> <span class="cause">' + esc(c.text) + "</span></div><div class=\"states\">" +
-        '<div class="state"><h4>' + esc(t("init")) + " " + apChip(ev.ap0) + "</h4>" + ctlBlock(kind, k, r.pc, "pc") + ctlBlock(kind, k, r.dc, "dc") +
-          '<div class="rate"><span class="muted small">S ' + (s || "–") + "</span>" + sel10(k + "|o", r.o, "O") + sel10(k + "|d", r.d, "D") + "</div></div>" +
+      h += '<div class="risk" data-k="' + k + '"><div><span class="label">' + esc(t("fc")) + '</span> <span class="chip">' + esc(elOfFail(kind, c)) + '</span> <span class="cause">' + esc(c.text) + "</span></div><div class=\"states\">" +
+        '<div class="state"><h4 title="' + esc(TIP("AP")) + '">' + esc(t("init")) + " " + apChip(ev.ap0) + "</h4>" + ctlBlock(kind, k, r.pc, "pc") + ctlBlock(kind, k, r.dc, "dc") +
+          '<div class="rate"><span class="muted small">S ' + (s || "–") + "</span>" + sel10(k + "|o", r.o, "O", "O") + sel10(k + "|d", r.d, "D", "D") + "</div></div>" +
         '<div class="state' + (need || (r.acts || []).length ? "" : " off") + '"><h4>' + esc(t("rev")) + " " + apChip(ev.ap1) + '</h4><p class="muted small">' + esc(need ? t("revNeed") : t("revOpt")) + "</p>" + acts +
           '<button class="btn sm" type="button" data-addact="' + k + '">' + esc(t("addAct")) + "</button>" +
-          ((r.acts || []).length ? '<div class="rate">' + sel10(k + "|o2", r.o2, t("oNew")) + sel10(k + "|d2", r.d2, t("dNew")) + "</div>" : "") + "</div>" +
+          ((r.acts || []).length ? '<div class="rate">' + sel10(k + "|o2", r.o2, t("oNew"), "O") + sel10(k + "|d2", r.d2, t("dNew"), "D") + "</div>" : "") + "</div>" +
         '<div class="state' + (ev.extraNeeded ? "" : " off") + '"><h4>' + esc(t("extra")) + " " + apChip(ev.apX) + '</h4><p class="muted small">' + esc(ev.extraNeeded ? t("extraNeed") : t("extraNo")) + "</p>" +
-          (ev.extraNeeded ? '<textarea class="in" data-rt="' + k + '|xt" placeholder="' + esc(t("extraPh")) + '" aria-label="' + esc(t("extra")) + '">' + esc(r.xt) + "</textarea>" + '<div class="rate">' + sel10(k + "|xd", r.xd, t("dExp")) + "</div>" +
+          (ev.extraNeeded ? '<textarea class="in" data-rt="' + k + '|xt" placeholder="' + esc(t("extraPh")) + '" aria-label="' + esc(t("extra")) + '">' + esc(r.xt) + "</textarea>" + '<div class="rate">' + sel10(k + "|xd", r.xd, t("dExp"), "D") + "</div>" +
             ((ev.fin === "H" || ev.fin === "M") && r.xt && r.xd ? '<label class="stack" style="gap:4px"><span class="small">' + esc(t("resid")) + '</span><textarea class="in" data-rt="' + k + '|resid">' + esc(r.resid) + "</textarea></label>" : "") : "") +
         "</div></div></div>";
     });
@@ -1030,6 +1265,9 @@ function renderRisk(body, kind) {
   });
 }
 
+/* name of the N3 element a cause belongs to */
+function elOfFail(kind, f) { const fn = fnById(S[kind], f.fn); const e = fn && elements(kind).find((x) => x.id === fn.el); return e ? tr(e.name).split(" · ")[0] : "–"; }
+
 /* ================================================================ report */
 function analysisReport(kind, text) {
   const A = S[kind]; const els = elements(kind); const parts = [];
@@ -1052,10 +1290,10 @@ function analysisReport(kind, text) {
     causesOf(A, m.id).forEach((c) => {
       const ev = evalRisk(A, m.id, c.id); const r = ev.r;
       const acts = (r.acts || []).map((a) => "[" + a.type + "] " + esc(a.text) + (a.resp ? " · " + esc(a.resp) : "") + (a.due ? " · " + esc(a.due) : "") + " · " + esc(t(a.status === "done" ? "stDone" : a.status === "progress" ? "stProg" : "stPlanned")) + (a.status === "done" && a.result ? ' · <b class="' + (a.result === "pass" ? "L" : "H") + '">' + a.result.toUpperCase() + "</b>" : "")).join("<br>");
-      rows += "<tr><td>" + effs.map((e) => esc(e.text) + " (S " + (e.s || "–") + ")").join("<br>") + "</td><td>" + (ev.s || "–") + "</td><td>" + esc(m.text) + "</td><td>" + esc(c.text) + "</td><td>" + (r.pc || []).map(esc).join("<br>") + "</td><td>" + (r.o || "–") +
+      rows += "<tr><td>" + effs.map((e) => esc(e.text) + " (S " + (e.s || "–") + ")").join("<br>") + "</td><td>" + (ev.s || "–") + "</td><td>" + esc(m.text) + "</td><td><i>" + esc(elOfFail(kind, c)) + "</i><br>" + esc(c.text) + "</td><td>" + (r.pc || []).map(esc).join("<br>") + "</td><td>" + (r.o || "–") +
         "</td><td>" + (r.dc || []).map(esc).join("<br>") + "</td><td>" + (r.d || "–") + '</td><td class="' + (ev.ap0 || "") + '">' + (ev.ap0 || "–") + "</td><td>" + (acts || "–") + "</td><td>" + (r.o2 || "–") + "</td><td>" + (r.d2 || "–") + '</td><td class="' + (ev.ap1 || "") + '">' + (ev.ap1 || "–") +
         "</td><td>" + (r.xt ? esc(r.xt) + (r.xd ? " (D " + r.xd + ")" : "") + (r.resid ? "<br><i>" + esc(r.resid) + "</i>" : "") : "–") + '</td><td class="' + (ev.fin || "") + '">' + (ev.fin || "–") + "</td></tr>";
-      text.push("FM: " + m.text + " | FE: " + effs.map((e) => e.text + " (S " + (e.s || "-") + ")").join("; ") + " | FC: " + c.text + " | PC: " + (r.pc || []).join("; ") + " | O=" + (r.o || "-") + " | DC: " + (r.dc || []).join("; ") + " | D=" + (r.d || "-") +
+      text.push("FM: " + m.text + " | FE: " + effs.map((e) => e.text + " (S " + (e.s || "-") + ")").join("; ") + " | FC: [" + elOfFail(kind, c) + "] " + c.text + " | PC: " + (r.pc || []).join("; ") + " | O=" + (r.o || "-") + " | DC: " + (r.dc || []).join("; ") + " | D=" + (r.d || "-") +
         " | AP=" + (ev.ap0 || "-") + " | rev: " + (r.acts || []).map((a) => "[" + a.type + "] " + a.text + " / " + a.resp + " / " + a.due + " / " + a.status + (a.status === "done" && a.result ? " / " + a.result.toUpperCase() : "")).join("; ") + " O'=" + (r.o2 || "-") + " D'=" + (r.d2 || "-") + " AP'=" + (ev.ap1 || "-") +
         " | extra: " + (r.xt || "-") + " D=" + (r.xd || "-") + " | AP final=" + (ev.fin || "-") + (r.resid ? " | residual: " + r.resid : ""));
       if (ev.s && r.o && r.d) {
