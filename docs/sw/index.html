@@ -276,12 +276,13 @@ const I18N = {
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). Rezultatul așteptat contrazice cerințele, deci cauza probabilă e specificația testului: corectează testul, nu codul.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomalie, ISO 26262-2, 5.4.3.2). Rezultatul așteptat respectă cerințele, dar codul dă altceva, deci cauza probabilă e obiectul testat: completează raportul de incident.",
     ctxTitle: "Context: ce face funcția", howTitle: "Cum se face", provTitle: "De unde vin valorile",
-    thrWarn: "Acoperirea codului e completă, dar testarea nu e: {n} din {m} praguri nu au ambele teste (exact la limită și imediat peste). Greșelile de tip > în loc de >= stau exact acolo, iar acoperirea nu le poate vedea.",
+    thrWarn: "Acoperirea codului e completă, dar testarea nu e: la {n} din {m} limite lipsește testul pe limită sau cel imediat după (valori la limită, BVA). Greșelile de tip > în loc de >= stau exact acolo, iar acoperirea nu le poate vedea.",
     thrWarnF3: "Greșeala variantei tale este în această funcție.",
-    thrHidden: "Pe varianta voastră aplicația arată doar câte praguri sunt testate complet. Care sunt pragurile și ce valori testați la limită și imediat peste le scoateți din cerințe.",
+    thrHidden: "Pe varianta voastră lista arată ce limită și ce test lipsește, fără valori: valorile le scoateți din cerințe.",
     histTitle: "Istoricul lucrului", histNote: "Pentru fiecare funcție: de câte ori s-au rulat testele, câte versiuni de test au primit avertisment pe parcurs și câte avertismente au rămas la final.", histResets: "Reporniri de la zero în acest browser",
     histRuns: "Rulări", histWarned: "Versiuni de test cu avertisment, cumulat", histLeft: "Avertismente rămase",
-    thrTitle: "Praguri: la limită și peste", thrAt: "la limită", thrOver: "peste", mThr: "Praguri complet testate",
+    thrTitle: "Valori la limită (BVA): pe limită și imediat după", thrAt: "pe limită", thrOver: "imediat după", mThr: "Valori la limită (BVA)",
+    bvaHow: "Pentru fiecare număr din cerințe: un test cu valoarea exact pe limită și unul cu valoarea imediat după. Exemplu: „peste 50 se respinge” → 50 (acceptat) și 51 (respins). Aici apar greșelile de tip > în loc de >=, pe care acoperirea nu le vede.",
     target: "100% = ținta de laborator (practică industrială). ISO 26262 cere o valoare-țintă definită și justificată (ISO 26262-6, 9.4.4, NOTA 1).",
     warnTitle: "Avertismente", warnOne: "avertisment", warnMany: "avertismente",
     stale: "Ai modificat testele. Apasă din nou „Rulează testele” ca să vezi rezultatele noi.",
@@ -303,9 +304,9 @@ const I18N = {
     student: "Student", generated: "Generat", answer: "Răspuns", summary: "Rezumat",
     exampleRow: "exemplu",
     deleteTest: "Șterge testul",
-    t1: ["Citește cerințele SWR-F1 și scrie câte un test pentru fiecare.", "Rulează testele și urmărește acoperirea. Atinge întâi 100% statement (ținta de laborator).", "Verifică deciziile: au toate rezultatul true și false? Dacă nu, adaugă testul lipsă și spune ce cerință acoperă.", "Notează în observații de ce 100% statement nu era suficient."],
-    t2: ["Atinge 100% decizii pentru sensor_value_plausible.", "Uită-te în tabelul de adevăr de la linia 28: ce condiții nu sunt încă demonstrate?", "Adaugă teste până când fiecare condiție are o pereche de teste care diferă doar în ea și dau rezultate diferite (MC/DC). Minimul teoretic este N + 1 teste pentru N condiții (MC/DC unique-cause, FAA DOT/FAA/AR-01/18), nu o cerință ISO 26262. Aplicația folosește unique-cause cu evaluare short-circuit: o condiție neevaluată contează ca „don't care” (unique-cause + masking, în terminologia FAA).", "Adaugă și testele la limită din cerințe: un prag e testat complet doar cu perechea la limită și imediat peste (ISO 26262-6, Tabelul 8, nota b)."],
-    t3: ["Scrie testele pornind strict de la cerințele SWR-F3, inclusiv perechile la limită și peste (127/128, 255/256). tec și rec sunt uint16_t: dacă ar fi uint8_t, tec > 255 ar fi imposibil și linia 39 ar deveni cod mort.", "Rulează și verifică acoperirea cerută pentru ASIL B.", "Dacă un test pică, analizează incidentul. Dacă testul respectă cerința, completează raportul: ce cerință e încălcată, pe ce linie e defectul și cum îl corectezi."],
+    t1: ["Citește cerințele SWR-F1 și scrie câte un test pentru fiecare.", "Rulează testele și urmărește acoperirea. Atinge întâi 100% statement (ținta de laborator).", "Verifică deciziile: au toate rezultatul true și false? Dacă nu, adaugă testul lipsă și spune ce cerință acoperă.", "Testează limitele (valori la limită, BVA): pentru fiecare număr din cerințe scrie un test cu valoarea exact pe limită și unul cu valoarea imediat după. Metrica „Valori la limită (BVA)” trebuie să ajungă la 100%.", "Notează în observații de ce 100% statement nu era suficient."],
+    t2: ["Atinge 100% decizii pentru sensor_value_plausible.", "Uită-te în tabelul de adevăr de la linia 28: ce condiții nu sunt încă demonstrate?", "Adaugă teste până când fiecare condiție are o pereche de teste care diferă doar în ea și dau rezultate diferite (MC/DC). Minimul teoretic este N + 1 teste pentru N condiții (MC/DC unique-cause, FAA DOT/FAA/AR-01/18), nu o cerință ISO 26262. Aplicația folosește unique-cause cu evaluare short-circuit: o condiție neevaluată contează ca „don't care” (unique-cause + masking, în terminologia FAA).", "Testează limitele (valori la limită, BVA): pentru fiecare număr din cerințe scrie un test cu valoarea exact pe limită și unul cu valoarea imediat după. Metrica „Valori la limită (BVA)” trebuie să ajungă la 100%."],
+    t3: ["Scrie testele pornind strict de la cerințele SWR-F3.", "Testează limitele (valori la limită, BVA): pentru fiecare număr din cerințe scrie un test cu valoarea exact pe limită și unul cu valoarea imediat după. Metrica „Valori la limită (BVA)” trebuie să ajungă la 100%.", "Rulează și verifică acoperirea cerută pentru ASIL B.", "Dacă un test pică, analizează incidentul. Dacă testul respectă cerința, completează raportul: ce cerință e încălcată, pe ce linie e defectul și cum îl corectezi."],
     t4: ["Scrie teste de integrare pentru can_rx_handler (intrările combină un cadru CAN, contextul senzorului și contoarele de erori).", "Urmărește ce funcții și ce apeluri au fost executate. Ținta de laborator: toate funcțiile și toate apelurile (la ASIL B, ISO 26262-6, 10.4.5 le recomandă, nu le impune).", "Pentru liniile care rămân neacoperite scrie justificarea sau descrie testul prin injectare de defecte care le-ar atinge."]
   },
   en: {
@@ -339,12 +340,13 @@ const I18N = {
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). The expected result contradicts the requirements, so the probable cause is the test specification: fix the test, not the code.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomaly, ISO 26262-2, 5.4.3.2). The expected result follows the requirements, but the code returns something else, so the probable cause is the test object: fill in the incident report.",
     ctxTitle: "Context: what the function does", howTitle: "How to do it", provTitle: "Where the values come from",
-    thrWarn: "Code coverage is complete, but testing is not: {n} of {m} thresholds do not have both tests (exactly at the limit and just beyond). Defects like > instead of >= sit exactly there, and coverage cannot see them.",
+    thrWarn: "Code coverage is complete, but testing is not: {n} of {m} limits miss the test on the limit or the one just after it (boundary values, BVA). Defects like > instead of >= sit exactly there, and coverage cannot see them.",
     thrWarnF3: "The defect of your variant is in this function.",
-    thrHidden: "On your variant the app shows only how many thresholds are fully tested. Which thresholds there are, and which values to test at and just beyond the limit, you derive from the requirements.",
+    thrHidden: "On your variant the list shows which limit and which test is missing, without values: take the values from the requirements.",
     histTitle: "Work history", histNote: "For every function: how many times the tests were run, how many test versions drew a warning along the way, and how many warnings remain at the end.", histResets: "Start-overs in this browser",
     histRuns: "Runs", histWarned: "Test versions with a warning, cumulative", histLeft: "Warnings remaining",
-    thrTitle: "Thresholds: at and beyond the limit", thrAt: "at the limit", thrOver: "beyond", mThr: "Thresholds fully tested",
+    thrTitle: "Boundary values (BVA): on the limit and just after", thrAt: "on the limit", thrOver: "just after", mThr: "Boundary values (BVA)",
+    bvaHow: "For every number in the requirements: one test with the value exactly on the limit and one with the value just after it. Example: “above 50 is rejected” → 50 (accepted) and 51 (rejected). This is where defects like > instead of >= show up, which coverage cannot see.",
     target: "100% = the lab target (industrial practice). ISO 26262 asks for a defined, justified target value (ISO 26262-6, 9.4.4, NOTE 1).",
     warnTitle: "Warnings", warnOne: "warning", warnMany: "warnings",
     stale: "You changed the tests. Press “Run tests” again to see the new results.",
@@ -366,9 +368,9 @@ const I18N = {
     student: "Student", generated: "Generated", answer: "Answer", summary: "Summary",
     exampleRow: "example",
     deleteTest: "Delete test",
-    t1: ["Read requirements SWR-F1 and write one test for each.", "Run the tests and watch the coverage. Reach 100% statement coverage first (the lab target).", "Check the decisions: did each one evaluate to true and to false? If not, add the missing test and state which requirement it covers.", "Write in the notes why 100% statement coverage was not enough."],
-    t2: ["Reach 100% decision coverage for sensor_value_plausible.", "Look at the truth table of line 28: which conditions are not shown yet?", "Add tests until every condition has a pair of tests that differ only in that condition and give different outcomes (MC/DC). The theoretical minimum is N + 1 tests for N conditions (unique-cause MC/DC, FAA DOT/FAA/AR-01/18), not an ISO 26262 requirement. The app uses unique-cause with short-circuit evaluation: a condition that is not evaluated counts as “don't care” (unique-cause + masking in FAA terms).", "Add the boundary tests from the requirements: a threshold is fully tested only with the pair at the limit and just beyond (ISO 26262-6, Table 8, note b)."],
-    t3: ["Write the tests strictly from requirements SWR-F3, including the pairs at and beyond the limit (127/128, 255/256). tec and rec are uint16_t: if they were uint8_t, tec > 255 could never be true and line 39 would be dead code.", "Run them and check the coverage required for ASIL B.", "If a test fails, analyse the incident. If the test follows the requirement, fill in the report: which requirement is violated, on which line the defect is and how you would fix it."],
+    t1: ["Read requirements SWR-F1 and write one test for each.", "Run the tests and watch the coverage. Reach 100% statement coverage first (the lab target).", "Check the decisions: did each one evaluate to true and to false? If not, add the missing test and state which requirement it covers.", "Test the limits (boundary value analysis, BVA): for every number in the requirements write one test with the value exactly on the limit and one with the value just after it. The “Boundary values (BVA)” metric must reach 100%.", "Write in the notes why 100% statement coverage was not enough."],
+    t2: ["Reach 100% decision coverage for sensor_value_plausible.", "Look at the truth table of line 28: which conditions are not shown yet?", "Add tests until every condition has a pair of tests that differ only in that condition and give different outcomes (MC/DC). The theoretical minimum is N + 1 tests for N conditions (unique-cause MC/DC, FAA DOT/FAA/AR-01/18), not an ISO 26262 requirement. The app uses unique-cause with short-circuit evaluation: a condition that is not evaluated counts as “don't care” (unique-cause + masking in FAA terms).", "Test the limits (boundary value analysis, BVA): for every number in the requirements write one test with the value exactly on the limit and one with the value just after it. The “Boundary values (BVA)” metric must reach 100%."],
+    t3: ["Write the tests strictly from requirements SWR-F3.", "Test the limits (boundary value analysis, BVA): for every number in the requirements write one test with the value exactly on the limit and one with the value just after it. The “Boundary values (BVA)” metric must reach 100%.", "Run them and check the coverage required for ASIL B.", "If a test fails, analyse the incident. If the test follows the requirement, fill in the report: which requirement is violated, on which line the defect is and how you would fix it."],
     t4: ["Write integration tests for can_rx_handler (the inputs combine a CAN frame, the sensor context and the error counters).", "Watch which functions and calls were executed. Lab target: every function and every call (for ASIL B, ISO 26262-6, 10.4.5 recommends this, it does not require it).", "For the lines that stay uncovered, write the rationale or describe the fault injection test that would reach them."]
   }
 };
@@ -835,30 +837,30 @@ const THRESH = {
   f1: () => {
     const idOk = (i) => i.id <= (i.extended ? 0x1FFFFFFF : 0x7FF);
     return [
-      ["DLC 8 / 9", (i) => i.dlc === 8 && idOk(i), (i) => i.dlc === 9 && idOk(i)],
-      ["ID std 0x7FF / 0x800", (i) => !i.extended && i.dlc <= 8 && i.id === 0x7FF, (i) => !i.extended && i.dlc <= 8 && i.id === 0x800],
-      ["ID ext 0x1FFFFFFF / 0x20000000", (i) => i.extended && i.dlc <= 8 && i.id === 0x1FFFFFFF, (i) => i.extended && i.dlc <= 8 && i.id === 0x20000000]];
+      ["DLC 8 / 9", (i) => i.dlc === 8 && idOk(i), (i) => i.dlc === 9 && idOk(i), "DLC"],
+      ["ID std 0x7FF / 0x800", (i) => !i.extended && i.dlc <= 8 && i.id === 0x7FF, (i) => !i.extended && i.dlc <= 8 && i.id === 0x800, L("ID standard", "standard ID")],
+      ["ID ext 0x1FFFFFFF / 0x20000000", (i) => i.extended && i.dlc <= 8 && i.id === 0x1FFFFFFF, (i) => i.extended && i.dlc <= 8 && i.id === 0x20000000, L("ID extins", "extended ID")]];
   },
   f2: (v) => {
     const s = SIGNALS[v.sig];
     const stepOk = (i) => i.first_sample || Math.abs(i.value - i.previous) <= s.step;
     const inR = (i) => i.value >= s.min && i.value <= s.max;
     return [
-      ["min " + s.min + " / " + (s.min - 1), (i) => i.value === s.min && stepOk(i), (i) => i.value === s.min - 1],
-      ["max " + s.max + " / " + (s.max + 1), (i) => i.value === s.max && stepOk(i), (i) => i.value === s.max + 1],
+      ["min " + s.min + " / " + (s.min - 1), (i) => i.value === s.min && stepOk(i), (i) => i.value === s.min - 1, L("minimul (SENSOR_MIN)", "minimum (SENSOR_MIN)")],
+      ["max " + s.max + " / " + (s.max + 1), (i) => i.value === s.max && stepOk(i), (i) => i.value === s.max + 1, L("maximul (SENSOR_MAX)", "maximum (SENSOR_MAX)")],
       [L("pas ", "step ") + s.step + " / " + (s.step + 1), (i) => !i.first_sample && inR(i) && Math.abs(i.value - i.previous) === s.step,
-                                                           (i) => !i.first_sample && inR(i) && Math.abs(i.value - i.previous) === s.step + 1]];
+                                                           (i) => !i.first_sample && inR(i) && Math.abs(i.value - i.previous) === s.step + 1, L("saltul (SENSOR_MAX_STEP)", "jump (SENSOR_MAX_STEP)")]];
   },
   f3: () => [
-    ["TEC 255 / 256 (bus-off)", (i) => i.tec === 255, (i) => i.tec === 256],
-    ["TEC 127 / 128 (passive)", (i) => i.tec === 127 && i.rec <= 127, (i) => i.tec === 128],
-    ["REC 127 / 128 (passive)", (i) => i.rec === 127 && i.tec <= 127, (i) => i.rec === 128 && i.tec <= 127]]
+    ["TEC 255 / 256 (bus-off)", (i) => i.tec === 255, (i) => i.tec === 256, "TEC → bus-off"],
+    ["TEC 127 / 128 (passive)", (i) => i.tec === 127 && i.rec <= 127, (i) => i.tec === 128, "TEC → error passive"],
+    ["REC 127 / 128 (passive)", (i) => i.rec === 127 && i.tec <= 127, (i) => i.rec === 128 && i.tec <= 127, "REC → error passive"]]
 };
 function thresholds(exKey, v, rows, tests) {
   if (!THRESH[exKey]) return null;
   const ok = [];
   rows.forEach((r, k) => { if (r.chk && tests[k].expected && r.chk.expOk) ok.push(r.vals); });
-  return THRESH[exKey](v).map((th) => ({ name: th[0], at: ok.some(th[1]), over: ok.some(th[2]) }));
+  return THRESH[exKey](v).map((th) => ({ name: th[0], generic: th[3], at: ok.some(th[1]), over: ok.some(th[2]) }));
 }
 /* ---------------------------------------------------------------- help: context, method, provenance, tooltips
    Everything a student without automotive background needs next to the exercise.
@@ -875,23 +877,23 @@ const HELP = {
            "Pentru SWR-F1-04 construiește un cadru corect în toate privințele: DLC 0…8 și ID sub limita formatului.",
            "Rezultatul așteptat îl iei din cerință, nu din cod: true = cadru acceptat, false = cadru respins.",
            "Rulează și citește listele de sub procente: ce linie, ce decizie sau ce cerință mai lipsește.",
-           "Pentru fiecare prag adaugă perechea exact la limită și imediat peste: DLC 8 / 9, ID standard 0x7FF / 0x800, ID extins 0x1FFFFFFF / 0x20000000."],
+           "Valori la limită (BVA): pentru fiecare limită, un test exact pe limită și unul imediat după: DLC 8 / 9, ID standard 0x7FF / 0x800, ID extins 0x1FFFFFFF / 0x20000000."],
       en: ["Take the requirements one by one. For a rejection requirement (SWR-F1-01…03) build a frame that breaks only that rule; every other value stays correct. Example for SWR-F1-02: standard frame, DLC 8, ID 0x800.",
            "For SWR-F1-04 build a frame that is correct in every respect: DLC 0…8 and the ID below the format limit.",
            "Take the expected result from the requirement, not from the code: true = frame accepted, false = frame rejected.",
            "Run and read the lists under the percentages: which line, decision or requirement is still missing.",
-           "For every threshold add the pair exactly at the limit and just beyond: DLC 8 / 9, standard ID 0x7FF / 0x800, extended ID 0x1FFFFFFF / 0x20000000."]
+           "Boundary values (BVA): for every limit, one test exactly on the limit and one just after it: DLC 8 / 9, standard ID 0x7FF / 0x800, extended ID 0x1FFFFFFF / 0x20000000."]
     } : {
       ro: ["Ia cerințele pe rând. Pentru o cerință de respingere construiește un cadru care încalcă doar acea regulă; restul valorilor rămân corecte.",
            "Pentru SWR-F1-04 construiește un cadru corect în toate privințele.",
            "Rezultatul așteptat îl iei din cerință, nu din cod: true = cadru acceptat, false = cadru respins.",
            "Rulează și citește listele de sub procente: ce linie, ce decizie sau ce cerință mai lipsește.",
-           "Pentru fiecare prag din cerințe adaugă perechea exact la limită și imediat peste."],
+           "Valori la limită (BVA): pentru fiecare număr din cerințe, un test exact pe limită și unul imediat după."],
       en: ["Take the requirements one by one. For a rejection requirement build a frame that breaks only that rule; every other value stays correct.",
            "For SWR-F1-04 build a frame that is correct in every respect.",
            "Take the expected result from the requirement, not from the code: true = frame accepted, false = frame rejected.",
            "Run and read the lists under the percentages: which line, decision or requirement is still missing.",
-           "For every threshold in the requirements add the pair exactly at the limit and just beyond."]
+           "Boundary values (BVA): for every number in the requirements, one test exactly on the limit and one just after it."]
     },
     prov: () => [
       ["CAN_MAX_DLC = 8", { ro: "Un cadru CAN clasic transportă cel mult 8 octeți de date (ISO 11898-1). Atenție: un DLC de 9…15 este valid la nivel de protocol și înseamnă tot 8 octeți. Respingerea lui (SWR-F1-01) este o cerință a aplicației noastre, aleasă pentru robustețe, nu o regulă CAN.",
@@ -912,23 +914,23 @@ const HELP = {
            "Pornește de la un test acceptat: valoare în domeniu, first_sample = false, salt mic (de exemplu value " + (s.min + s.max >> 1) + ", previous " + ((s.min + s.max >> 1) - (s.step >> 1)) + ").",
            "Strică pe rând câte o condiție față de el: valoare sub MIN (A), peste MAX (B), salt mai mare decât PASUL (D). Apoi păstrează saltul mare și pune first_sample = true (C).",
            "Verifică tabelul de adevăr: fiecare condiție trebuie să aibă o pereche de teste care diferă doar prin ea și dau rezultate diferite. „–” înseamnă condiție neevaluată.",
-           "Adaugă limitele: MIN și MIN − 1, MAX și MAX + 1, salt exact egal cu PASUL și PAS + 1."],
+           "Valori la limită (BVA): MIN și MIN − 1, MAX și MAX + 1, salt exact egal cu PASUL și PAS + 1."],
       en: ["Write down the limits of the variant: MIN " + s.min + ", MAX " + s.max + ", STEP " + s.step + " (they are in the requirements and in the #define lines).",
            "Start from an accepted test: value in range, first_sample = false, small jump (for example value " + (s.min + s.max >> 1) + ", previous " + ((s.min + s.max >> 1) - (s.step >> 1)) + ").",
            "Break one condition at a time: value below MIN (A), above MAX (B), jump larger than the STEP (D). Then keep the large jump and set first_sample = true (C).",
            "Check the truth table: every condition needs a pair of tests that differ only in it and give different results. “–” means the condition was not evaluated.",
-           "Add the limits: MIN and MIN − 1, MAX and MAX + 1, a jump exactly equal to the STEP and STEP + 1."]
+           "Boundary values (BVA): MIN and MIN − 1, MAX and MAX + 1, a jump exactly equal to the STEP and STEP + 1."]
     } : {
       ro: ["Notează limitele variantei tale din cerințe: MIN, MAX și PASUL maxim. Sunt altele decât la V0.",
            "Pornește de la un test acceptat: valoare în domeniu, first_sample = false, salt mic.",
            "Strică pe rând câte o condiție față de el: valoare sub MIN (A), peste MAX (B), salt prea mare (D). Apoi păstrează saltul mare și pune first_sample = true (C).",
            "Verifică tabelul de adevăr: fiecare condiție trebuie să aibă o pereche de teste care diferă doar prin ea și dau rezultate diferite.",
-           "Pentru fiecare prag din cerințe adaugă perechea exact la limită și imediat peste."],
+           "Valori la limită (BVA): pentru fiecare număr din cerințe, un test exact pe limită și unul imediat după."],
       en: ["Write down the limits of your variant from the requirements: MIN, MAX and the maximum STEP. They differ from V0.",
            "Start from an accepted test: value in range, first_sample = false, small jump.",
            "Break one condition at a time: value below MIN (A), above MAX (B), jump too large (D). Then keep the large jump and set first_sample = true (C).",
            "Check the truth table: every condition needs a pair of tests that differ only in it and give different results.",
-           "For every threshold in the requirements add the pair exactly at the limit and just beyond."]
+           "Boundary values (BVA): for every number in the requirements, one test exactly on the limit and one just after it."]
     },
     prov: (v) => {
       const P = {
@@ -959,20 +961,20 @@ const HELP = {
     how: (demo) => demo ? {
       ro: ["Împarte valorile în clase, din cerințe: TEC ≤ 127 și REC ≤ 127 → ERROR_ACTIVE; TEC 128…255 sau REC > 127 → ERROR_PASSIVE; TEC > 255 → BUS_OFF.",
            "Scrie câte un test din fiecare clasă (de exemplu TEC 300, TEC 200, TEC 0).",
-           "Adaugă perechile la limită și peste: TEC 127 / 128, TEC 255 / 256, REC 127 / 128.",
+           "Valori la limită (BVA): TEC 127 / 128, TEC 255 / 256, REC 127 / 128.",
            "Dacă un test pică, uită-te la cauza probabilă. „Codul” înseamnă un defect: completează raportul de incident (cerința, linia, corecția)."],
       en: ["Split the values into classes, from the requirements: TEC ≤ 127 and REC ≤ 127 → ERROR_ACTIVE; TEC 128…255 or REC > 127 → ERROR_PASSIVE; TEC > 255 → BUS_OFF.",
            "Write one test from every class (for example TEC 300, TEC 200, TEC 0).",
-           "Add the pairs at and beyond the limit: TEC 127 / 128, TEC 255 / 256, REC 127 / 128.",
+           "Boundary values (BVA): TEC 127 / 128, TEC 255 / 256, REC 127 / 128.",
            "If a test fails, look at the probable cause. “The code” means a defect: fill in the incident report (requirement, line, fix)."]
     } : {
       ro: ["Împarte valorile contoarelor în clase, din cerințe: câte o clasă pentru fiecare stare.",
            "Scrie câte un test din fiecare clasă.",
-           "Pentru fiecare prag din cerințe adaugă perechea exact la limită și imediat peste, separat pentru TEC și pentru REC.",
+           "Valori la limită (BVA): pentru fiecare număr din cerințe, un test exact pe limită și unul imediat după, separat pentru TEC și pentru REC.",
            "Dacă un test pică, uită-te la cauza probabilă. „Codul” înseamnă un defect: completează raportul de incident (cerința, linia, corecția)."],
       en: ["Split the counter values into classes, from the requirements: one class for every state.",
            "Write one test from every class.",
-           "For every threshold in the requirements add the pair exactly at the limit and just beyond, separately for TEC and REC.",
+           "Boundary values (BVA): for every number in the requirements, one test exactly on the limit and one just after it, separately for TEC and REC.",
            "If a test fails, look at the probable cause. “The code” means a defect: fill in the incident report (requirement, line, fix)."]
     },
     prov: () => [
@@ -1020,7 +1022,7 @@ const TIPS = {
   mDec: { ro: "Câte rezultate de decizie au fost atinse: fiecare if trebuie să fie o dată true și o dată false.", en: "How many decision outcomes were reached: every if must be true once and false once." },
   mMcdc: { ro: "Câte condiții au o pereche de teste care diferă doar prin ele și dau rezultate diferite.", en: "How many conditions have a pair of tests that differ only in them and give different results." },
   mReq: { ro: "Câte cerințe au cel puțin un test valid: testul exercită cerința și are rezultatul așteptat corect.", en: "How many requirements have at least one valid test: it exercises the requirement and has the correct expected result." },
-  mThr: { ro: "Câte praguri au perechea de teste exact la limită și imediat peste (ISO 26262-6, tabelul 8, nota b).", en: "How many thresholds have the pair of tests exactly at the limit and just beyond (ISO 26262-6, Table 8, note b)." },
+  mThr: { ro: "Valori la limită (BVA), tehnica clasică de testare: câte limite din cerințe au atât testul exact pe limită, cât și pe cel imediat după (ISO 26262-6, tabelul 8, nota b).", en: "Boundary value analysis (BVA), the classic test technique: how many limits in the requirements have both the test exactly on the limit and the one just after it (ISO 26262-6, Table 8, note b)." },
   mFunc: { ro: "Câte funcții au fost apelate măcar o dată.", en: "How many functions were called at least once." },
   mCall: { ro: "Câte locuri de apel (C1, C2, C3) au fost executate.", en: "How many call sites (C1, C2, C3) were executed." },
   hits: { ro: "Numărul din stânga codului: de câte ori a rulat linia. ##### = linie neexecutată.", en: "The number left of the code: how many times the line ran. ##### = line not executed." },
@@ -1287,9 +1289,8 @@ function renderResults(exKey, an) {
     "<div><h3>" + t("uncoveredLines") + "</h3><ul>" + (unl.length ? unl.map((n) => "<li>" + t("line") + " " + n + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("missingOutcomes") + "</h3><ul>" + (miss.length ? miss.map((m) => "<li>" + esc(m) + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>" +
     "<div><h3>" + t("reqMissing") + "</h3><ul>" + (an.reqMissing.length ? an.reqMissing.map((r) => '<li class="mono">' + r + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
-  if (an.thr && !isDemo()) html += "<div><h3>" + t("thrTitle") + '</h3><p class="muted" style="font-size:0.9rem;margin:6px 0 0">' + esc(t("thrHidden")) + "</p></div>";
-  if (an.thr && isDemo()) html += "<div><h3>" + t("thrTitle") + "</h3><ul>" + an.thr.map((x) => '<li><span class="mono">' + esc(x.name) + "</span> " +
-    '<span class="chip ' + (x.at ? "ok" : "bad") + '">' + t("thrAt") + (x.at ? " ✓" : " ✗") + '</span> <span class="chip ' + (x.over ? "ok" : "bad") + '">' + t("thrOver") + (x.over ? " ✓" : " ✗") + "</span></li>").join("") + "</ul></div>";
+  if (an.thr) html += "<div><h3>" + t("thrTitle") + "</h3><ul>" + an.thr.map((x) => '<li><span class="mono">' + esc(isDemo() ? x.name : x.generic) + "</span> " +
+    '<span class="chip ' + (x.at ? "ok" : "bad") + '">' + t("thrAt") + (x.at ? " ✓" : " ✗") + '</span> <span class="chip ' + (x.over ? "ok" : "bad") + '">' + t("thrOver") + (x.over ? " ✓" : " ✗") + "</span></li>").join("") + '</ul><p class="muted" style="font-size:0.82rem;margin:6px 0 0">' + esc(t("bvaHow")) + (isDemo() ? "" : " " + esc(t("thrHidden"))) + "</p></div>";
   html += "<div><h3>" + t("warnTitle") + "</h3><ul>" + (an.warned.length ? an.warned.map((r) => '<li><span class="mono">' + esc(r.id) + "</span>: " +
     r.chk.warnings.length + " " + t(r.chk.warnings.length === 1 ? "warnOne" : "warnMany") + "</li>").join("") : "<li>" + t("none") + "</li>") + "</ul></div>";
   if (singles.length) html += "<div><h3>MC/DC · " + t("notShown") + "</h3><ul>" + singles.map((d) => '<li><span class="mono">' + esc(d.conds[0].label) + "</span> (" + t("line") + " " + d.line + ")</li>").join("") + "</ul></div>";
@@ -1444,8 +1445,7 @@ function buildReport() {
     cov += "<li>" + t("uncoveredLines") + ": " + (unl.length ? unl.join(", ") : t("none")) + "</li><li>" + t("missingOutcomes") + ": " + (miss.length ? esc(miss.join(", ")) : t("none")) +
       "</li><li>MC/DC · " + t("notShown") + ": " + (condMiss.length ? esc(condMiss.join("; ")) : t("none")) + "</li><li>" + t("reqMissing") + ": " + (an.reqMissing.length ? an.reqMissing.join(", ") : t("none")) + "</li></ul>";
     if (an.thr) {
-      const th = isDemo() ? an.thr.map((x) => x.name + ": " + t("thrAt") + (x.at ? " ✓" : " ✗") + ", " + t("thrOver") + (x.over ? " ✓" : " ✗"))
-                          : [an.thr.filter((x) => x.at && x.over).length + " / " + an.thr.length];
+      const th = an.thr.map((x) => (isDemo() ? x.name : x.generic) + ": " + t("thrAt") + (x.at ? " ✓" : " ✗") + ", " + t("thrOver") + (x.over ? " ✓" : " ✗"));
       cov = cov.replace("</ul>", "<li>" + t("thrTitle") + ": " + esc(th.join("; ")) + "</li></ul>");
       text.push("  " + t("thrTitle") + ": " + th.join("; "));
     }
