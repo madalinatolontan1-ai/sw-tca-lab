@@ -3,13 +3,14 @@
 Aplicațiile de laborator (HW TCA, SW TCA, FMEA) trimit raportul fiecărui student la un script Google Apps Script. Scriptul:
 
 - salvează raportul HTML în Google Drive, în `Rapoarte laboratoare/<laborator>`;
-- adaugă un rând în foaia de calcul, în tab-ul laboratorului: momentul primirii, nume, grupă, variantă, un rezumat și linkul spre raport.
+- salvează lângă el, ca fișier JSON, datele structurate ale raportului: valorile și justificările din analiză, datele de lucru (începutul, timpul activ, modificările pe câmpuri, textul lipit, doar ca lungime) și copia analizei din momentul în care studentul a deschis prima dată tab-ul Raport;
+- adaugă un rând în foaia de calcul, în tab-ul laboratorului: momentul primirii, nume, grupă, variantă, un rezumat, linkul spre raport, linkul spre JSON, timpul activ în minute, numărul de modificări și numărul de lipiri.
 
 Un student poate trimite raportul de mai multe ori. Toate trimiterile se păstrează, iar ultima contează.
 
 ## Feedback anonim
 
-După ce raportul a fost trimis, aplicația deschide o singură dată (pe laborator și browser) un formular cu 5 întrebări, pe o scală de la 1 la 5, și un comentariu opțional. Formularul nu trimite numele, grupa sau varianta. Răspunsurile ajung în tab-ul **Feedback**, creat automat la primul răspuns. Se salvează doar data, fără oră, iar rândul se inserează pe o poziție aleatoare, ca ordinea rândurilor să nu poată fi pusă în legătură cu rapoartele.
+După ce raportul a fost trimis, aplicația deschide o singură dată (pe laborator și browser) un formular cu 13 afirmații, pe o scală de la 1 la 5, și un comentariu opțional: cele 10 ale System Usability Scale (SUS) și 3 despre laborator. Formularul nu trimite numele, grupa sau varianta. Răspunsurile ajung în tab-ul **Feedback SUS**, creat automat la primul răspuns, cu scorul SUS calculat (0–100). Răspunsurile vechi, cu 5 întrebări, rămân în tab-ul **Feedback**. Se salvează doar data, fără oră, iar rândul se inserează pe o poziție aleatoare, ca ordinea rândurilor să nu poată fi pusă în legătură cu rapoartele.
 
 ## Configurare (o singură dată, cam 5 minute)
 

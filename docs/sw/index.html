@@ -290,7 +290,7 @@ const I18N = {
     stale: "Ai modificat testele. Apasă din nou „Rulează testele” ca să vezi rezultatele noi.",
     shown: "demonstrată prin perechea", notShown: "nedemonstrată",
     line: "linia", decision: "decizia", outcome: "rezultat",
-    notes: "Observații (apar în raport)",
+    notes: "Observații (apar în raport)", conclusion: "Concluzia (apare în raport)", cCov: "Ce arată acoperirea obținută (statement, branch, MC/DC) despre codul testat", cLim: "Ce nu arată: ce defecte pot rămâne nedetectate chiar cu acoperire 100%",
     asilTitle: "Înainte de teste: ce cere ISO 26262-6 pentru ASIL B?",
     asilHint: "Alege nivelul de recomandare pentru fiecare metrică la nivel de unitate software (ISO 26262-6, Tabelul 9). Intrările 1a, 1b, 1c sunt alternative: se alege o combinație potrivită pentru ASIL, cu justificare. ISO 26262 nu fixează un procent: cere o valoare-țintă definită și justificată (9.4.4, NOTA 1). În laborator ținta este 100%, ca în practica industrială. Răspunsul apare în raport.",
     hr: "++ puternic recomandat", r: "+ recomandat", nr: "o fără recomandare", choose: "alege",
@@ -354,7 +354,7 @@ const I18N = {
     stale: "You changed the tests. Press “Run tests” again to see the new results.",
     shown: "shown by the pair", notShown: "not shown",
     line: "line", decision: "decision", outcome: "outcome",
-    notes: "Notes (included in the report)",
+    notes: "Notes (included in the report)", conclusion: "Conclusion (included in the report)", cCov: "What the coverage you reached (statement, branch, MC/DC) shows about the tested code", cLim: "What it does not show: which defects can stay undetected even at 100% coverage",
     asilTitle: "Before testing: what does ISO 26262-6 require for ASIL B?",
     asilHint: "Choose the recommendation level of each metric at software unit level (ISO 26262-6, Table 9). Entries 1a, 1b, 1c are alternatives: a suitable combination is chosen for the ASIL, with a rationale. ISO 26262 does not fix a percentage: it asks for a defined, justified target value (9.4.4, NOTE 1). In the lab the target is 100%, as in industrial practice. Your answer goes into the report.",
     hr: "++ highly recommended", r: "+ recommended", nr: "o no recommendation", choose: "choose",
@@ -1083,7 +1083,8 @@ function inputHint(exKey, k, raw, v) {
 const STORE_KEY = "swtca-lab-v1";
 let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", tests: { f1: [], f2: [], f3: [], int: [] },
           ran: { f1: false, f2: false, f3: false, int: false }, notes: { f1: "", f2: "", f3: "", int: "" },
-          asil: { stmt: "", branch: "", mcdc: "" }, bug: { test: "", line: "", fix: "", desc: "" }, just: "", hist: {} };
+          asil: { stmt: "", branch: "", mcdc: "" }, bug: { test: "", line: "", fix: "", desc: "" }, just: "", hist: {}, concl: { cov: "", lim: "" } };
+const CONCL = [["cov", "cCov"], ["lim", "cLim"]];
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() {
   try {
@@ -1470,22 +1471,43 @@ function buildReport() {
     if (S.notes[k]) { parts.push("<h3>" + t("notes") + "</h3><p>" + esc(S.notes[k]).replace(/\n/g, "<br>") + "</p>"); text.push("  " + t("notes") + ": " + S.notes[k]); }
     text.push("");
   });
+  parts.push("<h2>" + esc(t("conclusion")) + "</h2>" + CONCL.map((c) => "<h3>" + esc(t(c[1])) + "</h3><p>" + esc(S.concl[c[0]] || "–").replace(/\n/g, "<br>") + "</p>").join(""));
+  text.push(t("conclusion") + ":"); CONCL.forEach((c) => text.push("  " + t(c[1]) + ": " + (S.concl[c[0]] || "–")));
   const css = "body{font:14px/1.5 Arial,Helvetica,sans-serif;color:#17202D;max-width:1000px;margin:24px auto;padding:0 16px}h1{font-size:22px}h2{font-size:17px;margin-top:22px;border-bottom:1px solid #D9DEE7;padding-bottom:4px}h3{font-size:14px}" +
     "table.r{border-collapse:collapse;font-family:Consolas,monospace;font-size:12px}table.r th,table.r td{border:1px solid #D9DEE7;padding:3px 6px;text-align:left}table.r th{background:#F3F5F8}";
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>SW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
   return { html: html, body: parts.join("\n"), text: text.join("\n") };
 }
+/* structured copy of the work, sent with the report for scoring against the answer key */
+function reportData() {
+  const v = V(); let resets = 0; try { resets = +localStorage.getItem(RESET_KEY) || 0; } catch (e) { /* storage unavailable */ }
+  const ex = {};
+  EX_KEYS.forEach((k) => { const an = analyse(k, v, S.tests[k]);
+    const miss = []; an.decisions.forEach((d) => d.missing.forEach((o) => miss.push(d.line + ":" + o)));
+    const condMiss = []; an.decisions.forEach((d) => d.conds.forEach((c) => { if (!c.shown) condMiss.push(d.line + ": " + c.label); }));
+    ex[k] = { tests: S.tests[k], ran: !!S.ran[k], stmt: an.stmt, dec: an.dec, mcdc: an.mcdc, req: an.req, uncovered: an.stmtLines.filter((n) => an.hits[n] === 0),
+      missingOutcomes: miss, mcdcNotShown: condMiss, reqMissing: an.reqMissing, bva: an.thr ? an.thr.map((x) => ({ name: x.name, at: !!x.at, over: !!x.over })) : null,
+      warningsLeft: an.warned.reduce((a, r) => a + r.chk.warnings.length, 0), hist: histOf(k), notes: S.notes[k] || "" }; });
+  return { variant: S.variant, lang: LANG, asil: S.asil, bug: S.bug, just: S.just, concl: S.concl, resets: resets, ex: ex };
+}
 function renderReport(view) {
+  if (window.LabReport) window.LabReport.snapshot("SW-TCA", reportData);
   const r = buildReport();
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row">' +
     '<button class="btn primary" id="dl" type="button">' + t("download") + '</button><button class="btn" id="cp" type="button">' + t("copy") + "</button></div></div>" +
-    '<p class="muted">' + t("reportHint") + '</p><div id="sendBox"></div><div class="report-frame">' + r.body + "</div>" +
+    '<p class="muted">' + t("reportHint") + '</p><div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
+    CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>" +
+    '<div id="sendBox"></div><div class="report-frame" id="rframe">' + r.body + "</div>" +
     '<textarea id="reportText" readonly hidden></textarea>';
   if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "SW-TCA", lang: LANG, getPayload: () => {
     const x = buildReport(); const v = V();
     const sum = EX_KEYS.map((k) => { const an = analyse(k, v, S.tests[k]); return EX[k].fn + " " + pct(an.stmt) + " / " + pct(an.dec) + " / " + pct(an.mcdc) + " ⚠" + an.warned.length; }).join("; ");
-    return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, summary: "stmt / branch / MC/DC: " + sum + " · bug: " + ((S.bug && S.bug.line) || "-") };
+    return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, data: reportData(), summary: "stmt / branch / MC/DC: " + sum + " · bug: " + ((S.bug && S.bug.line) || "-") };
   } });
+  view.querySelectorAll("textarea[data-concl]").forEach((n) => {
+    n.addEventListener("input", () => { S.concl[n.dataset.concl] = n.value; save(); });
+    n.addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body; });
+  });
   view.querySelector("#dl").addEventListener("click", () => {
     const b = new Blob([buildReport().html], { type: "text/html" });
     const a = document.createElement("a");
@@ -1506,6 +1528,8 @@ function renderReport(view) {
 /* ---------------------------------------------------------------- boot */
 load();
 LANG = S.lang || "ro";
+if (!S.concl) S.concl = { cov: "", lim: "" };
+if (window.LabReport) window.LabReport.track("SW-TCA");
 document.getElementById("stName").value = S.name;
 document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
@@ -1536,6 +1560,7 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
         localStorage.setItem(STORE_KEY, JSON.stringify({ lang: LANG }));
         localStorage.setItem(RESET_KEY, String((+localStorage.getItem(RESET_KEY) || 0) + 1));
       } catch (e) { /* storage unavailable */ }
+      if (window.LabReport) window.LabReport.resetWork("SW-TCA");
       location.reload(); return;
     }
     armed = Date.now(); b.textContent = t("resetConfirm"); b.classList.add("danger");

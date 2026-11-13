@@ -454,13 +454,13 @@ const I18N = {
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
     apTitle: "Tabelul AP (AIAG-VDA)",
     whyRule: "regula", whyC7: "C7 marcaj", whyC5: "C5 THT pe BOTTOM", whyAOIb: "AOI cu BOTTOM activ", whyAOItop: "AOI fără BOTTOM", whyTP: "TP direct", whyNoTP: "fără TP direct (cluster / indirect)", whyNoNet: "pin neconectat",
-    conclusion: "Propuneri de îmbunătățire și concluzie (apar în raport)",
+    conclusion: "Concluzia (apare în raport)", cO: "Logica folosită pentru O", cImpr: "Îmbunătățirile propuse și efectul lor asupra AP", cLim: "Limitele analizei: ce nu poate vedea testarea sau analiza", c_conclF: "Concluzie: lipsește „{f}”.",
     reportTitle: "Fișa de evaluare a riscului · HW TCA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.",
     student: "Student", generated: "Generat", improvements: "Îmbunătățiri aplicate", tpOn: "Test point-uri", none: "niciuna", yes: "da", no: "nu",
     incomplete: "incomplet",
-    raAcc: "risc acceptat", raAct: "acțiune propusă", raPh: "de ce rămâne riscul, ce se poate face sau de ce se acceptă",
+    raAcc: "risc acceptat", raAct: "acțiune propusă", raWhyPh: "de ce rămâne riscul: ce nu prinde testarea și de ce", raPh: "ce se face sau de ce se acceptă riscul",
     newTestsTitle: "Teste FT noi (îmbunătățire)", newTestsHint: "Propune un test funcțional nou (ce măsori, unde, ce limită), apoi alege-l în coloana „Test FT nou” la modurile pe care le prinde, cu valoarea D. Testul contează doar în varianta cu îmbunătățiri.",
     newTestPh: "ex.: Măsurarea tensiunii pe RS cu nodul activ (< 0,3 · VDD)", addTest: "Adaugă testul", testAdded: "Testul {id} a fost adăugat.", del: "Șterge", newTag: "nou",
     ftListTitle: "Lista testelor funcționale (FT1–FT8) · cum alegi D FT", ftHowTitle: "Cum alegi testul și D FT",
@@ -505,13 +505,13 @@ const I18N = {
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
     apTitle: "AP table (AIAG-VDA)",
     whyRule: "rule", whyC7: "C7 marking", whyC5: "C5 THT on BOTTOM", whyAOIb: "AOI with BOTTOM active", whyAOItop: "AOI without BOTTOM", whyTP: "direct TP", whyNoTP: "no direct TP (cluster / indirect)", whyNoNet: "pin not connected",
-    conclusion: "Proposed improvements and conclusion (included in the report)",
+    conclusion: "Conclusion (included in the report)", cO: "The logic used for O", cImpr: "The proposed improvements and their effect on AP", cLim: "Limits of the analysis: what testing or the analysis cannot see", c_conclF: "Conclusion: “{f}” is missing.",
     reportTitle: "Risk assessment sheet · HW TCA", download: "Download report (.html)", copy: "Copy report text",
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.",
     student: "Student", generated: "Generated", improvements: "Improvements applied", tpOn: "Test points", none: "none", yes: "yes", no: "no",
     incomplete: "incomplete",
-    raAcc: "risk accepted", raAct: "action proposed", raPh: "why the risk remains, what can be done or why it is accepted",
+    raAcc: "risk accepted", raAct: "action proposed", raWhyPh: "why the risk remains: what testing does not catch and why", raPh: "what is done, or why the risk is accepted",
     newTestsTitle: "New FT tests (improvement)", newTestsHint: "Propose a new functional test (what you measure, where, which limit), then pick it in the “New FT test” column for the modes it catches, with the D value. The test counts only in the version with improvements.",
     newTestPh: "e.g.: Measure the RS voltage with the node active (< 0.3 · VDD)", addTest: "Add test", testAdded: "Test {id} added.", del: "Delete", newTag: "new",
     ftListTitle: "Functional test list (FT1–FT8) · how to choose D FT", ftHowTitle: "How to choose the test and D FT",
@@ -527,7 +527,9 @@ const tr = (o) => (o && typeof o === "object" ? o[LANG] : o);
 
 /* ---------------------------------------------------------------- state */
 const STORE_KEY = "hwtca-lab-v1";
-let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", sel: "", net: "", pin: "" };
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", concl: { o: "", impr: "", lim: "" }, sel: "", net: "", pin: "" };
+const CONCL = [["o", "cO"], ["impr", "cImpr"], ["lim", "cLim"]];
+const raDone = (u) => !!(u.rad && (u.ra || "").trim() && (u.raw || "").trim());
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
 const V = () => VARIANTS[S.variant];
@@ -574,7 +576,7 @@ const needsRA = (ap) => ap === "H" || ap === "M";
 function summary(env) {
   const idxs = V(); let h = 0, mm = 0, l = 0, done = 0;
   let ra = 0;
-  idxs.forEach((i) => { const r = evalRow(i, env); if (r.ap) { done++; if (r.ap === "H") h++; else if (r.ap === "M") mm++; else l++; if (needsRA(r.ap)) { const u = S.rows[i] || {}; if (u.rad && (u.ra || "").trim()) ra++; } } });
+  idxs.forEach((i) => { const r = evalRow(i, env); if (r.ap) { done++; if (r.ap === "H") h++; else if (r.ap === "M") mm++; else l++; if (needsRA(r.ap)) { const u = S.rows[i] || {}; if (raDone(u)) ra++; } } });
   return { n: idxs.length, done: done, H: h, M: mm, L: l, res: h + mm, ra: ra, cov: done ? Math.round(100 * l / done) : 0 };
 }
 
@@ -700,6 +702,7 @@ function renderAnalysis(view) {
     const ftNewCell = hasNew ? '<td><div class="ftc">' + sel("nfttest", S.newTests.map((x) => x.id), u.nfttest, t("colFTnew")) + sel("nft", c9opts, u.nft, t("colFTnew")) + "</div></td>" : "";
     const raCell = needsRA(r.ap) ? '<td class="ra"><select data-row="' + i + '" data-k="rad" aria-label="' + esc(t("colRA")) + '"><option value="">' + t("choose") + "</option>" +
         [["acc", t("raAcc")], ["act", t("raAct")]].map((o) => '<option value="' + o[0] + '"' + (u.rad === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>").join("") + "</select>" +
+        '<textarea data-raw="' + i + '" placeholder="' + esc(t("raWhyPh")) + '" aria-label="' + esc(t("raWhyPh")) + '">' + esc(u.raw || "") + "</textarea>" +
         '<textarea data-ra="' + i + '" placeholder="' + esc(t("raPh")) + '" aria-label="' + esc(t("raPh")) + '">' + esc(u.ra || "") + "</textarea></td>"
       : '<td class="num muted">–</td>';
     return '<tr class="' + (S.sel === r.m.ref ? "sel" : "") + '"><td class="num">' + (k + 1) + '</td><td class="ref" data-sel="' + r.m.ref + '">' + esc(r.m.ref) + '<span class="why">' + esc(r.m.pin === "–" ? "" : r.m.pin) + "</span></td>" +
@@ -731,7 +734,8 @@ function renderAnalysis(view) {
       meter(t("mRA"), now.ra + " / " + now.res, "–", now.res && now.ra === now.res ? "good" : now.res ? "risk" : "") +
     "</div></div>" +
     '<div class="panel stack"><div class="tablewrap"><table class="sheet"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>" +
-    '<div class="panel stack"><label class="label" for="conclusion">' + t("conclusion") + '</label><textarea id="conclusion">' + esc(S.conclusion) + "</textarea></div>";
+    '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
+      CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>";
 
   view.querySelectorAll("select[data-row]").forEach((n) => n.addEventListener("change", () => {
     const i = n.dataset.row; S.rows[i] = S.rows[i] || {}; S.rows[i][n.dataset.k] = n.value;
@@ -739,8 +743,9 @@ function renderAnalysis(view) {
     save(); render();
   }));
   view.querySelectorAll("textarea[data-ftj]").forEach((n) => n.addEventListener("input", () => { const i = n.dataset.ftj; S.rows[i] = S.rows[i] || {}; S.rows[i].ftj = n.value; save(); }));
-  view.querySelectorAll("textarea[data-ra]").forEach((n) => {
-    n.addEventListener("input", () => { const i = n.dataset.ra; S.rows[i] = S.rows[i] || {}; S.rows[i].ra = n.value; save(); });
+  view.querySelectorAll("textarea[data-ra], textarea[data-raw]").forEach((n) => {
+    const k = n.hasAttribute("data-raw") ? "raw" : "ra";
+    n.addEventListener("input", () => { const i = n.dataset[k]; S.rows[i] = S.rows[i] || {}; S.rows[i][k] = n.value; save(); });
     n.addEventListener("change", () => render());
   });
   view.querySelector("#addTest").addEventListener("submit", (e) => {
@@ -769,7 +774,7 @@ function renderAnalysis(view) {
     n.addEventListener("click", () => pick(n.dataset.ref));
     n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(n.dataset.ref); } });
   });
-  view.querySelector("#conclusion").addEventListener("input", (e) => { S.conclusion = e.target.value; save(); });
+  view.querySelectorAll("textarea[data-concl]").forEach((n) => n.addEventListener("input", () => { S.concl[n.dataset.concl] = n.value; save(); }));
 }
 
 /* ---------------------------------------------------------------- report */
@@ -794,8 +799,8 @@ function buildReport() {
     const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
     text.push((k + 1) + ". " + r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin) + " | " + modeTxt(r.m) + " | " + effTxt(r.m) + " | " + (u.cls || "–") + " S=" + (r.s || "–") + " O=" + (r.o || "–") +
       " | AOI=" + r.det.aoi + " AXI=" + r.det.axi + " ICT=" + r.det.ict + " FT=" + (r.ft0 || "–") + " (" + ftLabel(u) + (u.ftj ? ": " + u.ftj : "") + ")" + (r.ftN ? " FTnew=" + r.ftN + " (" + u.nfttest + ")" : "") + " | D=" + (r.d || "–") + " | AP=" + (r.ap || "–") + " (" + t("before") + ": " + (r0.ap || "–") + ")" +
-      (needsRA(r.ap) ? " | RA: " + (u.rad ? t(u.rad === "acc" ? "raAcc" : "raAct") : "–") + " – " + (u.ra || "–") : ""));
-    const raTxt = needsRA(r.ap) ? (u.rad ? "<b>" + esc(t(u.rad === "acc" ? "raAcc" : "raAct")) + "</b><br>" : "") + esc(u.ra || "–") : "–";
+      (needsRA(r.ap) ? " | RA: " + (u.rad ? t(u.rad === "acc" ? "raAcc" : "raAct") : "–") + " – " + (u.raw || "–") + " – " + (u.ra || "–") : ""));
+    const raTxt = needsRA(r.ap) ? (u.rad ? "<b>" + esc(t(u.rad === "acc" ? "raAcc" : "raAct")) + "</b><br>" : "") + esc(u.raw || "–") + "<br>" + esc(u.ra || "–") : "–";
     return "<tr><td>" + (k + 1) + "</td><td>" + esc(r.m.ref + (r.m.pin === "–" ? "" : " " + r.m.pin)) + "</td><td>" + esc(modeTxt(r.m)) + "</td><td>" + esc(effTxt(r.m)) + "</td><td>" + esc(u.cls || "–") + "</td><td>" + (r.s || "–") +
       "</td><td>" + (r.o || "–") + "</td><td>" + r.det.aoi + "</td><td>" + r.det.axi + "</td><td>" + r.det.ict + "</td><td>" + esc(ftLabel(u)) + " · " + (r.ft0 || "–") + (u.ftj ? "<br><i>" + esc(u.ftj) + "</i>" : "") + "</td><td>" + (r.ftN ? esc(u.nfttest) + " · " + r.ftN : "–") + "</td><td>" + (r.d || "–") +
       '</td><td class="ap-' + (r.ap || "na") + '">' + (r.ap || "–") + "</td><td>" + (r0.ap || "–") + "</td><td>" + raTxt + "</td></tr>";
@@ -804,13 +809,25 @@ function buildReport() {
   const sum = (x) => t("mDone") + ": " + x.done + "/" + x.n + " · H: " + x.H + " · M: " + x.M + " · L: " + x.L + " · " + t("mRes") + ": " + x.res + " · " + t("mCov") + ": " + x.cov + "%" + (x === now ? " · " + t("mRA") + ": " + x.ra + "/" + x.res : "");
   parts.push("<h2>" + t("summary") + "</h2><ul><li><strong>" + esc(sum(now)) + "</strong></li><li>" + esc(t("before")) + ": " + esc(sum(base)) + "</li></ul>");
   text.push("", t("summary") + ": " + sum(now), t("before") + ": " + sum(base));
-  parts.push("<h2>" + esc(t("conclusion")) + "</h2><p>" + esc(S.conclusion || "–").replace(/\n/g, "<br>") + "</p>");
-  text.push("", t("conclusion") + ": " + (S.conclusion || "–"));
+  parts.push("<h2>" + esc(t("conclusion")) + "</h2>" + CONCL.map((c) => "<h3>" + esc(t(c[1])) + "</h3><p>" + esc(S.concl[c[0]] || "–").replace(/\n/g, "<br>") + "</p>").join(""));
+  text.push("", t("conclusion") + ":"); CONCL.forEach((c) => text.push("  " + t(c[1]) + ": " + (S.concl[c[0]] || "–")));
   const css = "body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#17202D;max-width:1200px;margin:24px auto;padding:0 16px}h1{font-size:21px}h2{font-size:16px;margin-top:20px;border-bottom:1px solid #D9DEE7;padding-bottom:4px}" +
     "table.r{border-collapse:collapse;font-size:12px}table.r th,table.r td{border:1px solid #D9DEE7;padding:3px 6px;text-align:left;vertical-align:top}table.r th{background:#F3F5F8}.ap-H{background:#FBE6E6;font-weight:bold}.ap-M{background:#FAEFD8;font-weight:bold}.ap-L{background:#DFF2E8}";
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>HW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
   return { html: html, body: parts.join("\n"), text: text.join("\n") };
 }
+/* structured copy of the analysis, sent with the report for scoring against the answer key */
+function reportData() {
+  const env = ENV_NOW();
+  return { variant: S.variant, lang: LANG, aoiBottom: !!S.aoiBottom, tps: Object.keys(S.tps || {}).filter((k) => S.tps[k]), newTests: S.newTests || [], concl: S.concl,
+    rows: (V() || []).map((i) => { const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
+      return { idx: i, ref: r.m.ref, pin: r.m.pin, mode: r.m.mode, cls: u.cls || "", s: r.s || null, o: r.o || null, aoi: r.det.aoi, axi: r.det.axi, ict: r.det.ict,
+        fttest: u.fttest || "", ft: r.ft0 || null, ftj: u.ftj || "", nfttest: u.nfttest || "", nft: r.ftN || null, d: r.d || null, ap: r.ap || "", ap0: r0.ap || "",
+        rad: u.rad || "", raw: u.raw || "", ra: u.ra || "", checks: CHECK_KEYS(u, r) }; }),
+    checksOpen: checks().length };
+}
+const CHECK_KEYS = (u, r) => [!u.cls && "cls", !u.o && "o", !u.fttest && "ft", u.fttest && u.fttest !== "none" && !u.ft && "ftd", u.fttest && !(u.ftj || "").trim() && "ftj",
+  needsRA(r.ap) && !raDone(u) && "ra"].filter(Boolean);
 function checks() {
   const out = [];
   V().forEach((i, k) => {
@@ -820,19 +837,20 @@ function checks() {
     if (!u.cls) f("c_cls"); if (!u.o) f("c_o");
     if (!u.fttest) f("c_ft"); else if (u.fttest !== "none" && !u.ft) f("c_ftd");
     if (u.fttest && !(u.ftj || "").trim()) f("c_ftj");
-    if (needsRA(r.ap)) { if (!u.rad) f("c_ra", { ap: r.ap }); else if (!(u.ra || "").trim()) f("c_raTxt"); }
+    if (needsRA(r.ap)) { if (!u.rad) f("c_ra", { ap: r.ap }); else if (!raDone(u)) f("c_raTxt"); }
   });
-  if (!(S.conclusion || "").trim()) out.push(t("c_concl"));
+  CONCL.forEach((c) => { if (!(S.concl[c[0]] || "").trim()) out.push(fmtT("c_conclF", { f: t(c[1]) })); });
   return out;
 }
 function renderReport(view) {
   const r = buildReport();
   const ck = checks();
+  if (window.LabReport) window.LabReport.snapshot("HW-TCA", reportData);
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + t("download") +
     '</button><button class="btn" id="cp" type="button">' + t("copy") + '</button></div></div><p class="muted">' + t("reportHint") + '</p><div class="panel stack"><h3>' + t("chkTitle") + "</h3>" + (ck.length ? '<ul class="checks">' + ck.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : '<p class="muted">' + t("chkOk") + "</p>") + '</div><div id="sendBox"></div><div class="report-frame">' + r.body + '</div><textarea id="reportText" readonly hidden></textarea>';
   if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "HW-TCA", lang: LANG, getPayload: () => {
     const x = buildReport(); const s = summary(ENV_NOW());
-    return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text,
+    return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, data: reportData(),
       summary: s.done + "/" + s.n + " · H " + s.H + " · M " + s.M + " · L " + s.L + " · cov " + s.cov + "% · RA " + s.ra + "/" + s.res };
   } });
   view.querySelector("#dl").addEventListener("click", () => {
@@ -849,6 +867,9 @@ function renderReport(view) {
 
 /* ---------------------------------------------------------------- boot */
 load(); LANG = S.lang || "ro";
+if (!S.concl) S.concl = { o: "", impr: "", lim: "" };
+if ((S.conclusion || "").trim() && !S.concl.impr) { S.concl.impr = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
+if (window.LabReport) window.LabReport.track("HW-TCA");
 document.getElementById("stName").value = S.name; document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
 document.getElementById("studentForm").addEventListener("submit", (e) => {
@@ -865,6 +886,7 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
   b.addEventListener("click", () => {
     if (Date.now() - armed < 5000) {
       try { localStorage.setItem(STORE_KEY, JSON.stringify({ lang: LANG })); } catch (e) { /* storage unavailable */ }
+      if (window.LabReport) window.LabReport.resetWork("HW-TCA");
       location.reload(); return;
     }
     armed = Date.now(); b.textContent = t("resetConfirm"); b.classList.add("danger");
