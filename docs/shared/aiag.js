@@ -134,12 +134,46 @@
     }
     return "";
   }
-  /* option label for a select: "4 · Pass-Fail · proven method, in time ..." kept short */
+  /* short option labels for the selects (one line); the full handbook text stays in the reference tables and in the option tooltip */
+  const SH = {
+    S: { 10: L("Afectează siguranța vehiculului sau sănătatea persoanelor", "Affects safe vehicle operation or people's health"),
+      9: L("Neconformitate cu reglementările", "Noncompliance with regulations"),
+      8: L("Pierderea unei funcții principale a vehiculului", "Loss of a primary vehicle function"),
+      7: L("Degradarea unei funcții principale a vehiculului", "Degradation of a primary vehicle function"),
+      6: L("Pierderea unei funcții secundare a vehiculului", "Loss of a secondary vehicle function"),
+      5: L("Degradarea unei funcții secundare a vehiculului", "Degradation of a secondary vehicle function"),
+      4: L("Aspect, sunet sau vibrații foarte deranjante", "Very objectionable appearance, sound or vibration"),
+      3: L("Aspect, sunet sau vibrații moderat deranjante", "Moderately objectionable appearance, sound or vibration"),
+      2: L("Aspect, sunet sau vibrații ușor deranjante", "Slightly objectionable appearance, sound or vibration"),
+      1: L("Niciun efect perceptibil", "No discernible effect") },
+    O: { 10: L("tehnologie nouă, fără experiență și fără prevenție", "new technology, no experience, no prevention"),
+      9: L("prima utilizare în firmă, inovații noi, fără validare", "first use in the company, new innovations, no validation"),
+      8: L("inovații noi într-o aplicație nouă, fără validare", "new innovations in a new application, no validation"),
+      7: L("design nou pe tehnologie similară, prevenție limitată", "new design on similar technology, limited prevention"),
+      6: L("design similar, condiții de funcționare schimbate, prevenție parțială", "similar design, changed operating conditions, some prevention"),
+      5: L("modificări de detaliu, tehnologie dovedită, lecții învățate aplicate", "detail changes, proven technology, lessons learned applied"),
+      4: L("design aproape identic, respectă standardele și bunele practici", "almost identical design, conforms to standards and best practices"),
+      3: L("design cunoscut, testat în condiții comparabile", "known design, tested under comparable conditions"),
+      2: L("design matur, expunere lungă în teren", "mature design, long field exposure"),
+      1: L("cauza nu este posibilă prin design", "the cause is not possible by design") },
+    D: { 10: L("nu există încă procedură de test", "no test procedure yet"),
+      9: L("testul nu vizează modul de defectare sau cauza", "the test does not target the failure mode or cause"),
+      8: L("metodă de test nouă, nedovedită", "new, unproven test method"),
+      7: L("test dovedit, făcut târziu, pass / fail", "proven test, done late, pass / fail"),
+      6: L("test dovedit, făcut târziu, test până la defectare", "proven test, done late, test-to-failure"),
+      5: L("test dovedit, făcut târziu, test de degradare", "proven test, done late, degradation test"),
+      4: L("test dovedit, făcut la timp, pass / fail", "proven test, done in time, pass / fail"),
+      3: L("test dovedit, făcut la timp, test până la defectare", "proven test, done in time, test-to-failure"),
+      2: L("test dovedit, făcut la timp, test de degradare", "proven test, done in time, degradation test"),
+      1: L("detectează sigur sau cauza nu poate apărea", "always detects, or the cause cannot occur") }
+  };
+  const tl = (x, lang) => x[lang] || x.ro;
+  /* each option: [value, short label, full handbook text for the tooltip] */
   const short = {
-    S: (lang) => S.map((x) => [x[0], x[0] + " · " + (x[2][lang] || x[2].ro)]),
-    O: (lang) => O.map((x) => [x[0], x[0] + " · " + (x[1][lang] || x[1].ro) + " · " + (x[2][lang] || x[2].ro)]),
-    D: (lang) => D.map((x) => [x[0], x[0] + " · " + (x[1][lang] || x[1].ro) + (x[3][lang] ? " · " + x[3][lang] : "") + " · " + (x[2][lang] || x[2].ro)]),
-    OP: (lang) => OP.map((x) => [x[0], x[0] + " · " + (x[2][lang] || x[2].ro) + " · " + (x[3][lang] || x[3].ro)])
+    S: (lang) => S.map((x) => [x[0], x[0] + " · " + tl(SH.S[x[0]], lang), tl(x[2], lang)]),
+    O: (lang) => O.map((x) => [x[0], x[0] + " · " + tl(x[1], lang) + " · " + tl(SH.O[x[0]], lang), tl(x[2], lang)]),
+    D: (lang) => D.map((x) => [x[0], x[0] + " · " + tl(x[1], lang) + " · " + tl(SH.D[x[0]], lang), tl(x[2], lang) + (x[3][lang] ? " (" + tl(x[3], lang) + ")" : "")]),
+    OP: (lang) => OP.map((x) => [x[0], x[0] + " · " + tl(x[2], lang) + " · " + tl(x[3], lang), tl(x[3], lang)])
   };
   window.AIAG = { S: S, O: O, D: D, OP: OP, O_NOTE: O_NOTE, OP_NOTE: OP_NOTE, AP: AP, apOf: apOf, table: table, options: short };
 })();
