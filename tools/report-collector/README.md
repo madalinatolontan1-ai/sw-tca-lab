@@ -7,6 +7,10 @@ Aplicațiile de laborator (HW TCA, SW TCA, FMEA) trimit raportul fiecărui stude
 
 Un student poate trimite raportul de mai multe ori. Toate trimiterile se păstrează, iar ultima contează.
 
+## Feedback anonim
+
+După ce raportul a fost trimis, aplicația deschide o singură dată (pe laborator și browser) un formular cu 5 întrebări, pe o scală de la 1 la 5, și un comentariu opțional. Formularul nu trimite numele, grupa sau varianta. Răspunsurile ajung în tab-ul **Feedback**, creat automat la primul răspuns. Se salvează doar data, fără oră, iar rândul se inserează pe o poziție aleatoare, ca ordinea rândurilor să nu poată fi pusă în legătură cu rapoartele.
+
 ## Configurare (o singură dată, cam 5 minute)
 
 1. Deschide foaia de calcul **Rapoarte laboratoare – colectare automată** din Google Drive.

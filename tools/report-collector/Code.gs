@@ -4,6 +4,8 @@
  * The lab apps (HW TCA, SW TCA, FMEA) POST each finished report here. For every report the script
  *   1. saves the HTML report in Drive, in "Rapoarte laboratoare/<lab>",
  *   2. appends a row to the sheet tab of that lab (time, name, group, variant, summary, link).
+ * After a report, the apps may send an anonymous feedback form (kind: "feedback"): no name, group or variant;
+ * it goes to the "Feedback" tab with the date only, at a random row, so it cannot be matched to a report.
  *
  * Setup: see README.md in this folder.
  */
@@ -22,6 +24,7 @@ function doPost(e) {
     const d = JSON.parse(e.postData.contents);
     const lab = String(d.lab || "");
     if (!LABS[lab]) return out_({ ok: false, error: "unknown lab" });
+    if (d.kind === "feedback") return feedback_(lab, d);
     const name = clean_(d.name, 80), group = clean_(d.group, 20), variant = clean_(d.variant, 10);
     if (!name || !variant) return out_({ ok: false, error: "name and variant are required" });
     const html = String(d.html || "");
@@ -43,7 +46,7 @@ function doPost(e) {
 
 /* Health check: opening the web app URL in a browser shows {"ok":true,...,"version":...}.
    The version tells which code the deployment runs. */
-const VERSION = "2026-10-28";
+const VERSION = "2026-11-13";
 function doGet() {
   return out_({ ok: true, service: "lab-reports", version: VERSION, labs: Object.keys(LABS) });
 }
@@ -52,6 +55,27 @@ function doGet() {
 function testPost() {
   const r = doPost({ postData: { contents: JSON.stringify({ lab: "HW-TCA", lang: "ro", name: "TEST", group: "0", variant: "H0", summary: "test din editor", html: "<p>test</p>" }) } });
   Logger.log(r.getContent());
+}
+
+/* Anonymous feedback: 5 answers (1-5) and an optional comment. Only the date is stored and the row lands at a random
+   position, so the order of the rows says nothing about who sent what. */
+const FB_HEADER = ["Data", "Laborator", "Limba", "Q1 funcții / nevoi", "Q2 ușor de folosit", "Q3 proveniența valorilor", "Q4 aș face singur analiza", "Q5 util pentru industrie", "Comentariu"];
+function feedback_(lab, d) {
+  const a = Array.isArray(d.answers) ? d.answers.slice(0, 5).map((x) => Math.round(Number(x))) : [];
+  if (a.length !== 5 || a.some((x) => !(x >= 1 && x <= 5))) return out_({ ok: false, error: "5 answers from 1 to 5 are required" });
+  const ss = book_();
+  let sh = ss.getSheetByName("Feedback");
+  if (!sh) {
+    sh = ss.insertSheet("Feedback");
+    sh.appendRow(FB_HEADER); sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, FB_HEADER.length).setFontWeight("bold");
+  }
+  const row = [Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd"), LABS[lab], clean_(d.lang, 5)].concat(a, [safe_(clean_(d.comment, 1000))]);
+  const last = sh.getLastRow();
+  const at = 2 + Math.floor(Math.random() * last); /* between row 2 and last + 1 */
+  if (at > last) sh.appendRow(row);
+  else { sh.insertRowBefore(at); sh.getRange(at, 1, 1, row.length).setValues([row]); }
+  return out_({ ok: true });
 }
 
 function out_(obj) {
