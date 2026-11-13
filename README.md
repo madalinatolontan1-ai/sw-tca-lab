@@ -1,7 +1,4 @@
-# SW TCA lab – structural code coverage demo
-
-Demo for the *Software Test Coverage Analysis* lab (UPT, Faculty of Electronics,
-Telecommunications and Information Technologies).
+# SW TCA lab – structural code coverage demo.
 
 The code is part of the firmware of a CAN node that sends front-radar data
 (MCP2551 transceiver). It is compiled with **GCC 14** and measured with **gcov /
@@ -66,10 +63,9 @@ The apps can send each report to a Google Apps Script collector (Drive folder + 
 
 ---
 
-### Pe scurt, în română
+### Pe scurt
 
-Demo pentru laboratorul de *Analiza acoperirii testelor software*. Deschide un
-Codespace (**Code → Codespaces → Create codespace on main**), rulează în terminal
+Demo deschide un Codespace (**Code → Codespaces → Create codespace on main**), rulează în terminal
 una dintre comenzile din tabel, apoi `make serve` și apasă **Open in Browser**. Fiecare student
 lucrează în propriul Codespace; modificările tale nu afectează repository-ul.
 
