@@ -719,10 +719,10 @@ function renderAnalysis(view) {
       connPanel() +
       '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
       '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel + "</div>" +
-      '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" +
-    '<div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(t("ctx")) + "</p></div>" +
-    '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + t("howTitle") + '</summary><ol class="task">' + t("how").map((x) => "<li>" + esc(x) + "</li>").join("") +
-      (isDemo() ? "<li><b>" + esc(t("howDemo")) + "</b></li>" : "") + "</ol></details>" +
+      '<div class="stack"><div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(t("ctx")) + "</p></div>" +
+      '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + t("howTitle") + '</summary><ol class="task">' + t("how").map((x) => "<li>" + esc(x) + "</li>").join("") +
+      (isDemo() ? "<li><b>" + esc(t("howDemo")) + "</b></li>" : "") + "</ol></details></div></div>" +
+    '<div class="stack refs"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div>" +
     ftPanel() +
     '<div class="panel stack"><h3>' + t("summary") + '</h3><div class="meters">' +
       meter(t("mDone"), now.done + " / " + now.n, base.done + " / " + base.n) +

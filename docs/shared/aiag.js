@@ -128,9 +128,11 @@
     if (kind === "OP") return '<table class="mini aiag"><tr><th>O</th><th>' + h.pred + "</th><th>" + h.type + "</th><th>" + h.ctl + "</th></tr>" + OP.map((x) => row([x[0], tr(x[1]), tr(x[2]), tr(x[3])])).join("") + "</table>" +
       '<p class="muted aiagnote">' + tr(OP_NOTE) + "</p>";
     if (kind === "AP") {
-      const rows = ["9-10", "7-8", "4-6", "2-3", "1"].map((sb) => ["8-10", "6-7", "4-5", "2-3", "1"].map((ob) => '<tr><td class="c">S ' + sb + '</td><td class="c">O ' + ob + "</td>" +
-        AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("")).join("");
-      return '<table class="mini"><tr><th>S</th><th>O</th><th>D 7–10</th><th>D 5–6</th><th>D 2–4</th><th>D 1</th></tr>' + rows + "</table>";
+      /* one small O x D matrix per severity band, side by side: wide and short instead of 30 rows */
+      return '<div class="apgrid">' + ["9-10", "7-8", "4-6", "2-3", "1"].map((sb) => '<table class="mini apm"><tr><th colspan="5" class="c">S ' + sb + "</th></tr>" +
+        '<tr><th></th><th class="c">D 7–10</th><th class="c">D 5–6</th><th class="c">D 2–4</th><th class="c">D 1</th></tr>' +
+        ["8-10", "6-7", "4-5", "2-3", "1"].map((ob) => '<tr><th class="c">O ' + ob + "</th>" +
+          AP[sb][ob].split("").map((a) => '<td class="c"><span class="ap ' + a + '">' + a + "</span></td>").join("") + "</tr>").join("") + "</table>").join("") + "</div>";
     }
     return "";
   }

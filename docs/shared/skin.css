@@ -84,3 +84,12 @@ nav.steps { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(-
 
 /* toast */
 .toast { border-radius: 999px; }
+
+/* reference tables: compact rows, AP table as five small matrices side by side */
+table.mini th, table.mini td { padding: 3px 10px; line-height: 1.35; }
+table.mini.aiag td:nth-child(2) { white-space: nowrap; }
+table.mini td.c { width: 1%; white-space: nowrap; }
+.apgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.apgrid table.apm { width: 100%; }
+.apgrid table.apm th, .apgrid table.apm td { padding: 3px 6px; white-space: nowrap; }
+table.mini th.c { text-align: center; }
