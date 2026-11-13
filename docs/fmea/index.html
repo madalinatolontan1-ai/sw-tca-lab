@@ -365,7 +365,11 @@ const SW_SIG = {
           r4: "For every following measurement cycle, a velocity within the range shall be accepted only if |value - previous| <= 14 (1.4 m/s).", lbl: L("viteza relativă", "relative velocity") },
   lat:  { def: ["/* Front radar, object lateral distance, unit 0.1 m */", "#define SENSOR_MIN         (-700)   /* -70.0 m */", "#define SENSOR_MAX         700      /*  70.0 m */", "#define SENSOR_MAX_STEP    7        /*   0.7 m per 72 ms cycle */"],
           r1: "An object lateral distance lower than -700 (-70.0 m) shall be rejected as implausible.", r2: "An object lateral distance greater than 700 (70.0 m) shall be rejected as implausible.",
-          r4: "For every following measurement cycle, a lateral distance within the range shall be accepted only if |value - previous| <= 7 (0.7 m).", lbl: L("poziția laterală", "lateral position") }
+          r4: "For every following measurement cycle, a lateral distance within the range shall be accepted only if |value - previous| <= 7 (0.7 m).", lbl: L("poziția laterală", "lateral position") },
+  /* demo only (F0): no student variant uses it */
+  az:   { def: ["/* Front radar, object azimuth angle, unit 0.1 deg */", "#define SENSOR_MIN         (-600)   /* -60.0 deg */", "#define SENSOR_MAX         600      /*  60.0 deg */", "#define SENSOR_MAX_STEP    20       /*   2.0 deg per 72 ms cycle */"],
+          r1: "An object azimuth angle lower than -600 (-60.0 deg) shall be rejected as implausible.", r2: "An object azimuth angle greater than 600 (60.0 deg) shall be rejected as implausible.",
+          r4: "For every following measurement cycle, an azimuth angle within the range shall be accepted only if |value - previous| <= 20 (2.0 deg).", lbl: L("unghiul azimut", "azimuth angle") }
 };
 const SW_FUNCS = {
   F1: { fn: "can_frame_is_valid", code: () => [
@@ -408,7 +412,7 @@ const SW_FUNCS = {
 
 /* F0 = demo variant done together in the lab (SW part of F0 still to be settled) */
 const VARIANTS = {
-  F0: { hw: "FILT", sw: "F2", sig: "dist", demo: true },
+  F0: { hw: "FILT", sw: "F2", sig: "az", demo: true },
   F1: { hw: "TXD", sw: "F3" }, F2: { hw: "RXD", sw: "F2", sig: "dist" }, F3: { hw: "VDD", sw: "F1" },
   F4: { hw: "CAN", sw: "INT" }, F5: { hw: "RS", sw: "F2", sig: "vrel" }, F6: { hw: "TERM", sw: "F2", sig: "lat" }
 };
@@ -784,7 +788,7 @@ const CTRL = {
       L("Măsurători cu osciloscopul pe prototip", "Oscilloscope measurements on the prototype"), L("Test de mediu și anduranță", "Environmental and endurance test")]
   },
   sw: {
-    pc: [L("Reguli de codare MISRA C", "MISRA C coding rules"), L("Review al cerințelor", "Requirements review"), L("Review al arhitecturii / designului SW", "SW architecture / design review"),
+    pc: [L("Review de cod față de specificația senzorului", "Code review against the sensor specification"), L("Constante generate automat din specificația senzorului", "Constants generated automatically from the sensor specification"), L("Reguli de codare MISRA C", "MISRA C coding rules"), L("Review al cerințelor", "Requirements review"), L("Review al arhitecturii / designului SW", "SW architecture / design review"),
       L("Programare defensivă (ghid intern)", "Defensive programming (internal guideline)"), L("Șabloane de cod reutilizate, dovedite", "Reused, proven code templates"), L("Trasabilitate cerințe → cod", "Requirements → code traceability")],
     dc: [L("Testare pe cerințe (requirements-based)", "Requirements-based testing"), L("Teste la limite (boundary values)", "Boundary value tests"), L("Test unitar cu acoperire MC/DC", "Unit test with MC/DC coverage"),
       L("Analiză statică", "Static analysis"), L("Code review", "Code review"), L("Test de integrare", "Integration test"), L("Test HIL (hardware-in-the-loop)", "HIL test (hardware-in-the-loop)")]
@@ -860,6 +864,9 @@ const I18N = {
     demo_s23: "Demo F0: la N3 alegi categoriile în care vezi cauze, de exemplu „Dimensionarea componentelor”: „Asigură valori, toleranțe și marje corecte ale componentelor”. La N2: „Atenuează perturbațiile de înaltă frecvență de pe CANH și CANL (EMC)”.",
     demo_s4: "Demo F0: efect „Emisii electromagnetice peste limitele reglementate (EMC)”, S 9 (neconformitate cu reglementările); mod „Asimetrie între filtrele de pe CANH și CANL”; cauză la „Dimensionarea componentelor”: „Toleranță prea mare pentru funcție”, vinovat C2.",
     demo_s56: "Demo F0: prevenție „Calculul filtrului RC” și „Componente din lista aprobată”; detecție „Verificarea BOM față de schemă” și „Test EMC”. Pentru D, gândește-te când se face testul față de lansare și ce găsește (tabelul D3).",
+    demoSw_s23: "Demo F0 (SW): la N2, funcția „Respinge valorile din afara domeniului [MIN, MAX]” pentru unghiul azimut (±60,0°). La N3 alegi categoria „Constante și parametri (#define)”: „Asigură unitățile de măsură corecte ale constantelor”.",
+    demoSw_s4: "Demo F0 (SW): efect la N1 „Un obiect real nu e raportat (detecție ratată, frânare lipsă)”, S 8 (pierderea funcției principale, la nivel de senzor); mod la N2 „Respinge o valoare validă”; cauză la „Constante și parametri (#define)”: „Unitate de măsură greșită a constantei” (SENSOR_MAX scris în grade, 60, în loc de 600 în unități de 0,1°, deci obiectele de peste 6° sunt respinse).",
+    demoSw_s56: "Demo F0 (SW): prevenție „Review de cod față de specificația senzorului”, O 4; detecție „Testare pe cerințe (requirements-based)” și „Teste la limite (boundary values)”, D 3, deci AP M. Acțiune de tip P: „Constante generate automat din specificația senzorului”, care coboară O (de exemplu la 2, AP L).",
     provTitle: "De unde vin valorile",
     prov: [["S", "Tabelul D1 (AIAG-VDA DFMEA), pe efectul de la nivelul vehiculului (N1). Modul preia S max din efectele legate de el."],
       ["O", "Tabelul D2, pe cauză, cu prevenția existentă: cât de nou e designul, câtă experiență există și cât de dovedite sunt controalele de prevenție."],
@@ -953,6 +960,9 @@ const I18N = {
     demo_s23: "Demo F0: at N3 choose the categories where you see causes, e.g. “Component dimensioning”: “Ensures correct component values, tolerances and margins”. At N2: “Attenuates the high-frequency disturbances on CANH and CANL (EMC)”.",
     demo_s4: "Demo F0: effect “Electromagnetic emissions above the regulated limits (EMC)”, S 9 (noncompliance with regulations); mode “Asymmetry between the CANH and CANL filters”; cause under “Component dimensioning”: “Tolerance too wide for the function”, culprit C2.",
     demo_s56: "Demo F0: prevention “RC filter calculation” and “Components from the approved list”; detection “BOM check against the schematic” and “EMC test”. For D, think about when the test runs relative to release and what it finds (table D3).",
+    demoSw_s23: "Demo F0 (SW): at N2, the function “Rejects values outside [MIN, MAX]” for the azimuth angle (±60.0°). At N3 choose the category “Constants and parameters (#define)”: “Ensures the constants use the correct units”.",
+    demoSw_s4: "Demo F0 (SW): effect at N1 “A real object is not reported (missed detection, no braking)”, S 8 (loss of the main function, at sensor level); mode at N2 “Rejects a valid value”; cause under “Constants and parameters (#define)”: “Wrong unit of the constant” (SENSOR_MAX written in degrees, 60, instead of 600 in 0.1° units, so objects beyond 6° are rejected).",
+    demoSw_s56: "Demo F0 (SW): prevention “Code review against the sensor specification”, O 4; detection “Requirements-based testing” and “Boundary value tests”, D 3, so AP M. Action of type P: “Constants generated automatically from the sensor specification”, which lowers O (e.g. to 2, AP L).",
     provTitle: "Where the values come from",
     prov: [["S", "Table D1 (AIAG-VDA DFMEA), on the vehicle-level effect (N1). The mode takes the S max of its linked effects."],
       ["O", "Table D2, on the cause, with the existing prevention: how new the design is, how much experience exists and how proven the prevention controls are."],
@@ -1164,7 +1174,7 @@ function refTables() {
 const TIP = (k) => { const x = t("tips"); return x && x[k] ? x[k] : ""; };
 /* help for the current step: context, how-to (open on the demo variant), demo example */
 function helpPanel(kind, step) {
-  const demo = isDemo() && kind === "hw" ? t("demo_" + step) : "";
+  const demo = isDemo() ? t((kind === "hw" ? "demo_" : "demoSw_") + step) : "";
   return '<div class="panel ctxbox"><span class="label">' + esc(t("ctxTitle")) + "</span><p>" + esc(t(kind === "hw" ? "ctxHw" : "ctxSw")) + '</p><p class="limnote">' + esc(fmt(t("limNote"), LIM)) + "</p></div>" +
     '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + esc(t("howStep")) + '</summary><ol class="task">' + t("how_" + step).map((x) => "<li>" + esc(x) + "</li>").join("") +
     (demo ? "<li><b>" + esc(demo) + "</b></li>" : "") + "</ol></details>";
