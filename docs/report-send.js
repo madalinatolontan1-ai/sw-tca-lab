@@ -137,11 +137,12 @@
         b: { ro: "Rezistorul există, are valoarea corectă și nu e întrerupt sau în scurtcircuit.", en: "The resistor is present, has the right value and is neither open nor shorted." },
         c: { ro: "Toate componentele de pe același net sunt corecte.", en: "All parts on the same net are correct." },
         d: { ro: "Testul funcțional va trece sigur.", en: "The functional test will surely pass." } } },
-      { q: { ro: "AOI, AXI, ICT și FT rulează pe fiecare placă. Ce D se folosește pentru AP?", en: "AOI, AXI, ICT and FT run on every board. Which D is used for the AP?" }, c: "b", o: {
-        a: { ro: "Media celor patru valori D", en: "The average of the four D values" },
-        b: { ro: "Cea mai mică valoare D dintre cele patru metode", en: "The lowest D of the four methods" },
-        c: { ro: "Cea mai mare valoare D dintre cele patru metode", en: "The highest D of the four methods" },
-        d: { ro: "Doar D-ul testului funcțional", en: "Only the D of the functional test" } } },
+      { q: { ro: "Pentru un defect, aplicația dă D AOI = 10, D AXI = 3, D ICT = 5, iar tu alegi D FT = 5. Toate testele rulează pe fiecare placă. Ce D intră în calculul AP?",
+          en: "For a defect, the app gives D AOI = 10, D AXI = 3, D ICT = 5, and you choose D FT = 5. Every test runs on every board. Which D goes into the AP?" }, c: "b", o: {
+        a: { ro: "5,75 (media celor patru)", en: "5.75 (the average of the four)" },
+        b: { ro: "3 (cea mai mică valoare: metoda care prinde defectul cel mai sigur)", en: "3 (the lowest value: the method that catches the defect most reliably)" },
+        c: { ro: "10 (cea mai mare valoare)", en: "10 (the highest value)" },
+        d: { ro: "5 (doar D-ul testului funcțional)", en: "5 (only the D of the functional test)" } } },
       { q: { ro: "În HW TCA, de ce depinde ocurența (O) a unui defect de fabricație?", en: "In HW TCA, what does the occurrence (O) of a manufacturing defect depend on?" }, c: "c", o: {
         a: { ro: "De cât de grav e efectul la client", en: "How severe the effect is for the customer" },
         b: { ro: "De câte teste prind defectul", en: "How many tests catch the defect" },
