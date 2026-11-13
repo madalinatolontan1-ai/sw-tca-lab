@@ -258,7 +258,7 @@ for (const sl of K.slides) {
 }
 
 (async () => {
-  const out = path.join(__dirname, "HW_TCA_curs_RO_draft.pptx"); /* draft of 13 Nov 2026 */
+  const out = path.join(__dirname, K.meta.file); /* drafts of 13 Nov 2026 */
   await pres.writeFile({ fileName: out });
   await applyTheme(out, THEME);
   console.log("written", out, slideNo, "slides");

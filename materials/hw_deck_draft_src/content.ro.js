@@ -1,5 +1,5 @@
 module.exports = {
-  meta: { title: "Analiza acoperirii testelor de producție (HW TCA)", subject: "Laborator de testare, anul IV, ETC UPT", footer: "HW TCA · Laborator de testare · ETC, UPT", file: "HW_TCA_curs_RO.pptx" },
+  meta: { title: "Analiza acoperirii testelor de producție (HW TCA)", subject: "Laborator de testare, anul IV, ETC UPT", footer: "HW TCA · Laborator de testare · ETC, UPT", file: "HW_TCA_curs_RO_draft.pptx" },
   slides: [
     { type: "cover", kicker: "LABORATOR DE TESTARE · ANUL IV",
       title: "Analiza acoperirii testelor de producție (HW TCA)",
