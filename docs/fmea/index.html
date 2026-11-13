@@ -153,10 +153,13 @@ pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line);
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fcard.mode.sel { background: #3B3412; border-color: #C9AB2A; color: var(--ink); } }
 .fcard.mode { cursor: pointer; }
 .fcard.linked { border-color: var(--link-hi); border-style: solid; }
-.fcard .ft { color: var(--fail); font-size: 0.88rem; overflow-wrap: anywhere; padding-right: 22px; }
+.fcard .ft { color: var(--fail); font-size: 0.88rem; overflow-wrap: anywhere; padding-right: 48px; }
 .fcard .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--muted); }
 .fcard .meta select { height: 26px; font-size: 0.8rem; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
 .fcard > .x { position: absolute; right: 2px; top: 2px; }
+.fcard > .x.ed { right: 26px; }
+.x.ed { font-size: 0.85rem; }
+.edin { width: 100%; box-sizing: border-box; }
 .hd { position: absolute; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--surface); border: 2px solid var(--link); cursor: crosshair; touch-action: none; z-index: 2; }
 .hd:hover, .hd.active { border-color: var(--link-hi); background: var(--accent-soft); }
 .hd.r { right: -8px; } .hd.l { left: -8px; }
@@ -702,17 +705,46 @@ function pool(arr) {
   arr.forEach((x) => { const v = tr(x); if (v && !seen.has(v)) { seen.add(v); out.push(v); } });
   return out.sort((a, b) => a.localeCompare(b, LANG));
 }
+/* distractors: two functions and two modes of an unrelated signal / function, mixed into the lists so that choosing
+   from the list is a real decision; the report data records which entries came from them */
+const DISTRACT = { hw: { TXD: "TERM", RXD: "TERM", VDD: "TERM", CAN: "RXD", RS: "TERM", TERM: "TXD", FILT: "TXD" }, sw: { F1: "F3", F2: "F3", F3: "F1", INT: "F1" } };
+const distractFrom = (kind) => DISTRACT[kind][kind === "hw" ? V().hw : V().sw];
 function fnPool(kind) {
-  const v = V(); let a = SUG_FN.L1.common.concat(SUG_FN.L1[kind], SUG_FN.L2[kind === "hw" ? v.hw : v.sw]);
+  const v = V(); let a = SUG_FN.L1.common.concat(SUG_FN.L1[kind], SUG_FN.L2[kind === "hw" ? v.hw : v.sw], (SUG_FN.L2[distractFrom(kind)] || []).slice(0, 2));
   if (kind === "hw") { Object.keys(HW_CAT_FN).forEach((k) => { a = a.concat(HW_CAT_FN[k]); }); HW_COMP[v.hw].forEach((c) => { a = a.concat(c.fn); }); }
   else Object.keys(SUG_FN.L3.sw).forEach((k) => { a = a.concat(SUG_FN.L3.sw[k]); });
   return pool(a);
 }
 function failPool(kind) {
-  const v = V(); let a = SUG_EFFECT.common.concat(SUG_EFFECT[kind], SUG_MODE[kind === "hw" ? v.hw : v.sw]);
+  const v = V(); let a = SUG_EFFECT.common.concat(SUG_EFFECT[kind], SUG_MODE[kind === "hw" ? v.hw : v.sw], (SUG_MODE[distractFrom(kind)] || []).slice(0, 2));
   if (kind === "hw") { a = a.concat(HW_CAT_FC); HW_COMP[v.hw].forEach((c) => { a = a.concat(c.fc); }); }
   else a = a.concat(SW_CAT_FC, SW_FN_FC[v.sw] || []);
   return pool(a);
+}
+/* where a suggestion comes from: text → { lvl, dis } (lvl: L1 / L2 / L3 for functions, eff / mode / cause for failures) */
+function sugIndex(kind, what) {
+  const v = V(); const m = new Map(); const put = (arr, lvl, dis) => (arr || []).forEach((x) => { const k = tr(x); if (k && !m.has(k)) m.set(k, { lvl: lvl, dis: !!dis }); });
+  if (what === "fn") {
+    put(SUG_FN.L1.common.concat(SUG_FN.L1[kind]), "L1"); put(SUG_FN.L2[kind === "hw" ? v.hw : v.sw], "L2");
+    if (kind === "hw") { Object.keys(HW_CAT_FN).forEach((k) => put(HW_CAT_FN[k], "L3")); HW_COMP[v.hw].forEach((c) => put(c.fn, "L3")); }
+    else Object.keys(SUG_FN.L3.sw).forEach((k) => put(SUG_FN.L3.sw[k], "L3"));
+    put((SUG_FN.L2[distractFrom(kind)] || []).slice(0, 2), "L2", true);
+  } else {
+    put(SUG_EFFECT.common.concat(SUG_EFFECT[kind]), "eff"); put(SUG_MODE[kind === "hw" ? v.hw : v.sw], "mode");
+    if (kind === "hw") { put(HW_CAT_FC, "cause"); HW_COMP[v.hw].forEach((c) => put(c.fc, "cause")); } else { put(SW_CAT_FC, "cause"); put(SW_FN_FC[v.sw], "cause"); }
+    put((SUG_MODE[distractFrom(kind)] || []).slice(0, 2), "mode", true);
+  }
+  return m;
+}
+/* provenance of a typed entry: taken from the list unchanged, taken and edited, or written by the student */
+function provenance(kind, what, text) {
+  const idx = sugIndex(kind, what); const hit = idx.get(text);
+  if (hit) return { src: hit.dis ? "dis" : "sug", sugLvl: hit.lvl };
+  const words = (x) => new Set(x.toLowerCase().split(/[^a-z0-9ăâîșțşţ]+/i).filter((w) => w.length > 2));
+  const a = words(text); let best = null, bs = 0;
+  idx.forEach((meta, k) => { const b = words(k); let c = 0; a.forEach((w) => { if (b.has(w)) c++; }); const d = a.size + b.size ? (2 * c) / (a.size + b.size) : 0; if (d > bs) { bs = d; best = [k, meta]; } });
+  if (best && bs >= 0.6) return { src: best[1].dis ? "disEdit" : "sugEdit", sugLvl: best[1].lvl, sugOf: best[0] };
+  return { src: "own" };
 }
 /* culprits a cause can name: HW = the components on the signal (and its PCB tracks); SW = the requirements, for category C1 */
 function culprits(kind, catId) {
@@ -827,7 +859,7 @@ const I18N = {
     context: "Date de intrare", path: "Traseul semnalului", hwReqs: "Cerințe și date din datasheet", swReqs: "Cerințe software", code: "Codul",
     netHelp: "Scrie defectările sub fiecare funcție (cu roșu). Leagă: trage de la punctul unei defectări până pe o defectare din coloana vecină. Alternativ: dă clic pe un mod din mijloc, apoi pe „leagă” la efecte sau cauze. Ștergi o legătură cu × de pe linie.",
     colEff: "Efecte", colMode: "Moduri de defectare", colCause: "Cauze", failPh: "defectare nouă…", failPhSug: "alege din listă sau scrie…", noFns: "Adaugă întâi funcții la pasul 2–3.",
-    sev: "S", smax: "S max", link: "leagă", unlink: "dezleagă", del: "Șterge",
+    sev: "S", smax: "S max", link: "leagă", unlink: "dezleagă", del: "Șterge", edit: "Modifică textul (Enter salvează, Esc renunță)",
     riskHelp: "Fiecare legătură mod–cauză are o evaluare. S vine din efectele legate de mod (maximul). O se evaluează pe cauză, cu prevenția existentă; D pe detecția existentă.",
     noModes: "Nu ai încă moduri de defectare legate de cauze. Fă legăturile la pasul 4.", modeNoCause: "Modul nu e legat de nicio cauză.", effects: "Efecte",
     init: "Starea inițială", rev: "Starea revizuită", extra: "Acțiune suplimentară", pc: "Prevenție (PC)", dc: "Detecție (DC)", O: "O", D: "D", AP: "AP",
@@ -923,7 +955,7 @@ const I18N = {
     context: "Inputs", path: "Signal path", hwReqs: "Requirements and datasheet data", swReqs: "Software requirements", code: "Code",
     netHelp: "Write the failures under each function (in red). To link, drag from the dot of a failure onto a failure in the neighbouring column. Alternatively click a mode in the middle, then “link” on effects or causes. Remove a link with the × on the line.",
     colEff: "Effects", colMode: "Failure modes", colCause: "Causes", failPh: "new failure…", failPhSug: "choose from the list or type…", noFns: "Add functions in step 2–3 first.",
-    sev: "S", smax: "S max", link: "link", unlink: "unlink", del: "Delete",
+    sev: "S", smax: "S max", link: "link", unlink: "unlink", del: "Delete", edit: "Edit the text (Enter saves, Esc cancels)",
     riskHelp: "Every mode–cause link gets a rating. S comes from the effects linked to the mode (the maximum). O is rated on the cause with the existing prevention; D on the existing detection.",
     noModes: "There are no failure modes linked to causes yet. Make the links in step 4.", modeNoCause: "The mode is not linked to any cause.", effects: "Effects",
     init: "Initial state", rev: "Revised state", extra: "Additional action", pc: "Prevention (PC)", dc: "Detection (DC)", O: "O", D: "D", AP: "AP",
@@ -1070,7 +1102,7 @@ function addLink(A, a, b) {
 const LIM = { modes: 3, effects: 3, causes: 2 };
 function checks(kind) {
   const A = S[kind]; const out = [];
-  const add = (sev, key, o) => out.push({ sev: sev, msg: fmt(t(key), o || {}) });
+  const add = (sev, key, o) => out.push({ sev: sev, key: key, msg: fmt(t(key), o || {}) });
   const short = (s) => (s.length > 48 ? s.slice(0, 46) + "…" : s);
   const els = elements(kind);
   els.forEach((e) => {
@@ -1146,6 +1178,7 @@ function render() {
   if (S.tab === "start" || !V()) renderStart(view);
   else if (S.tab === "report") renderReport(view);
   else renderAnalysis(view, S.tab);
+  if (window.LabReport && V() && !V().demo) window.LabReport.preTest("FMEA", LANG);
   if (pendingFocus) { const n = view.querySelector(pendingFocus); if (n) n.focus(); pendingFocus = null; }
 }
 function renderStart(view) {
@@ -1222,7 +1255,8 @@ function renderAnalysis(view, kind) {
   const A = S[kind];
   const steps = [["s23", "2–3", t("st23")], ["s4", "4", t("st4")], ["s56", "5–6", t("st56")]];
   let h = '<div class="row between"><h2>' + esc(kind === "hw" ? t("hwAnalysis") + " · " + hwLabel() : t("swAnalysis") + " · " + swLabel()) + '</h2><span class="chip">' + esc(S.variant) + " · ASIL B</span></div>";
-  h += '<nav class="steps" aria-label="Steps">' + steps.map((s) => '<button type="button" data-step="' + s[0] + '"' + (A.step === s[0] ? ' aria-current="step"' : "") + '><span class="n">' + (LANG === "ro" ? "Pașii " : "Steps ") + s[1] + '</span><span class="tt">' + esc(s[2]) + "</span></button>").join("") + "</nav>";
+  const ss = stepState(kind).st; const ok = (k) => (k === "s56" ? ss.s5 === "done" && (ss.s6 === "done" || ss.s6 === "na") : ss[k] === "done");
+  h += '<nav class="steps" aria-label="Steps">' + steps.map((s) => '<button type="button" data-step="' + s[0] + '"' + (A.step === s[0] ? ' aria-current="step"' : "") + '><span class="n">' + (LANG === "ro" ? "Pașii " : "Steps ") + s[1] + (ok(s[0]) ? ' <span style="color:var(--ok)">✓</span>' : "") + '</span><span class="tt">' + esc(s[2]) + "</span></button>").join("") + "</nav>";
   h += helpPanel(kind, A.step);
   h += checksPanel(kind);
   h += '<div id="stepBody"></div>';
@@ -1256,7 +1290,7 @@ function renderStructure(body, kind) {
     return '<li class="l' + e.lvl + '"><button type="button" data-el="' + e.id + '"' + (e.id === A.selEl ? ' aria-current="true"' : "") + '><span class="lvl">N' + e.lvl + "</span><span>" + esc(tr(e.name)) + '</span><span class="cnt">' + (n ? "f " + n : "") + "</span></button></li>";
   }).join("") + "</ul>";
   const fns = A.fns.filter((f) => f.el === sel.id);
-  const list = fns.length ? '<div class="fnlist">' + fns.map((f) => '<div class="fnitem"><span class="txt">' + esc(f.text) + '</span><button class="x" type="button" data-delfn="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button></div>').join("") + "</div>" : '<p class="empty">' + esc(t("noFn")) + "</p>";
+  const list = fns.length ? '<div class="fnlist">' + fns.map((f) => '<div class="fnitem"><span class="txt">' + esc(f.text) + '</span><button class="x ed" type="button" data-edfn="' + f.id + '" aria-label="' + esc(t("edit")) + '" title="' + esc(t("edit")) + '">✎</button><button class="x" type="button" data-delfn="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button></div>').join("") + "</div>" : '<p class="empty">' + esc(t("noFn")) + "</p>";
   body.innerHTML = '<div class="grid-struct"><div class="panel stack"><span class="label">' + esc(t("structTree")) + "</span>" + tree + '<p class="muted small">N1 ' + esc(t("lvl1")) + " · N2 " + esc(t("lvl2")) + " · N3 " + esc(t("lvl3")) + "</p></div>" +
     '<div class="panel stack"><span class="label">' + esc(lvlName(sel.lvl)) + "</span><h3>" + esc(tr(sel.name)) + "</h3><h4>" + esc(t("fnOf")) + "</h4>" + list +
     '<datalist id="dl-fn">' + fnPool(kind).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>" +
@@ -1265,10 +1299,32 @@ function renderStructure(body, kind) {
   if (kind === "hw") wireBoard(body);
   body.querySelectorAll("[data-el]").forEach((b) => b.addEventListener("click", () => { A.selEl = b.dataset.el; save(); render(); }));
   body.querySelectorAll("[data-delfn]").forEach((b) => b.addEventListener("click", () => { removeFn(A, b.dataset.delfn); save(); render(); }));
+  body.querySelectorAll("[data-edfn]").forEach((b) => b.addEventListener("click", () => editInline(b.closest(".fnitem").querySelector(".txt"), fnById(A, b.dataset.edfn), kind, "fn", "dl-fn")));
   body.querySelector("#addFn").addEventListener("submit", (e) => {
     e.preventDefault(); const v = body.querySelector("#fnText").value.trim(); if (!v) return;
-    A.fns.push({ id: nid("f"), el: A.selEl, text: v }); pendingFocus = "#fnText"; save(); render();
+    A.fns.push(Object.assign({ id: nid("f"), el: A.selEl, text: v, at: new Date().toISOString() }, provenance(kind, "fn", v))); pendingFocus = "#fnText"; save(); render();
   });
+}
+
+/* edit the text of a function or a failure in place: Enter or leaving the field saves, Esc cancels */
+function editInline(span, item, kind, what, listId) {
+  if (!span || !item || span.querySelector("input")) return;
+  const inp = document.createElement("input"); inp.className = "in edin"; inp.value = item.text; inp.setAttribute("list", listId); inp.setAttribute("aria-label", t("edit"));
+  span.textContent = ""; span.appendChild(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = (keep) => {
+    if (done) return; done = true;
+    const v = inp.value.trim();
+    if (keep && v && v !== item.text) {
+      item.edits = (item.edits || []).concat([{ from: item.text, at: new Date().toISOString() }]);
+      item.text = v; Object.assign(item, { src: "", sugLvl: "", sugOf: "" }, provenance(kind, what, v));
+      save();
+    }
+    render();
+  };
+  ["click", "mousedown", "pointerdown"].forEach((ev) => inp.addEventListener(ev, (e) => e.stopPropagation()));
+  inp.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); finish(true); } else if (e.key === "Escape") { e.preventDefault(); finish(false); } });
+  inp.addEventListener("blur", () => finish(true));
 }
 
 /* ---------------------------------------------------------------- failure net */
@@ -1289,6 +1345,7 @@ function renderNet(body, kind) {
     const hds = (lvl === 1 ? '<span class="hd r" data-h="' + f.id + '"></span>' : lvl === 3 ? '<span class="hd l" data-h="' + f.id + '"></span>' : '<span class="hd l" data-h="' + f.id + '"></span><span class="hd r" data-h="' + f.id + '"></span>');
     return '<div class="fcard' + (isMode ? " mode" : "") + (isMode && f.id === sel ? " sel" : "") + (on && !isMode ? " linked" : "") + '" data-fid="' + f.id + '" data-lvl="' + lvl + '"' + (isMode ? ' tabindex="0" role="button"' : "") + ">" +
       '<span class="ft">' + esc(f.text) + "</span>" + (meta ? '<div class="meta">' + meta + "</div>" : "") + (lvl === 3 ? culChips(f) : "") +
+      '<button class="x ed" type="button" data-edf="' + f.id + '" aria-label="' + esc(t("edit")) + '" title="' + esc(t("edit")) + '">✎</button>' +
       '<button class="x" type="button" data-delf="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button>' + hds + "</div>";
   };
   const column = (lvl, title) => {
@@ -1315,6 +1372,7 @@ function renderNet(body, kind) {
   const net = body.querySelector("#net");
   body.querySelectorAll("[data-sev]").forEach((n) => n.addEventListener("change", () => { const f = failById(A, n.dataset.sev); f.s = n.value; save(); render(); }));
   body.querySelectorAll("[data-delf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); removeFail(A, n.dataset.delf); save(); render(); }));
+  body.querySelectorAll("[data-edf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); editInline(n.closest(".fcard").querySelector(".ft"), failById(A, n.dataset.edf), kind, "fail", "dl-fail"); }));
   body.querySelectorAll("[data-cul]").forEach((n) => n.addEventListener("click", (e) => {
     e.stopPropagation(); const i = n.dataset.cul.indexOf("|"); const f = failById(A, n.dataset.cul.slice(0, i)); const id = n.dataset.cul.slice(i + 1);
     f.comp = f.comp || []; if (f.comp.includes(id)) f.comp = f.comp.filter((x) => x !== id); else { f.comp.push(id); if (kind === "hw" && id !== "PCB") A.selComp = id; }
@@ -1323,7 +1381,7 @@ function renderNet(body, kind) {
   body.querySelectorAll("[data-tlink]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); toggleLink(A, sel, n.dataset.tlink); save(); render(); }));
   body.querySelectorAll("[data-addf]").forEach((n) => n.addEventListener("submit", (e) => {
     e.preventDefault(); const inp = n.querySelector("input"); const v = inp.value.trim(); if (!v) return;
-    A.fails.push({ id: nid("x"), fn: n.dataset.addf, text: v, s: "" }); pendingFocus = '[data-fin="' + n.dataset.addf + '"]'; save(); render();
+    A.fails.push(Object.assign({ id: nid("x"), fn: n.dataset.addf, text: v, s: "", at: new Date().toISOString() }, provenance(kind, "fail", v))); pendingFocus = '[data-fin="' + n.dataset.addf + '"]'; save(); render();
   }));
   body.querySelectorAll(".fcard.mode").forEach((n) => {
     const pick = () => { A.selMode = A.selMode === n.dataset.fid ? "" : n.dataset.fid; save(); render(); };
@@ -1497,6 +1555,7 @@ function buildReport() {
   let body = "<h1>" + esc(t("reportTitle")) + "</h1><p><b>" + t("student") + ":</b> " + esc(S.name || "–") + " · <b>" + t("variant") + ":</b> " + esc(S.variant) +
     " · <b>" + t("generated") + ":</b> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>";
   text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString());
+  if (window.LabReport) { const sl = stepList(); body += window.LabReport.stepsHtml(sl, LANG, true); text.push("", window.LabReport.stepsText(sl, LANG)); }
   body += "<h2>" + esc(t("fiveT")) + '</h2><table class="r"><tr><th>' + t("tIntent") + "</th><td>" + esc(fmt(t("vIntent"), { hw: hwLabel(), sw: swLabel() })) + "</td></tr><tr><th>" + t("tTiming") + "</th><td>" + esc(t("vTiming")) +
     "</td></tr><tr><th>" + t("tTeam") + "</th><td>" + esc(fmt(t("vTeam"), { name: S.name || "–" })) + "</td></tr><tr><th>" + t("tTask") + "</th><td>" + esc(t("vTask")) + "</td></tr><tr><th>" + t("tTools") + "</th><td>" + esc(t("vTools")) + "</td></tr></table>";
   body += analysisReport("hw", text) + analysisReport("sw", text);
@@ -1508,6 +1567,39 @@ function buildReport() {
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>DFMEA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + body + "</body></html>";
   return { html: html, body: body, text: text.join("\n") };
 }
+/* the 7 AIAG-VDA steps, per analysis, with what the student did (shown on the step buttons, in the Report tab and in the report) */
+const STEP_KEYS = { s23: ["c_noFn", "c_noFnL3"], s4: ["c_noFail", "c_modeNoEff", "c_modeNoCause", "c_noS", "c_orphanE", "c_orphanC"],
+  s5: ["c_noO", "c_noD", "c_noPC", "c_noDC"], s6: ["c_noRev", "c_revOD", "c_actInc", "c_noResult", "c_failAct", "c_noExtra", "c_extraO", "c_extraD", "c_noResid"] };
+function stepState(kind) {
+  const A = S[kind]; const ck = checks(kind);
+  const open = (st) => ck.filter((x) => STEP_KEYS[st].includes(x.key));
+  const pairs = []; failsAt(A, 2).forEach((m) => causesOf(A, m.id).forEach((c) => pairs.push(evalRisk(A, m.id, c.id))));
+  const rated = pairs.filter((p) => p.r.o && p.r.d).length;
+  const need = pairs.filter((p) => p.ap0 === "H" || p.ap0 === "M").length;
+  const st = (content, issues) => (!content ? "todo" : issues.length ? "part" : "done");
+  const res = {
+    s23: st(A.fns.length, open("s23")), s4: st(failsAt(A, 2).length, open("s4")),
+    s5: !pairs.length ? "todo" : rated < pairs.length ? (rated ? "part" : "todo") : open("s5").length ? "part" : "done",
+    s6: !pairs.length || rated < pairs.length ? "todo" : !need ? "na" : open("s6").filter((x) => x.sev === "err").length ? "part" : "done"
+  };
+  const det = { s23: A.fns.length + (LANG === "ro" ? " funcții" : " functions"), s4: failsAt(A, 1).length + " E · " + failsAt(A, 2).length + " M · " + failsAt(A, 3).length + " C",
+    s5: rated + " / " + pairs.length + (LANG === "ro" ? " legături mod–cauză evaluate" : " mode–cause links rated"), s6: need + (LANG === "ro" ? " cu AP H/M inițial" : " with initial AP H/M") };
+  Object.keys(res).forEach((k) => { const o = open(k).length; if (o) det[k] += " · " + (LANG === "ro" ? "probleme deschise: " : "open issues: ") + o; });
+  return { st: res, det: det };
+}
+function stepList() {
+  const ro = LANG === "ro"; if (!V()) return [];
+  const H = stepState("hw"), W = stepState("sw");
+  const nm = { s23: ro ? "Analiza structurii și a funcțiilor" : "Structure and function analysis", s4: ro ? "Analiza defectelor: efecte, moduri, cauze, legate, cu S" : "Failure analysis: effects, modes, causes, linked, with S",
+    s5: ro ? "Analiza riscului: prevenție și O, detecție și D, AP" : "Risk analysis: prevention and O, detection and D, AP", s6: ro ? "Optimizare: acțiuni, reevaluare, risc rezidual" : "Optimization: actions, re-rating, residual risk" };
+  const num = { s23: "2–3", s4: "4", s5: "5", s6: "6" };
+  const out = [{ n: "1", name: ro ? "Planificare: domeniul analizei (semnalul HW și funcția SW ale variantei)" : "Planning: scope of the analysis (the HW signal and the SW function of the variant)", status: "done", detail: hwLabel() + " · " + swLabel() }];
+  ["s23", "s4", "s5", "s6"].forEach((k) => { out.push({ n: num[k] + " HW", name: nm[k], status: H.st[k], detail: H.det[k] }); out.push({ n: num[k] + " SW", name: nm[k], status: W.st[k], detail: W.det[k] }); });
+  const cDone = CONCL.filter((c) => (S.concl[c[0]] || "").trim()).length;
+  out.push({ n: "7", name: ro ? "Documentare: concluziile (decizii, acțiuni, limite) și raportul" : "Documentation: the conclusions (decisions, actions, limits) and the report",
+    status: window.LabReport ? window.LabReport.stepStatus(cDone, CONCL.length) : "todo", detail: cDone + " / " + CONCL.length });
+  return out;
+}
 /* structured copy of both analyses, sent with the report for scoring against the answer key */
 function reportData() {
   const one = (k) => { const A = S[k];
@@ -1516,16 +1608,16 @@ function reportData() {
         ap0: ev.ap0 || "", ap1: ev.ap1 || "", apX: ev.apX || "", fin: ev.fin || "", failOpen: ev.failOpen }); }));
     const ck = checks(k);
     return { fns: A.fns, fails: A.fails, links: A.links, risk: A.risk, pairs: pairs, checksErr: ck.filter((x) => x.sev === "err").length, checksWarn: ck.filter((x) => x.sev !== "err").length }; };
-  return { variant: S.variant, lang: LANG, hw: one("hw"), sw: one("sw"), concl: S.concl };
+  return { variant: S.variant, lang: LANG, hw: one("hw"), sw: one("sw"), concl: S.concl, steps: stepList().map((x) => ({ n: x.n, status: x.status, detail: x.detail })) };
 }
 function renderReport(view) {
   if (window.LabReport) window.LabReport.snapshot("FMEA", reportData);
   const r = buildReport();
   view.innerHTML = '<div class="row between"><h2>' + esc(t("reportTitle")) + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + esc(t("download")) + '</button><button class="btn" id="cp" type="button">' + esc(t("copy")) + "</button></div></div>" +
-    '<p class="muted">' + esc(t("reportHint")) + '</p><div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
+    '<p class="muted">' + esc(t("reportHint")) + "</p>" + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
     CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea class="in" id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>" +
     '<div id="sendBox"></div><div class="report-frame" id="rframe">' + r.body + '</div><textarea class="in" id="reportText" readonly hidden></textarea>';
-  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "FMEA", lang: LANG, getPayload: () => {
+  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "FMEA", lang: LANG, demo: !!(V() && V().demo), getPayload: () => {
     const x = buildReport();
     const sum = ["hw", "sw"].map((k) => { const A = S[k]; const c = { H: 0, M: 0, L: 0 }; let n = 0;
       failsAt(A, 2).forEach((m) => causesOf(A, m.id).forEach((cs) => { n++; const f = evalRisk(A, m.id, cs.id).fin; if (f) c[f]++; }));

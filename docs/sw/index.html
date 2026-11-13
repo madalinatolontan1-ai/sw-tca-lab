@@ -1138,9 +1138,10 @@ function applyI18n() {
 function renderTabs() {
   const box = document.getElementById("tabs");
   const items = [["start", t("tabStart"), ""]].concat(EX_KEYS.map((k) => [k, t(EX[k].tab), EX[k].num])).concat([["report", t("tabReport"), "5"]]);
+  const mark = {}; if (V()) stepList().forEach((x) => { if (x.status === "done") mark[x.n] = ' <span style="color:var(--ok)" aria-label="✓">✓</span>'; });
   box.innerHTML = items.map((it) =>
     '<button role="tab" data-tab="' + it[0] + '" aria-selected="' + (S.tab === it[0]) + '"' +
-    ((it[0] !== "start" && !V()) ? " disabled" : "") + ">" + (it[2] ? '<span class="num">' + it[2] + "</span>" : "") + esc(it[1]) + "</button>").join("");
+    ((it[0] !== "start" && !V()) ? " disabled" : "") + ">" + (it[2] ? '<span class="num">' + it[2] + "</span>" : "") + esc(it[1]) + (mark[it[2]] || "") + "</button>").join("");
   box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.tab; save(); render(); }));
 }
 
@@ -1149,8 +1150,8 @@ function render() {
   renderTabs();
   const view = document.getElementById("view");
   if (S.tab === "start" || !V()) { view.innerHTML = renderStart(); return; }
-  if (S.tab === "report") { renderReport(view); return; }
-  renderExercise(view, S.tab);
+  if (S.tab === "report") renderReport(view); else renderExercise(view, S.tab);
+  if (window.LabReport && !isDemo()) window.LabReport.preTest("SW-TCA", LANG);
 }
 
 function renderStart() {
@@ -1417,6 +1418,7 @@ function buildReport() {
   let resets = 0; try { resets = +localStorage.getItem(RESET_KEY) || 0; } catch (e) { /* storage unavailable */ }
   parts.push("<p><strong>" + t("histTitle") + ":</strong> " + esc(t("histNote")) + " " + t("histResets") + ": " + resets + ".</p>");
   text.push(t("reportTitle") + " · SW TCA", t("student") + ": " + (S.name || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + now.toISOString(), "");
+  if (window.LabReport) { const sl = stepList(); parts.push(window.LabReport.stepsHtml(sl, LANG, true)); text.push(window.LabReport.stepsText(sl, LANG), ""); }
   parts.push("<h2>ASIL B · ISO 26262-6</h2><ul><li>Statement: " + esc(asilTxt("stmt")) + "</li><li>Branch: " + esc(asilTxt("branch")) + "</li><li>MC/DC: " + esc(asilTxt("mcdc")) + "</li></ul>");
   text.push("ASIL B: Statement = " + asilTxt("stmt") + "; Branch = " + asilTxt("branch") + "; MC/DC = " + asilTxt("mcdc"), "");
   EX_KEYS.forEach((k) => {
@@ -1478,6 +1480,35 @@ function buildReport() {
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>SW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
   return { html: html, body: parts.join("\n"), text: text.join("\n") };
 }
+/* the lab steps (tabs 1-5), with what was achieved in each (shown on the tabs, in the Report tab and in the report) */
+function stepList() {
+  const ro = LANG === "ro"; const v = V(); if (!v) return [];
+  const full = (p) => p[1] > 0 && p[0] >= p[1];
+  const out = EX_KEYS.map((k) => {
+    const ex = EX[k]; const an = analyse(k, v, S.tests[k]); const c = [];
+    const add = (ok, lbl) => c.push([!!ok, lbl]);
+    if (k === "f1") add(S.asil.stmt && S.asil.branch && S.asil.mcdc, ro ? "ASIL: nivelurile ISO 26262-6" : "ASIL: the ISO 26262-6 levels");
+    add(S.ran[k], ro ? "teste rulate" : "tests run");
+    add(full(an.req), ro ? "toate cerințele au test" : "every requirement has a test");
+    add(full(an.stmt), "statement 100%");
+    add(full(an.dec), "branch 100%");
+    if (an.mcdc[1] > 0) add(full(an.mcdc), "MC/DC 100%");
+    if (an.thr) add(an.thr.every((x) => x.at && x.over), ro ? "valori la limită (BVA)" : "boundary values (BVA)");
+    add(an.warned.reduce((a, r) => a + r.chk.warnings.length, 0) === 0, ro ? "fără avertismente la teste" : "no test warnings");
+    if (k === bugTab()) add(S.bug.test && S.bug.line && S.bug.fix, ro ? "raportul de incident" : "the incident report");
+    if (k === "int") {
+      add(ex.funcs.every((f) => an.funcs.has(f)) && ex.calls.every((cl) => an.calls.has(cl[0])), ro ? "funcții și apeluri 100%" : "functions and calls 100%");
+      add((S.just || "").trim(), ro ? "justificarea codului neacoperit" : "the justification of uncovered code");
+    }
+    const ok = c.filter((x) => x[0]).length;
+    return { n: ex.num, name: t(ex.tab) + " · " + c.map((x) => x[1]).join(", "), status: !S.ran[k] ? "todo" : window.LabReport ? window.LabReport.stepStatus(ok, c.length) : "todo",
+      detail: (ro ? "lipsește: " : "missing: ") + (c.filter((x) => !x[0]).map((x) => x[1]).join(", ") || "–") };
+  });
+  const cDone = CONCL.filter((c) => (S.concl[c[0]] || "").trim()).length;
+  out.push({ n: "5", name: ro ? "Raportul: concluzia (ce arată acoperirea și ce nu arată)" : "Report: the conclusion (what coverage shows and what it does not)",
+    status: window.LabReport ? window.LabReport.stepStatus(cDone, CONCL.length) : "todo", detail: cDone + " / " + CONCL.length });
+  return out;
+}
 /* structured copy of the work, sent with the report for scoring against the answer key */
 function reportData() {
   const v = V(); let resets = 0; try { resets = +localStorage.getItem(RESET_KEY) || 0; } catch (e) { /* storage unavailable */ }
@@ -1488,18 +1519,18 @@ function reportData() {
     ex[k] = { tests: S.tests[k], ran: !!S.ran[k], stmt: an.stmt, dec: an.dec, mcdc: an.mcdc, req: an.req, uncovered: an.stmtLines.filter((n) => an.hits[n] === 0),
       missingOutcomes: miss, mcdcNotShown: condMiss, reqMissing: an.reqMissing, bva: an.thr ? an.thr.map((x) => ({ name: x.name, at: !!x.at, over: !!x.over })) : null,
       warningsLeft: an.warned.reduce((a, r) => a + r.chk.warnings.length, 0), hist: histOf(k), notes: S.notes[k] || "" }; });
-  return { variant: S.variant, lang: LANG, asil: S.asil, bug: S.bug, just: S.just, concl: S.concl, resets: resets, ex: ex };
+  return { variant: S.variant, lang: LANG, asil: S.asil, bug: S.bug, just: S.just, concl: S.concl, resets: resets, ex: ex, steps: stepList().map((x) => ({ n: x.n, status: x.status, detail: x.detail })) };
 }
 function renderReport(view) {
   if (window.LabReport) window.LabReport.snapshot("SW-TCA", reportData);
   const r = buildReport();
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row">' +
     '<button class="btn primary" id="dl" type="button">' + t("download") + '</button><button class="btn" id="cp" type="button">' + t("copy") + "</button></div></div>" +
-    '<p class="muted">' + t("reportHint") + '</p><div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
+    '<p class="muted">' + t("reportHint") + "</p>" + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
     CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>" +
     '<div id="sendBox"></div><div class="report-frame" id="rframe">' + r.body + "</div>" +
     '<textarea id="reportText" readonly hidden></textarea>';
-  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "SW-TCA", lang: LANG, getPayload: () => {
+  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "SW-TCA", lang: LANG, demo: isDemo(), getPayload: () => {
     const x = buildReport(); const v = V();
     const sum = EX_KEYS.map((k) => { const an = analyse(k, v, S.tests[k]); return EX[k].fn + " " + pct(an.stmt) + " / " + pct(an.dec) + " / " + pct(an.mcdc) + " ⚠" + an.warned.length; }).join("; ");
     return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, data: reportData(), summary: "stmt / branch / MC/DC: " + sum + " · bug: " + ((S.bug && S.bug.line) || "-") };

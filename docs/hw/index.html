@@ -615,8 +615,8 @@ function render() {
   applyI18n(); renderTabs();
   const view = document.getElementById("view");
   if (S.tab === "start" || !V()) { view.innerHTML = renderStart(); return; }
-  if (S.tab === "report") { renderReport(view); return; }
-  renderAnalysis(view);
+  if (S.tab === "report") renderReport(view); else renderAnalysis(view);
+  if (window.LabReport && !isDemo()) window.LabReport.preTest("HW-TCA", LANG);
 }
 function renderStart() {
   return '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p><p>" + esc(t("introP3")) + '</p><p class="stdbox">' + esc(t("introStd")) + "</p>" +
@@ -732,7 +732,7 @@ function renderAnalysis(view) {
       meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
       meter(t("mRes"), now.res, base.res, now.done && !now.res ? "good" : now.res ? "risk" : "") + meter(t("mCov"), now.cov + "%", base.cov + "%", now.done && now.cov === 100 ? "good" : "") +
       meter(t("mRA"), now.ra + " / " + now.res, "–", now.res && now.ra === now.res ? "good" : now.res ? "risk" : "") +
-    "</div></div>" +
+    "</div>" + (window.LabReport ? window.LabReport.stepsBar(stepList(), LANG) : "") + "</div>" +
     '<div class="panel stack"><div class="tablewrap"><table class="sheet"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>" +
     '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
       CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>";
@@ -790,6 +790,7 @@ function buildReport() {
   parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) +
     " · <strong>" + t("generated") + ":</strong> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>");
   text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString(), "");
+  if (window.LabReport) { const sl = stepList(); parts.push(window.LabReport.stepsHtml(sl, LANG, true)); text.push(window.LabReport.stepsText(sl, LANG), ""); }
   const nt = (S.newTests || []);
   parts.push("<h2>" + t("improvements") + "</h2><ul><li>" + t("tpOn") + ": " + (tpList.length ? tpList.join(", ") : t("none")) + "</li><li>" + esc(t("aoiBottom")) + ": " + (S.aoiBottom ? t("yes") : t("no")) + "</li><li>" + esc(t("newTests")) + ": " +
     (nt.length ? nt.map((x) => esc(x.id) + " – " + esc(x.desc)).join("; ") : t("none")) + "</li></ul>");
@@ -816,6 +817,32 @@ function buildReport() {
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>HW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
   return { html: html, body: parts.join("\n"), text: text.join("\n") };
 }
+/* the 8 steps of the lab guide, with what the student did in each (shown in the app and in the report) */
+function stepList() {
+  const ro = LANG === "ro"; const env = ENV_NOW(); const idx = V() || []; const n = idx.length;
+  const LR = window.LabReport; const st = LR ? LR.stepStatus : (a, b) => (b === 0 ? "na" : a >= b ? "done" : a ? "part" : "todo");
+  let cls = 0, o = 0, ft = 0, ap = 0, hm0 = 0, hm = 0, ra = 0;
+  idx.forEach((i) => { const u = S.rows[i] || {}; const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE);
+    if (u.cls) cls++; if (u.o) o++;
+    if (u.fttest && (u.fttest === "none" || u.ft) && (u.ftj || "").trim()) ft++;
+    if (r.ap) ap++; if (needsRA(r0.ap)) hm0++;
+    if (needsRA(r.ap)) { hm++; if (raDone(u)) ra++; } });
+  const tps = Object.keys(S.tps || {}).filter((k) => S.tps[k]).length, nt = (S.newTests || []).length;
+  const nImpr = tps + (S.aoiBottom ? 1 : 0) + nt;
+  const cDone = CONCL.filter((c) => (S.concl[c[0]] || "").trim()).length;
+  const of = (a, b) => a + " / " + b;
+  return [
+    { n: "1", name: ro ? "Severitatea (S): clasa de efect pe fiecare rând" : "Severity (S): the effect class on every row", status: st(cls, n), detail: of(cls, n) },
+    { n: "2", name: ro ? "Ocurența (O) din tabelul P2, pe fiecare rând" : "Occurrence (O) from table P2, on every row", status: st(o, n), detail: of(o, n) },
+    { n: "3", name: ro ? "Detecția la AOI, AXI și ICT" : "Detection at AOI, AXI and ICT", status: "auto", detail: "" },
+    { n: "4", name: ro ? "Detecția la testul funcțional: test, D FT și justificare" : "Functional test detection: test, D FT and justification", status: st(ft, n), detail: of(ft, n) },
+    { n: "5", name: ro ? "Prioritatea de acțiune (AP), din S, O și D" : "Action priority (AP), from S, O and D", status: st(ap, n), detail: of(ap, n) },
+    { n: "6", name: ro ? "Îmbunătățiri pentru modurile cu AP H sau M" : "Improvements for the modes with AP H or M", status: ap < n ? (nImpr ? "part" : "todo") : hm0 === 0 ? "na" : nImpr ? "done" : "todo",
+      detail: (ro ? "H/M inițial: " : "initial H/M: ") + hm0 + " · TP " + tps + " · AOI BOTTOM " + (S.aoiBottom ? (ro ? "da" : "yes") : (ro ? "nu" : "no")) + " · " + (ro ? "teste FT noi " : "new FT tests ") + nt },
+    { n: "7", name: ro ? "Riscul rezidual documentat pentru modurile care rămân H sau M" : "Residual risk documented for the modes that stay H or M", status: ap < n ? (ra ? "part" : "todo") : st(ra, hm), detail: of(ra, hm) },
+    { n: "8", name: ro ? "Concluzia: logica pentru O, îmbunătățirile, limitele analizei" : "Conclusion: the logic for O, the improvements, the limits of the analysis", status: st(cDone, CONCL.length), detail: of(cDone, CONCL.length) }
+  ];
+}
 /* structured copy of the analysis, sent with the report for scoring against the answer key */
 function reportData() {
   const env = ENV_NOW();
@@ -824,7 +851,7 @@ function reportData() {
       return { idx: i, ref: r.m.ref, pin: r.m.pin, mode: r.m.mode, cls: u.cls || "", s: r.s || null, o: r.o || null, aoi: r.det.aoi, axi: r.det.axi, ict: r.det.ict,
         fttest: u.fttest || "", ft: r.ft0 || null, ftj: u.ftj || "", nfttest: u.nfttest || "", nft: r.ftN || null, d: r.d || null, ap: r.ap || "", ap0: r0.ap || "",
         rad: u.rad || "", raw: u.raw || "", ra: u.ra || "", checks: CHECK_KEYS(u, r) }; }),
-    checksOpen: checks().length };
+    checksOpen: checks().length, steps: stepList().map((x) => ({ n: x.n, status: x.status, detail: x.detail })) };
 }
 const CHECK_KEYS = (u, r) => [!u.cls && "cls", !u.o && "o", !u.fttest && "ft", u.fttest && u.fttest !== "none" && !u.ft && "ftd", u.fttest && !(u.ftj || "").trim() && "ftj",
   needsRA(r.ap) && !raDone(u) && "ra"].filter(Boolean);
@@ -847,8 +874,8 @@ function renderReport(view) {
   const ck = checks();
   if (window.LabReport) window.LabReport.snapshot("HW-TCA", reportData);
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + t("download") +
-    '</button><button class="btn" id="cp" type="button">' + t("copy") + '</button></div></div><p class="muted">' + t("reportHint") + '</p><div class="panel stack"><h3>' + t("chkTitle") + "</h3>" + (ck.length ? '<ul class="checks">' + ck.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : '<p class="muted">' + t("chkOk") + "</p>") + '</div><div id="sendBox"></div><div class="report-frame">' + r.body + '</div><textarea id="reportText" readonly hidden></textarea>';
-  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "HW-TCA", lang: LANG, getPayload: () => {
+    '</button><button class="btn" id="cp" type="button">' + t("copy") + '</button></div></div><p class="muted">' + t("reportHint") + "</p>" + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + '<div class="panel stack"><h3>' + t("chkTitle") + "</h3>" + (ck.length ? '<ul class="checks">' + ck.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : '<p class="muted">' + t("chkOk") + "</p>") + '</div><div id="sendBox"></div><div class="report-frame">' + r.body + '</div><textarea id="reportText" readonly hidden></textarea>';
+  if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "HW-TCA", lang: LANG, demo: isDemo(), getPayload: () => {
     const x = buildReport(); const s = summary(ENV_NOW());
     return { name: S.name, group: S.group, variant: S.variant, html: x.html, text: x.text, data: reportData(),
       summary: s.done + "/" + s.n + " · H " + s.H + " · M " + s.M + " · L " + s.L + " · cov " + s.cov + "% · RA " + s.ra + "/" + s.res };
