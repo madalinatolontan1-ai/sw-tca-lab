@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../shared/pcb.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: FMEA workbench in the APIS spirit. Header with student/variant; one tab per analysis (HW signal, SW function);
    inside each, three steps: structure + functions, failure net (effects | modes | causes, linked by dragging), risk + optimization. */
@@ -93,8 +94,8 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .intro { max-width: 78ch; display: flex; flex-direction: column; gap: 12px; }
 .notice { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; }
 .grid-start { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.grid-struct { display: grid; grid-template-columns: minmax(220px, 3fr) minmax(0, 5fr) minmax(0, 4fr); gap: 18px; align-items: start; }
-@media (max-width: 1100px) { .grid-struct { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .grid-struct > .ctx { grid-column: 1 / -1; } }
+.grid-struct { display: grid; grid-template-columns: minmax(220px, 3fr) minmax(0, 4fr) minmax(0, 5fr); gap: 18px; align-items: start; }
+@media (max-width: 1100px) { .grid-struct { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .grid-struct > .ctx, .grid-struct > .sidecol { grid-column: 1 / -1; } }
 @media (max-width: 760px) { .grid-start, .grid-struct { grid-template-columns: minmax(0, 1fr); } }
 table.mini { border-collapse: collapse; font-size: 0.84rem; width: 100%; }
 table.mini th, table.mini td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
@@ -205,7 +206,9 @@ pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line);
 .netchip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; background: var(--surface); color: var(--ink); }
 .netchip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .netchips { display: flex; flex-wrap: wrap; gap: 6px; }
-.boardbox { max-width: 1000px; }
+.boardbox { max-width: 640px; }
+.sidecol .boardbox { max-width: none; }
+details.boardpanel > div { max-width: 680px; }
 .ctxbox { border-left: 3px solid var(--accent); }
 .ctxbox p { margin-top: 4px; max-width: 110ch; }
 details.help summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }
@@ -243,6 +246,7 @@ details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
 .toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: var(--radius); font-size: 0.9rem; z-index: 20; max-width: calc(100vw - 32px); }
 @media (max-width: 640px) { .student { margin-left: 0; } .w-name { width: 150px; } }
 </style>
+<link rel="stylesheet" href="../shared/skin.css">
 <script src="../shared/theme.js"></script>
 </head>
 <body>
@@ -254,7 +258,6 @@ details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
     </div>
     <form class="student" id="studentForm" autocomplete="off">
       <div class="field"><label class="label" for="stName" data-i18n="name"></label><input id="stName" class="in w-name"></div>
-      <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="in w-small"></div>
       <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="in w-small mono" placeholder="F1"></div>
       <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
       <button class="btn" id="resetAll" type="button" data-i18n="reset"></button>
@@ -798,7 +801,7 @@ const I18N = {
     introTitle: "Analiza modurilor de defectare și a efectelor (DFMEA)",
     introP1: "Faci două analize DFMEA pentru nodul CAN al radarului frontal: una pentru un semnal hardware și una pentru o funcție software. Metoda e aceeași pentru amândouă: cei 7 pași AIAG-VDA.",
     introP2: "La fiecare analiză scrii funcțiile elementelor din structură și defectările lor, apoi legi efectul, modul de defectare și cauza într-o rețea de defectare. Pe fiecare legătură mod–cauză evaluezi riscul (S, O, D, AP) și propui optimizări.",
-    introP3: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
+    introP3: "Introdu numele și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
     sysTitle: "Sistemul analizat",
     sys: ["Radarul frontal (ASIL B) detectează obiectele din fața vehiculului și trimite lista de obiecte către ECU-ul ADAS pe CAN, la 500 kbit/s, cam la fiecare 72 ms.",
       "Nodul CAN al radarului e format din controllerul CAN al MCU și modulul transceiver cu MCP2551: J1 (VDD, TXD, RXD, GND), U1 MCP2551, C3 100 nF, R3 4,7 kΩ pe RS, R4 120 Ω + JP1 (terminație), R1/C1 și R2/C2 100 Ω / 560 pF (filtre RC), J2 (CAN_H, CAN_L, GND), LED1 + R5 1 kΩ (indicator de alimentare).",
@@ -891,7 +894,7 @@ const I18N = {
     introTitle: "Failure mode and effects analysis (DFMEA)",
     introP1: "You perform two DFMEAs for the CAN node of the front radar: one for a hardware signal and one for a software function. The method is the same for both: the 7 AIAG-VDA steps.",
     introP2: "In each analysis you write the functions of the structure elements and their failures, then link effect, failure mode and cause in a failure net. On every mode–cause link you rate the risk (S, O, D, AP) and propose optimizations.",
-    introP3: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
+    introP3: "Enter your name and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
     sysTitle: "System under analysis",
     sys: ["The front radar (ASIL B) detects the objects in front of the vehicle and sends the object list to the ADAS ECU over CAN at 500 kbit/s, about every 72 ms.",
       "The radar CAN node consists of the MCU CAN controller and the MCP2551 transceiver module: J1 (VDD, TXD, RXD, GND), U1 MCP2551, C3 100 nF, R3 4.7 kΩ on RS, R4 120 Ω + JP1 (termination), R1/C1 and R2/C2 100 Ω / 560 pF (RC filters), J2 (CAN_H, CAN_L, GND), LED1 + R5 1 kΩ (power indicator).",
@@ -1247,7 +1250,7 @@ function renderStructure(body, kind) {
     '<div class="panel stack"><span class="label">' + esc(lvlName(sel.lvl)) + "</span><h3>" + esc(tr(sel.name)) + "</h3><h4>" + esc(t("fnOf")) + "</h4>" + list +
     '<datalist id="dl-fn">' + fnPool(kind).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>" +
     '<form class="addrow" id="addFn"><input class="in" id="fnText" list="dl-fn" placeholder="' + esc(t("fnPh")) + '" aria-label="' + esc(t("fnOf")) + '"><button class="btn primary" type="submit">' + esc(t("add")) + '</button></form><p class="muted small">' + esc(t("fnHint")) + "</p></div>" +
-    contextPanel(kind) + "</div>" + (kind === "hw" ? boardPanel(false) : "");
+    (kind === "hw" ? '<div class="stack sidecol">' + boardPanel(false) + contextPanel(kind) + "</div>" : contextPanel(kind)) + "</div>";
   if (kind === "hw") wireBoard(body);
   body.querySelectorAll("[data-el]").forEach((b) => b.addEventListener("click", () => { A.selEl = b.dataset.el; save(); render(); }));
   body.querySelectorAll("[data-delfn]").forEach((b) => b.addEventListener("click", () => { removeFn(A, b.dataset.delfn); save(); render(); }));
@@ -1294,8 +1297,8 @@ function renderNet(body, kind) {
     return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span></div>" + inner + "</div>";
   };
   const dls = '<datalist id="dl-fail">' + failPool(kind).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>";
-  body.innerHTML = dls + '<div class="stack"><p class="muted">' + esc(t("netHelp")) + '</p><div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
-    column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + (kind === "hw" ? boardPanel(true) : "") + refTables() + "</div>";
+  body.innerHTML = dls + '<div class="stack"><p class="muted">' + esc(t("netHelp")) + "</p>" + (kind === "hw" ? boardPanel(true) : "") + '<div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
+    column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + refTables() + "</div>";
   if (kind === "hw") wireBoard(body);
 
   const net = body.querySelector("#net");
@@ -1480,9 +1483,9 @@ function analysisReport(kind, text) {
 }
 function buildReport() {
   const date = new Date(); const text = [];
-  let body = "<h1>" + esc(t("reportTitle")) + "</h1><p><b>" + t("student") + ":</b> " + esc(S.name || "–") + " · <b>" + t("group") + ":</b> " + esc(S.group || "–") + " · <b>" + t("variant") + ":</b> " + esc(S.variant) +
+  let body = "<h1>" + esc(t("reportTitle")) + "</h1><p><b>" + t("student") + ":</b> " + esc(S.name || "–") + " · <b>" + t("variant") + ":</b> " + esc(S.variant) +
     " · <b>" + t("generated") + ":</b> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>";
-  text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString());
+  text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString());
   body += "<h2>" + esc(t("fiveT")) + '</h2><table class="r"><tr><th>' + t("tIntent") + "</th><td>" + esc(fmt(t("vIntent"), { hw: hwLabel(), sw: swLabel() })) + "</td></tr><tr><th>" + t("tTiming") + "</th><td>" + esc(t("vTiming")) +
     "</td></tr><tr><th>" + t("tTeam") + "</th><td>" + esc(fmt(t("vTeam"), { name: S.name || "–" })) + "</td></tr><tr><th>" + t("tTask") + "</th><td>" + esc(t("vTask")) + "</td></tr><tr><th>" + t("tTools") + "</th><td>" + esc(t("vTools")) + "</td></tr></table>";
   body += analysisReport("hw", text) + analysisReport("sw", text);
@@ -1523,9 +1526,8 @@ function renderReport(view) {
 /* ================================================================ boot */
 load(); LANG = S.lang || "ro";
 if (!S.hw) S.hw = blankA(); if (!S.sw) S.sw = blankA();
-document.getElementById("stName").value = S.name; document.getElementById("stGroup").value = S.group; document.getElementById("stVariant").value = S.variant;
+document.getElementById("stName").value = S.name; document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
-document.getElementById("stGroup").addEventListener("input", (e) => { S.group = e.target.value; save(); });
 document.getElementById("studentForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const code = document.getElementById("stVariant").value.trim().toUpperCase();

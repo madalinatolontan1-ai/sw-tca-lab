@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../shared/pcb.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: production-test workbench. Header with student/variant, board view with test points
    beside the reference tables, risk sheet (S/O/D per failure mode) and AP summary below. */
@@ -198,6 +199,7 @@ textarea { width: 100%; min-height: 96px; border: 1px solid var(--line); border-
 .toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: var(--radius); font-size: 0.9rem; z-index: 20; max-width: calc(100vw - 32px); }
 @media (max-width: 640px) { .student { margin-left: 0; } .field input.w-name { width: 150px; } }
 </style>
+<link rel="stylesheet" href="../shared/skin.css">
 <script src="../shared/theme.js"></script>
 </head>
 <body>
@@ -209,7 +211,6 @@ textarea { width: 100%; min-height: 96px; border: 1px solid var(--line); border-
     </div>
     <form class="student" id="studentForm" autocomplete="off">
       <div class="field"><label class="label" for="stName" data-i18n="name"></label><input id="stName" class="w-name"></div>
-      <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="w-small"></div>
       <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="w-small mono" placeholder="H1"></div>
       <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
       <button class="btn" id="resetAll" type="button" data-i18n="reset"></button>
@@ -427,7 +428,7 @@ const I18N = {
     introP2: "Pentru fiecare mod alegi severitatea (S) și ocurența (O) din tabele. Aplicația prezice detecția (D) pentru AOI, AXI și ICT din regulile de detecție; detecția la testul funcțional (FT) o stabilești tu. Din S, O și D minim rezultă prioritatea de acțiune (AP), după tabelul AIAG-VDA.",
     introP3: "La final propui îmbunătățiri (test point-uri, AOI pe fața BOTTOM, teste FT) și verifici cât scade riscul rezidual. Raportul se descarcă din tab-ul Raport.",
     introStd: "Ce standard guvernează analiza? Acoperirea testelor de producție nu este o metrică ISO 26262: ține de IATF 16949 (planul de control), de FMEA de proces (AIAG-VDA), de IPC-A-610 și de cerințele clientului. ISO 26262 atinge producția doar prin partea 7. Nu o confunda cu diagnostic coverage (ISO 26262-5), care măsoară cât detectează mecanismele de siguranță un defect apărut în funcționare.",
-    introP4: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
+    introP4: "Introdu numele și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
     stepsTitle: "Pașii",
     s1: "S: alege clasa de efect. Efectul e dat; severitatea rezultă din clasă.",
     s2: "O: încadrează controlul de prevenție tipic în tabelul P2 (FMEA de proces) și alege ocurența.",
@@ -478,7 +479,7 @@ const I18N = {
     introP2: "For every mode you choose the severity (S) and occurrence (O) from the tables. The app predicts the detection (D) for AOI, AXI and ICT from the detection rules; you set the detection of the functional test (FT). S, O and the minimum D give the action priority (AP) from the AIAG-VDA table.",
     introP3: "Finally you propose improvements (test points, AOI on the BOTTOM side, FT tests) and check how much the residual risk drops. Download the report from the Report tab.",
     introStd: "Which standard governs this analysis? Production test coverage is not an ISO 26262 metric: it belongs to IATF 16949 (control plan), process FMEA (AIAG-VDA), IPC-A-610 and customer-specific requirements. ISO 26262 reaches production only through Part 7. Do not confuse it with diagnostic coverage (ISO 26262-5), which measures how well safety mechanisms detect a fault that appears in operation.",
-    introP4: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
+    introP4: "Enter your name and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
     stepsTitle: "Steps",
     s1: "S: choose the effect class. The effect is given; the severity follows from the class.",
     s2: "O: place the typical prevention control in table P2 (process FMEA) and choose the occurrence.",
@@ -780,9 +781,9 @@ function buildReport() {
   const tpList = Object.keys(S.tps).filter((n) => S.tps[n]);
   const parts = [], text = [];
   parts.push("<h1>" + esc(t("reportTitle")) + "</h1>");
-  parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("group") + ":</strong> " + esc(S.group || "–") + " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) +
+  parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) +
     " · <strong>" + t("generated") + ":</strong> " + date.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>");
-  text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString(), "");
+  text.push(t("reportTitle"), t("student") + ": " + (S.name || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + date.toISOString(), "");
   const nt = (S.newTests || []);
   parts.push("<h2>" + t("improvements") + "</h2><ul><li>" + t("tpOn") + ": " + (tpList.length ? tpList.join(", ") : t("none")) + "</li><li>" + esc(t("aoiBottom")) + ": " + (S.aoiBottom ? t("yes") : t("no")) + "</li><li>" + esc(t("newTests")) + ": " +
     (nt.length ? nt.map((x) => esc(x.id) + " – " + esc(x.desc)).join("; ") : t("none")) + "</li></ul>");
@@ -847,9 +848,8 @@ function renderReport(view) {
 
 /* ---------------------------------------------------------------- boot */
 load(); LANG = S.lang || "ro";
-document.getElementById("stName").value = S.name; document.getElementById("stGroup").value = S.group; document.getElementById("stVariant").value = S.variant;
+document.getElementById("stName").value = S.name; document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
-document.getElementById("stGroup").addEventListener("input", (e) => { S.group = e.target.value; save(); });
 document.getElementById("studentForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const code = document.getElementById("stVariant").value.trim().toUpperCase();

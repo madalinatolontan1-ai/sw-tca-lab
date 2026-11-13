@@ -5,11 +5,11 @@
   var TXT = {
     ro: { title: "Trimite raportul profesorului", hint: "Raportul ajunge direct la profesor. Poți retrimite oricând; se păstrează toate trimiterile, iar ultima contează.",
       send: "Trimite raportul", sending: "Se trimite…", ok: "Raport trimis", okAt: "Trimis la {t}.", fail: "Trimiterea nu a mers. Verifică conexiunea și încearcă din nou; dacă tot nu merge, descarcă raportul și trimite-l separat.",
-      need: "Completează numele, grupa și varianta înainte de trimitere.",
+      need: "Completează numele și varianta înainte de trimitere.",
       consent: "Prin completarea și trimiterea acestui raport, declar că sunt de acord cu folosirea datelor din acesta pentru studiu de caz. Numele tău nu va fi folosit nicăieri; se folosesc doar rezultatele din aplicație.", unconf: "Raportul a plecat, dar serverul nu a confirmat primirea. Descarcă raportul și păstrează-l până confirmă profesorul.", last: "Ultima trimitere: {t}." },
     en: { title: "Send the report to your instructor", hint: "The report goes straight to your instructor. You can send it again at any time; every submission is kept and the last one counts.",
       send: "Send report", sending: "Sending…", ok: "Report sent", okAt: "Sent at {t}.", fail: "Sending did not work. Check your connection and try again; if it still fails, download the report and send it separately.",
-      need: "Fill in your name, group and variant before sending.",
+      need: "Fill in your name and variant before sending.",
       consent: "By completing and sending this report, I agree that the data in it may be used for a case study. Your name will not be used anywhere; only the results from the app are used.", unconf: "The report was sent but the server did not confirm receipt. Download the report and keep it until your instructor confirms.", last: "Last sent: {t}." }
   };
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -29,7 +29,7 @@
     var btn = box.querySelector("[data-send]"), st = box.querySelector("[data-status]");
     btn.addEventListener("click", function () {
       var p = opts.getPayload();
-      if (!String(p.name || "").trim() || !String(p.group || "").trim() || !String(p.variant || "").trim()) { st.textContent = T.need; st.style.color = "var(--bad)"; return; }
+      if (!String(p.name || "").trim() || !String(p.variant || "").trim()) { st.textContent = T.need; st.style.color = "var(--bad)"; return; }
       btn.disabled = true; st.style.color = ""; st.textContent = T.sending;
       var body = JSON.stringify({ lab: opts.lab, lang: opts.lang, name: p.name, group: p.group, variant: p.variant, summary: p.summary || "", html: p.html, text: p.text || "" });
       var done = function (when) {
@@ -53,7 +53,7 @@
      Shown once per lab and browser, after the report is sent. No name, group or variant is sent with it;
      the collector stores only the date and shuffles the rows. */
   var FB = {
-    ro: { title: "Părerea ta despre aplicație", intro: "5 întrebări, complet anonime: nu se trimite numele, grupa sau varianta. Răspunsurile ne ajută să îmbunătățim laboratorul.",
+    ro: { title: "Părerea ta despre aplicație", intro: "5 întrebări, complet anonime: nu se trimit numele sau varianta. Răspunsurile ne ajută să îmbunătățim laboratorul.",
       scale: ["Dezacord total", "Dezacord", "Neutru", "Acord", "Acord total"],
       q: ["Funcțiile aplicației mi-au acoperit nevoile pentru acest exercițiu.",
         "Aplicația este ușor de folosit.",
@@ -61,7 +61,7 @@
         "Acum aș putea face singur această analiză pe un alt produs.",
         "Exercițiul mi s-a părut util, ținând cont că această analiză se folosește în industrie."],
       comment: "Ce ai schimba sau ce ți-a lipsit? (opțional)", send: "Trimite", later: "Nu acum", need: "Răspunde la toate cele 5 întrebări.", thanks: "Mulțumim!", fail: "Nu s-a putut trimite. Încearcă din nou." },
-    en: { title: "Your opinion about the app", intro: "5 questions, fully anonymous: no name, group or variant is sent. Your answers help us improve the lab.",
+    en: { title: "Your opinion about the app", intro: "5 questions, fully anonymous: no name or variant is sent. Your answers help us improve the lab.",
       scale: ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"],
       q: ["The app's features met my needs for this exercise.",
         "The app is easy to use.",

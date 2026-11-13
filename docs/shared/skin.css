@@ -1,0 +1,86 @@
+/* Shared visual skin for the three lab apps (HW TCA, SW TCA, FMEA), loaded after each app's own <style>.
+   Soft lavender background, white rounded cards, a dark pill for the active item, vivid blue and violet accents.
+   Only colours, fonts, radii and shadows change here; the layout stays in each app. */
+:root {
+  --bg: #F1EFF8; --surface: #FFFFFF; --ink: #1C1B29; --muted: #66637C; --line: #E4E1EF;
+  --accent: #1F6FEB; --accent-ink: #FFFFFF; --accent-soft: #E4EEFF; --code-bg: #F7F6FC;
+  --violet: #7C5CFA; --violet-soft: #EEE9FF; --cyan: #12B5CB;
+  --primary: #1C1B29; --primary-ink: #FFFFFF;
+  --ok: #138A4B; --ok-bg: #DDF6E7; --bad: #D0393F; --bad-bg: #FDE7E8; --warn: #A3640A; --warn-bg: #FFF1D6;
+  --font-display: "Plus Jakarta Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --radius: 12px; --radius-lg: 20px;
+  --shadow: 0 1px 2px rgba(28, 27, 41, 0.04), 0 6px 20px rgba(28, 27, 41, 0.06);
+  --field: #F6F5FB;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121119; --surface: #1C1B27; --ink: #ECEAF5; --muted: #A4A0BA; --line: #2E2C3D;
+    --accent: #6EA8FF; --accent-ink: #0D1220; --accent-soft: #1D2A45; --code-bg: #171622;
+    --violet: #A996FF; --violet-soft: #2A2445; --cyan: #5FD6E6;
+    --primary: #ECEAF5; --primary-ink: #121119;
+    --ok: #4CC98A; --ok-bg: #12301F; --bad: #FF7A80; --bad-bg: #3A1B1F; --warn: #F0BA5C; --warn-bg: #35290F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+    --field: #16151F;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121119; --surface: #1C1B27; --ink: #ECEAF5; --muted: #A4A0BA; --line: #2E2C3D;
+  --accent: #6EA8FF; --accent-ink: #0D1220; --accent-soft: #1D2A45; --code-bg: #171622;
+  --violet: #A996FF; --violet-soft: #2A2445; --cyan: #5FD6E6;
+  --primary: #ECEAF5; --primary-ink: #121119;
+  --ok: #4CC98A; --ok-bg: #12301F; --bad: #FF7A80; --bad-bg: #3A1B1F; --warn: #F0BA5C; --warn-bg: #35290F;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+  --field: #16151F;
+}
+
+body { letter-spacing: -0.005em; }
+h1, h2, h3, h4 { letter-spacing: -0.015em; }
+h1 { font-weight: 800; }
+
+/* header: white card under a lavender page, brand mark of two dots */
+header.top { background: transparent; border-bottom: 0; padding-inline: 16px; }
+header.top .wrap { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-top: 14px; padding: 14px 20px; }
+.brand h1 { display: flex; align-items: center; gap: 10px; }
+.brand h1::before { content: ""; width: 26px; height: 26px; flex: none; border-radius: 50%;
+  background: radial-gradient(circle at 70% 30%, var(--violet) 0 34%, transparent 35%), radial-gradient(circle at 30% 72%, var(--accent) 0 24%, transparent 25%), radial-gradient(circle at 18% 40%, var(--cyan) 0 12%, transparent 13%); }
+
+/* tabs: pills, active one dark */
+nav.tabs { background: transparent; border-bottom: 0; }
+nav.tabs .wrap { padding-block: 12px 0; gap: 6px; }
+nav.tabs button { border: 0; border-radius: 999px; padding: 9px 18px; background: var(--surface); color: var(--muted); box-shadow: var(--shadow); font-family: var(--font-display); }
+nav.tabs button:not([aria-selected="true"]):not(:disabled):hover { color: var(--ink); }
+nav.tabs button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); border-bottom: 0; }
+
+/* cards */
+.panel, details.ref, details.help, .ctxbox { border: 1px solid transparent; border-radius: var(--radius-lg); box-shadow: var(--shadow); background: var(--surface); }
+details.ref > summary, details.help > summary { border-radius: var(--radius-lg); }
+.ctxbox { border-left: 4px solid var(--violet); }
+.notice { border-left-color: var(--violet); background: var(--violet-soft); border-radius: 0 var(--radius) var(--radius) 0; }
+
+/* controls */
+.btn { border-radius: 999px; border-color: var(--line); background: var(--surface); font-weight: 600; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+.btn.primary:hover { filter: brightness(1.15); }
+.lang, .seg { border-radius: 999px; border-color: var(--line); background: var(--surface); padding: 2px; gap: 2px; }
+.lang button, .seg button { border-radius: 999px; }
+.lang button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); }
+input, select, textarea { accent-color: var(--accent); }
+.field input, .field select, input.in, select.in, textarea.in { border-radius: 10px; background: var(--field); border-color: var(--line); }
+.chip { background: var(--accent-soft); color: var(--accent); }
+.label { letter-spacing: 0.06em; }
+
+/* FMEA steps and structure tree */
+.step { border: 1px solid transparent; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+nav.steps { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); border-color: transparent; }
+.steps button[aria-current="step"] { background: var(--primary); color: var(--primary-ink); box-shadow: none; }
+.steps button[aria-current="step"] .n, .steps button[aria-current="step"] .tt { color: var(--primary-ink); }
+.tree button { border-radius: 12px; }
+.tree button[aria-current="true"] { background: var(--violet-soft); border-color: var(--violet); }
+
+/* AP badges as soft pills */
+.ap { border-radius: 8px; }
+
+/* toast */
+.toast { border-radius: 999px; }

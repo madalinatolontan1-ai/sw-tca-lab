@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: test-bench workspace. Header with student/variant, tab rail of exercises,
    requirements + annotated source side by side, test table and coverage readout below. */
@@ -211,6 +212,7 @@ textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); border-
   .field input.w-name { width: 150px; }
 }
 </style>
+<link rel="stylesheet" href="../shared/skin.css">
 <script src="../shared/theme.js"></script>
 </head>
 <body>
@@ -222,7 +224,6 @@ textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); border-
     </div>
     <form class="student" id="studentForm" autocomplete="off">
       <div class="field"><label class="label" for="stName" data-i18n="name"></label><input id="stName" class="w-name"></div>
-      <div class="field"><label class="label" for="stGroup" data-i18n="group"></label><input id="stGroup" class="w-small"></div>
       <div class="field"><label class="label" for="stVariant" data-i18n="variant"></label><input id="stVariant" class="w-small mono" placeholder="V1"></div>
       <button class="btn primary" id="loadVariant" type="submit" data-i18n="load"></button>
       <button class="btn" id="resetAll" type="button" data-i18n="reset"></button>
@@ -255,7 +256,7 @@ const I18N = {
     introTitle: "Analiza acoperirii testelor software",
     introP1: "Lucrezi pe firmware-ul unui nod CAN care transmite datele unui radar frontal (ASIL B). Pentru fiecare funcție scrii teste pornind de la cerințe, le rulezi și urmărești ce parte din cod au exercitat.",
     introP2: "Aplicația măsoară acoperirea de instrucțiuni (statement), de decizii (branch) și MC/DC, cum o face un instrument de acoperire. Codul afișat este exact codul testat. Este un simulator didactic: într-un proiect real, acoperirea vine dintr-o unealtă evaluată sau calificată conform ISO 26262-8 clauza 11, rulată pe cod instrumentat.",
-    introP3: "Introdu numele, grupa și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
+    introP3: "Introdu numele și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
     introSteps: "Exercițiile",
     s1: "Instrucțiuni și decizii: de ce 100% statement nu ajunge.",
     s2: "MC/DC: fiecare condiție trebuie să influențeze singură rezultatul.",
@@ -319,7 +320,7 @@ const I18N = {
     introTitle: "Software test coverage analysis",
     introP1: "You work on the firmware of a CAN node that transmits the data of a front radar (ASIL B). For every function you write tests from the requirements, run them and see which part of the code they exercised.",
     introP2: "The app measures statement, decision (branch) and MC/DC coverage, the way a coverage tool does. The code you see is exactly the code under test. It is a teaching simulator: in a real project, coverage comes from a tool evaluated or qualified per ISO 26262-8 clause 11, run on instrumented code.",
-    introP3: "Enter your name, group and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
+    introP3: "Enter your name and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
     introSteps: "Exercises",
     s1: "Statements and decisions: why 100% statement coverage is not enough.",
     s2: "MC/DC: every condition must independently affect the outcome.",
@@ -1410,11 +1411,11 @@ function buildReport() {
   const parts = []; const text = [];
   const asilTxt = (k) => ({ "++": t("hr"), "+": t("r"), "o": t("nr") }[S.asil[k]] || "–");
   parts.push("<h1>" + esc(t("reportTitle")) + " · SW TCA</h1>");
-  parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + " · <strong>" + t("group") + ":</strong> " + esc(S.group || "–") +
+  parts.push("<p><strong>" + t("student") + ":</strong> " + esc(S.name || "–") + 
     " · <strong>" + t("variant") + ":</strong> " + esc(S.variant) + " · <strong>" + t("generated") + ":</strong> " + now.toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB") + "</p>");
   let resets = 0; try { resets = +localStorage.getItem(RESET_KEY) || 0; } catch (e) { /* storage unavailable */ }
   parts.push("<p><strong>" + t("histTitle") + ":</strong> " + esc(t("histNote")) + " " + t("histResets") + ": " + resets + ".</p>");
-  text.push(t("reportTitle") + " · SW TCA", t("student") + ": " + (S.name || "–") + " | " + t("group") + ": " + (S.group || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + now.toISOString(), "");
+  text.push(t("reportTitle") + " · SW TCA", t("student") + ": " + (S.name || "–") + " | " + t("variant") + ": " + S.variant + " | " + t("generated") + ": " + now.toISOString(), "");
   parts.push("<h2>ASIL B · ISO 26262-6</h2><ul><li>Statement: " + esc(asilTxt("stmt")) + "</li><li>Branch: " + esc(asilTxt("branch")) + "</li><li>MC/DC: " + esc(asilTxt("mcdc")) + "</li></ul>");
   text.push("ASIL B: Statement = " + asilTxt("stmt") + "; Branch = " + asilTxt("branch") + "; MC/DC = " + asilTxt("mcdc"), "");
   EX_KEYS.forEach((k) => {
@@ -1506,10 +1507,8 @@ function renderReport(view) {
 load();
 LANG = S.lang || "ro";
 document.getElementById("stName").value = S.name;
-document.getElementById("stGroup").value = S.group;
 document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
-document.getElementById("stGroup").addEventListener("input", (e) => { S.group = e.target.value; save(); });
 document.getElementById("studentForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const code = document.getElementById("stVariant").value.trim().toUpperCase();
