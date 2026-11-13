@@ -714,15 +714,16 @@ function renderAnalysis(view) {
   const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '" title="' + esc(TIP(Object.keys(I18N[LANG]).find((k) => I18N[LANG][k] === label) || "")) + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
   view.innerHTML =
     '<div class="row" style="justify-content:space-between"><h2>' + t("sheet") + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
-    '<div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(t("ctx")) + "</p></div>" +
-    '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + t("howTitle") + '</summary><ol class="task">' + t("how").map((x) => "<li>" + esc(x) + "</li>").join("") +
-      (isDemo() ? "<li><b>" + esc(t("howDemo")) + "</b></li>" : "") + "</ol></details>" +
     '<div class="grid2"><div class="panel stack"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side === "bottom") + '">' + t("bottom") + '</button><button type="button" id="sideSch" aria-pressed="' + (S.side === "sch") + '">' + t("schematic") + "</button></div></div>" +
       '<div id="boardBox">' + (S.side === "sch" ? schSVG(S.sel, refs) : boardSVG(S.side === "top", S.sel, refs)) + "</div>" +
       connPanel() +
       '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
       '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel + "</div>" +
-      '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" + ftPanel() +
+      '<div class="stack"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div></div>" +
+    '<div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(t("ctx")) + "</p></div>" +
+    '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + t("howTitle") + '</summary><ol class="task">' + t("how").map((x) => "<li>" + esc(x) + "</li>").join("") +
+      (isDemo() ? "<li><b>" + esc(t("howDemo")) + "</b></li>" : "") + "</ol></details>" +
+    ftPanel() +
     '<div class="panel stack"><h3>' + t("summary") + '</h3><div class="meters">' +
       meter(t("mDone"), now.done + " / " + now.n, base.done + " / " + base.n) +
       meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
