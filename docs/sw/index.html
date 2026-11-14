@@ -295,6 +295,10 @@ const I18N = {
     asilHint: "Alege nivelul de recomandare pentru fiecare metrică la nivel de unitate software (ISO 26262-6, Tabelul 9). Intrările 1a, 1b, 1c sunt alternative: se alege o combinație potrivită pentru ASIL, cu justificare. ISO 26262 nu fixează un procent: cere o valoare-țintă definită și justificată (9.4.4, NOTA 1). În laborator ținta este 100%, ca în practica industrială. Răspunsul apare în raport.",
     hr: "++ puternic recomandat", r: "+ recomandat", nr: "o fără recomandare", choose: "alege",
     bugTitle: "Raport de incident",
+    fixUnparsed: "Corectura nu poate fi verificată: scrie linia corectată întreagă, așa cum apare în cod (condiția din if, cu operatorul schimbat).",
+    fixPass: "Retest: cu această corectură trec toate cele {n} teste valide. Retestul e doar atât de bun cât sunt testele tale: verifică să ai teste pe limită și imediat după.",
+    fixFail: "Retest: cu această corectură trec {p} din {n} teste valide. Pică: {ids}. Corectura nu rezolvă defectul sau strică un caz care mergea: recitește cerința.",
+    fixNone: "Retest: nu există încă teste valide, cu rezultat așteptat, pe care să fie verificată corectura.", fixRep: "Retest cu corectura propusă",
     bugHint: "Un test care pică este un incident (ISO/IEC/IEEE 29119-1), tratat prin procesul de rezolvare a anomaliilor (ISO 26262-2, 5.4.3.2). Analizează-l: dacă rezultatul așteptat respectă cerința, cauza e în cod; descrie defectul și corecția. Comparația o faci pe baza cerinței.",
     bugTest: "Testul care pică", bugLine: "Linia suspectă", bugFix: "Corecția propusă (cod C)", bugDesc: "Descriere: cerință, rezultat obținut, rezultat așteptat",
     justTitle: "Justificarea codului neacoperit",
@@ -359,6 +363,10 @@ const I18N = {
     asilHint: "Choose the recommendation level of each metric at software unit level (ISO 26262-6, Table 9). Entries 1a, 1b, 1c are alternatives: a suitable combination is chosen for the ASIL, with a rationale. ISO 26262 does not fix a percentage: it asks for a defined, justified target value (9.4.4, NOTE 1). In the lab the target is 100%, as in industrial practice. Your answer goes into the report.",
     hr: "++ highly recommended", r: "+ recommended", nr: "o no recommendation", choose: "choose",
     bugTitle: "Incident report",
+    fixUnparsed: "The fix cannot be checked: write the whole corrected line as it appears in the code (the if condition, with the operator changed).",
+    fixPass: "Retest: with this fix all {n} valid tests pass. A retest is only as good as your tests: make sure you have tests on the limit and just after it.",
+    fixFail: "Retest: with this fix {p} of {n} valid tests pass. Failing: {ids}. The fix does not solve the defect or breaks a case that worked: re-read the requirement.",
+    fixNone: "Retest: there are no valid tests with an expected result yet to check the fix against.", fixRep: "Retest with the proposed fix",
     bugHint: "A failing test is an incident (ISO/IEC/IEEE 29119-1), handled by the anomaly resolution process (ISO 26262-2, 5.4.3.2). Analyse it: if the expected result follows the requirement, the cause is in the code; describe the defect and the fix. Compare against the requirement.",
     bugTest: "Failing test", bugLine: "Suspected line", bugFix: "Proposed fix (C code)", bugDesc: "Description: requirement, actual result, expected result",
     justTitle: "Justification of uncovered code",
@@ -1112,6 +1120,46 @@ function recordRun(exKey) {
   });
 }
 const bugTab = () => (V() && V().f1bug ? "f1" : "f3");  /* the tab that holds the planted bug */
+/* Retest of the proposed fix (ISO 26262-8 change management: a change is verified again). The corrected line the
+   student wrote is read (comparison operators, and for F1 the returned value), the function is run with it on the
+   student's own valid tests, and the result is shown. "spec" (the fix equals the requirement) goes only into the data. */
+const OPS = { ">": (a, b) => a > b, ">=": (a, b) => a >= b, "<": (a, b) => a < b, "<=": (a, b) => a <= b, "==": (a, b) => a === b, "!=": (a, b) => a !== b };
+const OPRE = "(>=|<=|==|!=|>|<)";
+const fmt = (str, o) => str.replace(/\{(\w+)\}/g, (m, k) => (k in o ? o[k] : m));
+function fixCheck() {
+  const v = V(); const txt = ((S.bug && S.bug.fix) || "").replace(/\s+/g, " ").trim();
+  if (!v || !txt) return null;
+  const k = bugTab(); let run = null, spec = false;
+  if (k === "f1") {
+    const m = txt.match(new RegExp("\\bid " + "?" + OPRE + " ?(max_id|CAN_STD_ID_MAX|CAN_EXT_ID_MAX)", "i"));
+    if (m) {
+      const rhs = m[2].toLowerCase(); const r = txt.match(/return (true|false)/i); const ret = r ? r[1].toLowerCase() === "true" : false;
+      run = (i) => { if (i.dlc > 8) return "false"; const lim = rhs === "max_id" ? (i.extended ? 0x1FFFFFFF : 0x7FF) : rhs === "can_std_id_max" ? 0x7FF : 0x1FFFFFFF;
+        return OPS[m[1]](i.id, lim) ? String(ret) : "true"; };
+      spec = m[1] === ">" && rhs === "max_id" && !ret;
+    }
+  } else {
+    const o = f3Ops(v); let hit = false;
+    const pick = (name, lim) => { const m = txt.match(new RegExp("\\b" + name + " ?" + OPRE + " ?(" + lim + ")u?\\b", "i")); if (m) hit = true; return m ? m[1] : null; };
+    const bo = pick("tec", "CAN_BUSOFF_LIMIT|255") || o.busoff, tp = pick("tec", "CAN_PASSIVE_LIMIT|127") || o.tecP, rp = pick("rec", "CAN_PASSIVE_LIMIT|127") || o.recP;
+    if (hit) {
+      run = (i) => (OPS[bo](i.tec, 255) ? "BUS_OFF" : (OPS[tp](i.tec, 127) || OPS[rp](i.rec, 127)) ? "ERROR_PASSIVE" : "ERROR_ACTIVE");
+      spec = bo === ">" && tp === ">" && rp === ">";
+    }
+  }
+  if (!run) return { parsed: false };
+  const an = analyse(k, v, S.tests[k]);
+  const rows = an.rows.filter((r) => !r.bad && r.verdict !== "none" && r.chk.expOk);   /* tests whose expected result follows the requirements */
+  const failed = rows.filter((r) => { const t0 = S.tests[k].find((x) => x.id === r.id); return run(r.vals) !== t0.expected; }).map((r) => r.id);
+  return { parsed: true, total: rows.length, pass: rows.length - failed.length, failed: failed, spec: spec };
+}
+function fixMsg() {
+  const c = fixCheck(); if (!c) return "";
+  const cls = !c.parsed || !c.total ? "warn" : c.failed.length ? "bad" : "ok";
+  const msg = !c.parsed ? t("fixUnparsed") : !c.total ? t("fixNone") : c.failed.length ? fmt(t("fixFail"), { p: c.pass, n: c.total, ids: c.failed.join(", ") }) : fmt(t("fixPass"), { n: c.total });
+  return '<span style="color:var(--' + cls + ')">' + esc(msg) + "</span>";
+}
+const fixOk = () => { const c = fixCheck(); return !!(c && c.parsed && c.total && !c.failed.length); };
 
 function nextId(exKey) {
   const prefix = { f1: "T", f2: "T", f3: "T", int: "I" }[exKey];
@@ -1322,6 +1370,7 @@ function bugBlock() {
     '<div class="field"><label class="label" for="bug_test">' + t("bugTest") + '</label><input id="bug_test" data-bug="test" value="' + esc(S.bug.test) + '"></div>' +
     '<div class="field"><label class="label" for="bug_line">' + t("bugLine") + '</label><input id="bug_line" data-bug="line" value="' + esc(S.bug.line) + '"></div>' +
     '<div class="field"><label class="label" for="bug_fix">' + t("bugFix") + '</label><input id="bug_fix" class="mono" data-bug="fix" value="' + esc(S.bug.fix) + '"></div></div>' +
+    '<p id="fixChk" role="status" style="margin:0;font-size:.88rem">' + fixMsg() + "</p>" +
     '<div class="field"><label class="label" for="bug_desc">' + t("bugDesc") + '</label><textarea id="bug_desc" data-bug="desc">' + esc(S.bug.desc) + "</textarea></div></div>";
 }
 function justBlock() {
@@ -1402,7 +1451,7 @@ function renderExercise(view, exKey) {
   }));
   view.querySelectorAll("[data-notes]").forEach((n) => n.addEventListener("input", () => { S.notes[exKey] = n.value; save(); }));
   view.querySelectorAll("[data-asil]").forEach((n) => n.addEventListener("change", () => { S.asil[n.dataset.asil] = n.value; save(); }));
-  view.querySelectorAll("[data-bug]").forEach((n) => n.addEventListener("input", () => { S.bug[n.dataset.bug] = n.value; save(); }));
+  view.querySelectorAll("[data-bug]").forEach((n) => n.addEventListener("input", () => { S.bug[n.dataset.bug] = n.value; save(); const fc = view.querySelector("#fixChk"); if (fc) fc.innerHTML = fixMsg(); }));
   view.querySelectorAll("[data-just]").forEach((n) => n.addEventListener("input", () => { S.just = n.value; save(); }));
 }
 
@@ -1464,6 +1513,8 @@ function buildReport() {
     text.push("  MC/DC · " + t("notShown") + ": " + (condMiss.length ? condMiss.join("; ") : t("none")) + " | " + t("reqMissing") + ": " + (an.reqMissing.length ? an.reqMissing.join(", ") : t("none")));
     if (k === bugTab()) {
       parts.push("<h3>" + t("bugTitle") + "</h3><ul><li>" + t("bugTest") + ": " + esc(S.bug.test || "–") + "</li><li>" + t("bugLine") + ": " + esc(S.bug.line || "–") + "</li><li>" + t("bugFix") + ": <code>" + esc(S.bug.fix || "–") + "</code></li></ul><p>" + esc(S.bug.desc || "–").replace(/\n/g, "<br>") + "</p>");
+      { const fc = fixCheck(); const ft = !fc ? "–" : !fc.parsed ? t("fixUnparsed") : !fc.total ? t("fixNone") : fc.pass + " / " + fc.total + (fc.failed.length ? " (FAIL: " + fc.failed.join(", ") + ")" : " PASS");
+        parts.push("<p><strong>" + esc(t("fixRep")) + ":</strong> " + esc(ft) + "</p>"); text.push("  " + t("fixRep") + ": " + ft); }
       text.push("  " + t("bugTitle") + ": " + t("bugTest") + "=" + (S.bug.test || "–") + "; " + t("bugLine") + "=" + (S.bug.line || "–") + "; " + t("bugFix") + "=" + (S.bug.fix || "–"), "  " + (S.bug.desc || "–"));
     }
     if (k === "int") {
@@ -1507,6 +1558,7 @@ function stepList() {
     add(an.warned.reduce((a, r) => a + r.chk.warnings.length, 0) === 0, ro ? "fără avertismente la teste" : "no test warnings");
     if (k === bugTab()) {
       add(S.bug.test && S.bug.line && S.bug.fix, ro ? "raportul de incident: testul, linia, corectura" : "the incident report: test, line, fix");
+      add(fixOk(), ro ? "corectura trece retestul" : "the fix passes the retest");
       add((S.bug.desc || "").trim(), ro ? "descrierea greșelii: cerința, rezultatul obținut și cel așteptat" : "the defect description: requirement, actual and expected result");
     }
     if (k === "int") {
@@ -1532,7 +1584,7 @@ function reportData() {
     ex[k] = { tests: S.tests[k], ran: !!S.ran[k], stmt: an.stmt, dec: an.dec, mcdc: an.mcdc, req: an.req, uncovered: an.stmtLines.filter((n) => an.hits[n] === 0),
       missingOutcomes: miss, mcdcNotShown: condMiss, reqMissing: an.reqMissing, bva: an.thr ? an.thr.map((x) => ({ name: x.name, at: !!x.at, over: !!x.over })) : null,
       warningsLeft: an.warned.reduce((a, r) => a + r.chk.warnings.length, 0), hist: histOf(k), notes: S.notes[k] || "" }; });
-  return { variant: S.variant, lang: LANG, asil: S.asil, bug: S.bug, just: S.just, concl: S.concl, resets: resets, ex: ex, steps: stepList().map((x) => ({ n: x.n, status: x.status, detail: x.detail })) };
+  return { variant: S.variant, lang: LANG, asil: S.asil, bug: Object.assign({}, S.bug, { fixCheck: fixCheck() }), just: S.just, concl: S.concl, resets: resets, ex: ex, steps: stepList().map((x) => ({ n: x.n, status: x.status, detail: x.detail })) };
 }
 function renderReport(view) {
   if (window.LabReport) window.LabReport.snapshot("SW-TCA", reportData);
