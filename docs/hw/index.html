@@ -151,6 +151,31 @@ td.ra textarea { min-height: 54px; font-size: 0.82rem; padding: 4px 6px; }
 .x { border: 0; background: transparent; color: var(--muted); cursor: pointer; width: 26px; height: 26px; border-radius: 4px; font-size: 1rem; flex: none; }
 .x:hover { color: var(--bad); background: var(--bad-bg); }
 
+/* step tabs */
+.steplay { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 16px; align-items: start; }
+.steplay .boardpanel { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow: auto; }
+@media (max-width: 1000px) { .steplay { grid-template-columns: minmax(0, 1fr); } .steplay .boardpanel { position: static; max-height: none; } }
+.subtabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.subtabs button { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
+.subtabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); }
+nav.tabs .tm { font-size: 0.85em; } nav.tabs .tm.ok { color: var(--ok); } nav.tabs .tm.part { color: var(--warn); }
+table.sheet.stept td { vertical-align: middle; }
+table.sheet.stept td.eff { max-width: 280px; white-space: normal; font-size: 0.85rem; }
+table.sheet.stept select { min-width: 120px; max-width: 260px; }
+table.sheet.stept select.empty, table.sheet.stept textarea.empty { border-color: var(--warn); background: var(--warn-bg); }
+table.sheet.stept .why { display: block; max-width: 170px; }
+table.sheet.ftstep textarea { min-width: 220px; min-height: 52px; font-size: 0.85rem; }
+.mref { font-family: var(--font-mono); font-weight: 700; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); padding: 1px 6px; cursor: pointer; }
+.mref.on { border-color: var(--accent); background: var(--accent-soft); }
+.stephelp p { margin: 0 0 4px; } .stephelp p:last-child { margin: 0; }
+table.mini.p2 td, table.mini.p2 th { font-size: 0.85rem; }
+.rablock { border-left: 4px solid var(--warn); } .rablock.done { border-left-color: var(--ok); }
+.rablock .row { gap: 10px; flex-wrap: wrap; align-items: center; }
+.rablock .ragrid { display: grid; grid-template-columns: minmax(180px, 240px) 1fr 1fr; gap: 10px; align-items: start; }
+.rablock .ragrid textarea { min-height: 64px; }
+@media (max-width: 900px) { .rablock .ragrid { grid-template-columns: 1fr; } }
+.stepnav { justify-content: space-between; }
+.small { font-size: 0.8rem; }
 /* failure-mode cards */
 .mcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 14px; align-items: start; }
 .mcard { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; scroll-margin-top: 12px; transition: box-shadow 0.3s; }
@@ -324,18 +349,18 @@ const modeShort = (m) => (LANG === "ro" && MODE_RO[m.mode] ? MODE_RO[m.mode] : m
 const effTxt = (m) => (LANG === "ro" && EFF_RO[m.effect] ? EFF_RO[m.effect] : m.effect);
 /* typical prevention control on an automotive SMT / THT line per component type and mode, and the O it gives in table P2 (sheet "Ocurență (PFMEA)") */
 const PREV = {
-  missingSMD: [{ ro: "verificarea prezenței piesei pe duza pick & place (vacuum / cameră), monitorizarea feeder-ului", en: "part presence check on the pick & place nozzle (vacuum / camera), feeder monitoring" }, "2"],
-  openSMD: [{ ro: "stencil proiectat după IPC-7525, inspecția pastei (SPI), profil de reflow validat", en: "stencil designed to IPC-7525, solder paste inspection (SPI), validated reflow profile" }, "2"],
-  shortSMD: [{ ro: "stencil și pad-uri după IPC-7351, SPI (volumul pastei)", en: "stencil and pads to IPC-7351, SPI (paste volume)" }, "2"],
-  wrongValue: [{ ro: "scanarea codului de bare al rolei la încărcarea feeder-ului (verificare automată a setup-ului)", en: "reel barcode scan when loading the feeder (automatic setup verification)" }, "2"],
-  polarity: [{ ro: "orientarea verificată de camera pick & place, marcaj de polaritate pe pad", en: "orientation checked by the pick & place camera, polarity mark on the pad" }, "2"],
-  icMissing: [{ ro: "verificarea prezenței piesei pe duză (cameră)", en: "part presence check on the nozzle (camera)" }, "2"],
-  icShort: [{ ro: "stencil cu deschideri reduse la pas fin, SPI", en: "reduced stencil apertures at fine pitch, SPI" }, "2"],
-  icFunc: [{ ro: "protecție ESD în fabrică (EPA, IEC 61340-5-1), componente de la furnizori calificați (AEC-Q100)", en: "ESD protection in the plant (EPA, IEC 61340-5-1), parts from qualified suppliers (AEC-Q100)" }, "2"],
-  thtMissing: [{ ro: "inserție manuală cu instrucțiune de lucru, eventual șablon (fixture)", en: "manual insertion with a work instruction, possibly a fixture" }, "4–5"],
-  thtSolder: [{ ro: "lipire în val / selectivă cu parametri monitorizați, gaură și pad după IPC-2221", en: "wave / selective soldering with monitored parameters, hole and pad to IPC-2221" }, "4–5"],
-  jmpMissing: [{ ro: "montare manuală cu instrucțiune de lucru (control comportamental)", en: "manual fitting with a work instruction (behavioural control)" }, "6–7"],
-  jmpOther: [{ ro: "montare manuală, jumper din lista aprobată", en: "manual fitting, jumper from the approved list" }, "4–5"]
+  missingSMD: [{ ro: "verificarea prezenței piesei pe duza pick & place (vacuum / cameră), monitorizarea feeder-ului", en: "part presence check on the pick & place nozzle (vacuum / camera), feeder monitoring" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  openSMD: [{ ro: "stencil proiectat după IPC-7525, inspecția pastei (SPI), profil de reflow validat", en: "stencil designed to IPC-7525, solder paste inspection (SPI), validated reflow profile" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  shortSMD: [{ ro: "stencil și pad-uri după IPC-7351, SPI (volumul pastei)", en: "stencil and pads to IPC-7351, SPI (paste volume)" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  wrongValue: [{ ro: "scanarea codului de bare al rolei la încărcarea feeder-ului (verificare automată a setup-ului)", en: "reel barcode scan when loading the feeder (automatic setup verification)" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  polarity: [{ ro: "orientarea verificată de camera pick & place, marcaj de polaritate pe pad", en: "orientation checked by the pick & place camera, polarity mark on the pad" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  icMissing: [{ ro: "verificarea prezenței piesei pe duză (cameră)", en: "part presence check on the nozzle (camera)" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  icShort: [{ ro: "stencil cu deschideri reduse la pas fin, SPI", en: "reduced stencil apertures at fine pitch, SPI" }, "2", { ro: "SMT automat: pick & place și reflow", en: "automatic SMT: pick & place and reflow" }, { ro: "tehnic, automat (mașina verifică): foarte eficient", en: "technical, automatic (the machine checks): highly effective" }],
+  icFunc: [{ ro: "protecție ESD în fabrică (EPA, IEC 61340-5-1), componente de la furnizori calificați (AEC-Q100)", en: "ESD protection in the plant (EPA, IEC 61340-5-1), parts from qualified suppliers (AEC-Q100)" }, "2", { ro: "componentă cumpărată, manipulată în zona protejată ESD", en: "purchased part, handled in the ESD protected area" }, { ro: "bune practici (EPA, furnizori calificați): foarte eficient", en: "best practices (EPA, qualified suppliers): highly effective" }],
+  thtMissing: [{ ro: "inserție manuală cu instrucțiune de lucru, eventual șablon (fixture)", en: "manual insertion with a work instruction, possibly a fixture" }, "4–5", { ro: "THT: inserție manuală de către operator", en: "THT: manual insertion by an operator" }, { ro: "comportamental (operatorul urmează o instrucțiune): eficient", en: "behavioural (the operator follows an instruction): effective" }],
+  thtSolder: [{ ro: "lipire în val / selectivă cu parametri monitorizați, gaură și pad după IPC-2221", en: "wave / selective soldering with monitored parameters, hole and pad to IPC-2221" }, "4–5", { ro: "THT: lipire în val / selectivă după inserția manuală", en: "THT: wave / selective soldering after manual insertion" }, { ro: "tehnic, dar pe o operație cu pas manual: eficient", en: "technical, but on an operation with a manual step: effective" }],
+  jmpMissing: [{ ro: "montare manuală cu instrucțiune de lucru (control comportamental)", en: "manual fitting with a work instruction (behavioural control)" }, "6–7", { ro: "jumper montat manual, la final, după instrucțiune", en: "jumper fitted by hand, at the end, per instruction" }, { ro: "comportamental, fără verificare: oarecum eficient", en: "behavioural, without a check: somewhat effective" }],
+  jmpOther: [{ ro: "montare manuală, jumper din lista aprobată", en: "manual fitting, jumper from the approved list" }, "4–5", { ro: "jumper montat manual", en: "jumper fitted by hand" }, { ro: "comportamental, jumper din lista aprobată: eficient", en: "behavioural, jumper from the approved list: effective" }]
 };
 function prevOf(m) {
   const ty = m.type, md = m.mode;
@@ -479,7 +504,21 @@ const I18N = {
     aoiBottom: "AOI și pe fața BOTTOM (lipiturile THT ale lui J1, J2, JP1)",
     nc: "neconectat",
     sheet: "Fișa de analiză", colComp: "Componentă", colMode: "Mod de defectare", colEffect: "Efect", colClass: "Clasă efect", colS: "S", colO: "O",
-    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "FT · test, D și justificare", colFTnew: "Test FT nou (îmbun.)", colFTd: "D FT", ftNone: "NONE (niciun test nu se potrivește)", ftJustPh: "de ce ai ales testul și valoarea?", kS: "Severitatea (S): clasa efectului", kO: "Ocurența (O), din tabelul P2", kDet: "Detecția la AOI, AXI și ICT", kAuto: "calculat", kFT: "Testul funcțional (FT)", kFTtest: "Testul care vede efectul", kFTj: "Justificare (obligatorie): de ce acest test și această valoare D", kAP: "Rezultat: D și AP", kDmin: "minimul dintre AOI, AXI, ICT și FT", kAPnow: "AP cu îmbunătățiri", kImpr: "Îmbunătățiri", kImprHint: "Test point-urile, AOI pe BOTTOM și testele FT noi se aleg în panoul de lângă placă; efectul lor apare imediat în D și AP de mai sus. Dacă ai propus un test FT nou care prinde acest mod, alege-l aici.", kRA: "Riscul rezidual: AP rămâne", kRAdec: "Decizia", kRAwhy: "De ce rămâne riscul: ce nu prinde testarea și de ce", kRAwhat: "Ce se face sau de ce se acceptă riscul", kOk: "complet", kMiss: "de completat: {n}", kShow: "arată componenta pe placă și în schemă", kStatus: "Stare", kSumTitle: "Rezumat", kSumHint: "Doar citire. Apasă pe un rând ca să mergi la cardul modului.", kCardsTitle: "Modurile de defectare: completează fiecare card, pașii în ordine", schematic: "SCHEMĂ", colRA: "Evaluarea riscului rezidual", noTest: "niciun test", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "FT · test, D și justificare", colFTnew: "Test FT nou (îmbun.)", colFTd: "D FT", ftNone: "NONE (niciun test nu se potrivește)", ftJustPh: "de ce ai ales testul și valoarea?", tab_s1: "1 · Severitate", tab_s2: "2 · Ocurență", tab_det: "3–4 · Detecție", tab_ap: "5–6 · AP și îmbunătățiri", tab_ra: "7 · Risc rezidual", tab_concl: "8 · Concluzie",
+    tabT_s1: "Severitatea (S)", tabT_s2: "Ocurența (O)", tabT_det: "Detecția (D)", tabT_ap: "Prioritatea (AP) și îmbunătățirile", tabT_ra: "Riscul rezidual", tabT_concl: "Concluzia", stepWord: "Pasul",
+    subAuto: "3 · AOI · AXI · ICT (calculat)", subFT: "4 · Testul funcțional (FT)",
+    h_s1: ["Pentru fiecare mod, citește efectul și alege clasa de efect din tabelul de clase de mai jos; S rezultă din clasă.", "Efectele EMC (filtre, decuplare) sunt E9, chiar dacă funcția nu e afectată."],
+    h_s1Demo: "",
+    h_s2: ["O spune cât de probabil apare defectul în producție. Depinde de proces și de cât de bun e controlul de prevenție, nu de cât de comună e piesa.", "Pe fiecare rând ai procesul și tipul controlului. Caută rândul potrivit în tabelul scurt de mai sus (tipul și eficiența controlului) și alege O din banda lui."],
+    h_s2Demo: "Pe H0, sub fiecare listă apare banda corectă.",
+    h_det3: ["Aplicația calculează D pentru AOI, AXI și ICT din regulile de detecție. Sub fiecare valoare e motivul. Citește-le: nu completezi nimic aici.", "Apasă pe numele componentei ca s-o vezi pe placă și în schemă, cu net-urile ei și test point-urile."],
+    h_det4: ["Pentru fiecare mod, urmărește pe placă netul pinului: dacă ajunge la un conector, testul funcțional poate vedea efectul.", "Alege din lista FT1–FT8 testul care vede efectul (sau NONE), apoi D din scala de detecție, și scrie de ce: ce măsoară testul și dacă localizează defectul."],
+    h_ap: ["D este minimul metodelor, iar AP se citește din tabelul AIAG-VDA; aplicația le calculează.", "Pentru modurile cu AP H sau M, încearcă îmbunătățiri în panoul din dreapta: test point-uri, AOI pe BOTTOM, teste FT noi. Coloana „AP fără îmbun.” păstrează rezultatul inițial."],
+    h_ra: ["Aici apar doar modurile care rămân H sau M după îmbunătățiri. Pentru fiecare: alege decizia (risc acceptat sau acțiune propusă), spune de ce rămâne riscul și ce se face sau de ce se acceptă."],
+    h_concl: ["Trei câmpuri, scrise concret: logica folosită pentru O, ce aduc îmbunătățirile, ce nu poate vedea testarea sau analiza. Un „nu” sau „-” nu se ia în calcul."],
+    raNone: "Niciun mod nu rămâne H sau M: pasul 7 nu e cazul.", raWait: "Completează întâi pașii 1–4 pentru toate modurile.",
+    p2Title: "Cum alegi O (tabelul P2, pe scurt)", p2Ctl: "Tipul controlului de prevenție", p2Eff: "Eficiența", p2Proc: "Procesul", p2CtlShort: "control",
+    p2Rows: [["Tehnic: cauza nu poate apărea fizic (geometrie, dispozitiv)", "extrem de eficient", "1"], ["Tehnic, automat, sau bune practici", "foarte eficient", "2–3"], ["Comportamental sau tehnic", "eficient", "4–5"], ["Comportamental sau tehnic", "oarecum eficient", "6–7"], ["Comportamental", "efect mic", "8–9"], ["Niciun control", "–", "10"]], kS: "Severitatea (S): clasa efectului", kO: "Ocurența (O), din tabelul P2", kDet: "Detecția la AOI, AXI și ICT", kAuto: "calculat", kFT: "Testul funcțional (FT)", kFTtest: "Testul care vede efectul", kFTj: "Justificare (obligatorie): de ce acest test și această valoare D", kAP: "Rezultat: D și AP", kDmin: "minimul dintre AOI, AXI, ICT și FT", kAPnow: "AP cu îmbunătățiri", kImpr: "Îmbunătățiri", kImprHint: "Test point-urile, AOI pe BOTTOM și testele FT noi se aleg în panoul de lângă placă; efectul lor apare imediat în D și AP de mai sus. Dacă ai propus un test FT nou care prinde acest mod, alege-l aici.", kRA: "Riscul rezidual: AP rămâne", kRAdec: "Decizia", kRAwhy: "De ce rămâne riscul: ce nu prinde testarea și de ce", kRAwhat: "Ce se face sau de ce se acceptă riscul", kOk: "complet", kMiss: "de completat: {n}", kShow: "arată componenta pe placă și în schemă", kStatus: "Stare", kSumTitle: "Rezumat", kSumHint: "Doar citire. Apasă pe un rând ca să mergi la cardul modului.", kCardsTitle: "Modurile de defectare: completează fiecare card, pașii în ordine", schematic: "SCHEMĂ", colRA: "Evaluarea riscului rezidual", noTest: "niciun test", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
     choose: "–",
     summary: "Rezumat", mDone: "Moduri completate", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Risc rezidual (H + M)", mCov: "Acoperirea riscului",
     before: "fără îmbunătățiri",
@@ -530,7 +569,21 @@ const I18N = {
     aoiBottom: "AOI on the BOTTOM side too (THT solder joints of J1, J2, JP1)",
     nc: "not connected",
     sheet: "Analysis sheet", colComp: "Component", colMode: "Failure mode", colEffect: "Effect", colClass: "Effect class", colS: "S", colO: "O",
-    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "FT · test, D and justification", colFTnew: "New FT test (impr.)", colFTd: "D FT", ftNone: "NONE (no test fits)", ftJustPh: "why did you choose this test and value?", kS: "Severity (S): the effect class", kO: "Occurrence (O), from table P2", kDet: "Detection at AOI, AXI and ICT", kAuto: "computed", kFT: "Functional test (FT)", kFTtest: "The test that sees the effect", kFTj: "Justification (required): why this test and this D value", kAP: "Result: D and AP", kDmin: "minimum of AOI, AXI, ICT and FT", kAPnow: "AP with improvements", kImpr: "Improvements", kImprHint: "Test points, AOI on BOTTOM and new FT tests are chosen in the panel next to the board; their effect shows at once in D and AP above. If you proposed a new FT test that catches this mode, pick it here.", kRA: "Residual risk: AP stays", kRAdec: "Decision", kRAwhy: "Why the risk remains: what testing does not catch and why", kRAwhat: "What is done, or why the risk is accepted", kOk: "complete", kMiss: "to fill in: {n}", kShow: "show the component on the board and in the schematic", kStatus: "Status", kSumTitle: "Summary", kSumHint: "Read only. Click a row to go to the mode's card.", kCardsTitle: "Failure modes: fill in every card, steps in order", schematic: "SCHEMATIC", colRA: "Residual risk assessment", noTest: "no test", colD: "D", colAP: "AP", colAP0: "AP no impr.",
+    colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "FT · test, D and justification", colFTnew: "New FT test (impr.)", colFTd: "D FT", ftNone: "NONE (no test fits)", ftJustPh: "why did you choose this test and value?", tab_s1: "1 · Severity", tab_s2: "2 · Occurrence", tab_det: "3–4 · Detection", tab_ap: "5–6 · AP and improvements", tab_ra: "7 · Residual risk", tab_concl: "8 · Conclusion",
+    tabT_s1: "Severity (S)", tabT_s2: "Occurrence (O)", tabT_det: "Detection (D)", tabT_ap: "Priority (AP) and improvements", tabT_ra: "Residual risk", tabT_concl: "Conclusion", stepWord: "Step",
+    subAuto: "3 · AOI · AXI · ICT (computed)", subFT: "4 · Functional test (FT)",
+    h_s1: ["For every mode, read the effect and choose the effect class from the class table below; S follows from the class.", "EMC effects (filters, decoupling) are E9, even when the function is not affected."],
+    h_s1Demo: "",
+    h_s2: ["O says how likely the defect is to occur in production. It depends on the process and on how good the prevention control is, not on how common the part is.", "Every row shows the process and the type of control. Find the matching row in the short table above (type and effectiveness of the control) and choose O from its band."],
+    h_s2Demo: "On H0 the correct band appears under each list.",
+    h_det3: ["The app computes D for AOI, AXI and ICT from the detection rules. The reason is under each value. Read them: you fill in nothing here.", "Click the component name to see it on the board and in the schematic, with its nets and test points."],
+    h_det4: ["For every mode, follow the pin's net on the board: if it reaches a connector, the functional test can see the effect.", "Choose from the FT1–FT8 list the test that sees the effect (or NONE), then D from the detection scale, and write why: what the test measures and whether it locates the defect."],
+    h_ap: ["D is the minimum over the methods, and AP is read from the AIAG-VDA table; the app computes both.", "For the modes with AP H or M, try improvements in the panel on the right: test points, AOI on BOTTOM, new FT tests. The “AP without impr.” column keeps the initial result."],
+    h_ra: ["Only the modes that stay H or M after the improvements appear here. For each: choose the decision (risk accepted or action proposed), say why the risk remains and what is done or why it is accepted."],
+    h_concl: ["Three fields, written concretely: the logic used for O, what the improvements bring, what testing or the analysis cannot see. A “no” or “-” does not count."],
+    raNone: "No mode stays H or M: step 7 does not apply.", raWait: "First complete steps 1–4 for all modes.",
+    p2Title: "How to choose O (table P2, short)", p2Ctl: "Type of prevention control", p2Eff: "Effectiveness", p2Proc: "Process", p2CtlShort: "control",
+    p2Rows: [["Technical: the cause cannot physically occur (geometry, fixture)", "extremely effective", "1"], ["Technical, automatic, or best practices", "highly effective", "2–3"], ["Behavioural or technical", "effective", "4–5"], ["Behavioural or technical", "somewhat effective", "6–7"], ["Behavioural", "little effect", "8–9"], ["No control", "–", "10"]], kS: "Severity (S): the effect class", kO: "Occurrence (O), from table P2", kDet: "Detection at AOI, AXI and ICT", kAuto: "computed", kFT: "Functional test (FT)", kFTtest: "The test that sees the effect", kFTj: "Justification (required): why this test and this D value", kAP: "Result: D and AP", kDmin: "minimum of AOI, AXI, ICT and FT", kAPnow: "AP with improvements", kImpr: "Improvements", kImprHint: "Test points, AOI on BOTTOM and new FT tests are chosen in the panel next to the board; their effect shows at once in D and AP above. If you proposed a new FT test that catches this mode, pick it here.", kRA: "Residual risk: AP stays", kRAdec: "Decision", kRAwhy: "Why the risk remains: what testing does not catch and why", kRAwhat: "What is done, or why the risk is accepted", kOk: "complete", kMiss: "to fill in: {n}", kShow: "show the component on the board and in the schematic", kStatus: "Status", kSumTitle: "Summary", kSumHint: "Read only. Click a row to go to the mode's card.", kCardsTitle: "Failure modes: fill in every card, steps in order", schematic: "SCHEMATIC", colRA: "Residual risk assessment", noTest: "no test", colD: "D", colAP: "AP", colAP0: "AP no impr.",
     choose: "–",
     summary: "Summary", mDone: "Modes completed", mH: "AP H", mM: "AP M", mL: "AP L", mRes: "Residual risk (H + M)", mCov: "Risk coverage",
     before: "without improvements",
@@ -643,8 +696,9 @@ function applyI18n() {
 }
 function renderTabs() {
   const box = document.getElementById("tabs");
-  const items = [["start", t("tabStart")], ["analysis", t("tabAnalysis")], ["report", t("tabReport")]];
-  box.innerHTML = items.map((it) => '<button role="tab" data-tab="' + it[0] + '" aria-selected="' + (S.tab === it[0]) + '"' + (it[0] !== "start" && !V() ? " disabled" : "") + ">" + esc(it[1]) + "</button>").join("");
+  const items = [["start", t("tabStart")]].concat(STEP_TABS.map((k) => [k, t("tab_" + k)])).concat([["report", t("tabReport")]]);
+  const mark = (k) => { if (!V() || !STEP_TABS.includes(k)) return ""; const st = tabStatus(k); return st === "done" ? ' <span class="tm ok">✓</span>' : st === "part" ? ' <span class="tm part">◐</span>' : ""; };
+  box.innerHTML = items.map((it) => '<button role="tab" data-tab="' + it[0] + '" aria-selected="' + (S.tab === it[0] || (it[0] === "s1" && S.tab === "analysis")) + '"' + (it[0] !== "start" && !V() ? " disabled" : "") + ">" + esc(it[1]) + mark(it[0]) + "</button>").join("");
   box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.tab; save(); render(); }));
 }
 function render() {
@@ -711,97 +765,119 @@ function connPanel() {
     '<div class="label">' + t("connParts") + '</div><div class="netchips">' + Object.keys(PARTS).map((r) => '<button type="button" class="compchip' + (S.sel === r ? " on" : "") + (CUR_REFS.has(r) ? "" : " out") + '" data-pick="' + r + '">' + r + "</button>").join("") + "</div>" +
     '<div class="label">' + t("connNets") + '</div><div class="netchips">' + Object.keys(NET_COLOR).map(chip).join("") + "</div></div>";
 }
-function renderAnalysis(view) {
-  const idxs = V(); const env = ENV_NOW();
-  const refs = new Set(idxs.map((i) => MODES[i].ref));
-  CUR_REFS = refs;
-  const now = summary(env), base = summary(ENV_BASE);
-  const hasNew = (S.newTests || []).length > 0;
+/* the analysis is split in step tabs; every tab shows the 6 modes in one compact table with only that step's columns */
+const STEP_TABS = ["s1", "s2", "det", "ap", "ra", "concl"];
+function tabStatus(tab) {
+  const st = stepList(); const g = (n) => (st.find((x) => x.n === n) || {}).status;
+  const set = { s1: ["1"], s2: ["2"], det: ["4"], ap: ["5", "6"], ra: ["7"], concl: ["8"] }[tab].map(g).filter((x) => x && x !== "auto");
+  if (!set.length) return "";
+  if (set.every((x) => x === "done" || x === "na")) return "done";
+  return set.some((x) => x === "done" || x === "part") ? "part" : "todo";
+}
+function boardPanel(refs, withTP) {
   const nets = '<div class="nets">' + NETS.map((n) => {
     const na = n === "VREF";
     return '<label class="' + (S.tps[n] ? "on" : "") + (na ? " na" : "") + '"><input type="checkbox" data-tp="' + n + '"' + (S.tps[n] ? " checked" : "") + (na ? " disabled" : "") + "> " + n + (na ? " (" + t("nc") + ")" : "") + "</label>";
   }).join("") + "</div>";
-  const stepOf = { cls: "1", o: "2", ft: "4", ftd: "4", ftj: "4", ra: "7" };
-  const dOpts = AIAG.D.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[1]) + (tr(x[3]) ? " · " + tr(x[3]) : "")]);
-  const oOpts = AIAG.OP.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[2])]);
-  const sumRows = [], cards = [];
-  idxs.forEach((i, k) => {
-    const r = evalRow(i, env), r0 = evalRow(i, ENV_BASE); const u = S.rows[i] || {};
-    const miss = CHECK_KEYS(u, r); const missSteps = new Set(miss.map((x) => stepOf[x]));
-    const sel = (name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"><option value="">' + t("choose") + "</option>" +
-      opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
-    const pv = prevOf(r.m);
-    const status = miss.length ? '<span class="chip warn">' + esc(fmtT("kMiss", { n: miss.length })) + "</span>" : '<span class="chip ok">✓ ' + esc(t("kOk")) + "</span>";
-    const ap = (x) => '<span class="ap ' + (x || "na") + '">' + (x || "–") + "</span>";
-    const dv = (v) => '<span class="dv ' + (v === 1 ? "d1" : v === 10 ? "d10" : "dm") + '">' + v + "</span>";
-    const step = (n, title, inner, extra) => '<div class="mstep' + (missSteps.has(n) ? " miss" : "") + (extra ? " " + extra : "") + '"><span class="sn">' + n + '</span><div class="mbody"><div class="mt">' + title + "</div>" + inner + "</div></div>";
-    const fld = (label, ctl, req) => '<label class="fl"><span>' + esc(label) + (req ? ' <b class="req">*</b>' : "") + "</span>" + ctl + "</label>";
-    sumRows.push('<tr data-goto="' + i + '" class="' + (miss.length ? "" : "okrow") + '"><td class="num">' + (k + 1) + '</td><td class="ref">' + esc(r.m.ref) + (r.m.pin === "–" ? "" : ' <span class="muted">' + esc(r.m.pin) + "</span>") + "</td><td>" + esc(modeTxt(r.m)) + '</td><td class="num">' + (r.s || "–") + '</td><td class="num">' + (r.o || "–") + '</td><td class="num">' + (r.d || "–") + '</td><td class="num">' + ap(r0.ap) + '</td><td class="num">' + ap(r.ap) + "</td><td>" + status + "</td></tr>");
-    const s1 = step("1", t("kS"), '<div class="frow">' + fld(t("colClass"), sel("cls", SEVERITY.map((x) => [x[0], x[0] + " · S " + x[1]]), u.cls, t("colClass")), true) + '<div class="res">S = <b>' + (r.s || "–") + "</b></div></div>");
-    const s2 = step("2", t("kO"), '<div class="frow">' + fld("O", sel("o", oOpts, u.o, "O"), true) + '<div class="res">O = <b>' + (r.o || "–") + "</b></div></div>" +
-      '<p class="hint" title="' + esc(t("prevTip")) + '">' + esc(t("prevTyp")) + ": " + esc(tr(pv[0])) + (isDemo() ? " → O " + pv[1] : "") + "</p>", "");
-    const det = [["AOI", r.det.aoi, r.det.aoiWhy], ["AXI", r.det.axi, r.det.axiWhy], ["ICT", r.det.ict, r.det.ictWhy]];
-    const s3 = step("3", t("kDet") + ' <span class="chip neutral">' + esc(t("kAuto")) + "</span>", '<div class="dets">' + det.map((x) => '<div class="det"><span class="dl">' + x[0] + "</span>" + dv(x[1]) + '<span class="hint">' + esc(x[2]) + "</span></div>").join("") + "</div>");
-    const s4 = step("4", t("kFT"), '<div class="frow">' + fld(t("kFTtest"), sel("fttest", FT_LIST.map((x) => [x.id, x.id + " · " + tr(x.name)]).concat([["none", t("ftNone")]]), u.fttest, t("kFTtest")), true) +
-      (u.fttest && u.fttest !== "none" ? fld(t("colFTd"), sel("ft", dOpts, u.ft, t("colFTd")), true) : u.fttest === "none" ? '<div class="res">D FT = <b>10</b></div>' : "") + "</div>" +
-      fld(t("kFTj"), '<textarea class="ftj" data-ftj="' + i + '" placeholder="' + esc(t("ftJustPh")) + '">' + esc(u.ftj || "") + "</textarea>", true));
-    const s5 = step("5", t("kAP"), '<div class="apbox"><div><span class="dl">D</span><b class="mono">' + (r.d || "–") + '</b><span class="hint">' + esc(t("kDmin")) + "</span></div>" +
-      "<div><span class=\"dl\">" + esc(t("colAP0")) + "</span>" + ap(r0.ap) + "</div><div><span class=\"dl\">" + esc(t("kAPnow")) + "</span>" + ap(r.ap) + "</div></div>");
-    const s6 = (needsRA(r0.ap) || hasNew || u.nfttest) ? step("6", t("kImpr"), '<p class="hint">' + esc(t("kImprHint")) + "</p>" +
-      (hasNew ? '<div class="frow">' + fld(t("colFTnew"), sel("nfttest", S.newTests.map((x) => [x.id, x.id + " · " + x.desc]), u.nfttest, t("colFTnew"))) + (u.nfttest ? fld(t("colFTd"), sel("nft", dOpts, u.nft, t("colFTd"))) : "") + "</div>" : "")) : "";
-    const s7 = needsRA(r.ap) ? step("7", t("kRA") + " " + ap(r.ap), fld(t("kRAdec"), '<select data-row="' + i + '" data-k="rad" aria-label="' + esc(t("kRAdec")) + '"><option value="">' + t("choose") + "</option>" +
-        [["acc", t("raAcc")], ["act", t("raAct")]].map((o) => '<option value="' + o[0] + '"' + (u.rad === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>").join("") + "</select>", true) +
-      fld(t("kRAwhy"), '<textarea data-raw="' + i + '" placeholder="' + esc(t("raWhyPh")) + '">' + esc(u.raw || "") + "</textarea>", true) +
-      fld(t("kRAwhat"), '<textarea data-ra="' + i + '" placeholder="' + esc(t("raPh")) + '">' + esc(u.ra || "") + "</textarea>", true), "rastep") : "";
-    cards.push('<article class="mcard' + (S.sel === r.m.ref ? " sel" : "") + (miss.length ? "" : " done") + '" id="mc' + i + '"><header><span class="mn">#' + (k + 1) + '</span><button type="button" class="mref" data-sel="' + r.m.ref + '" title="' + esc(t("kShow")) + '">' + esc(r.m.ref) + (r.m.pin === "–" ? "" : " · " + esc(r.m.pin)) + "</button>" +
-      '<span class="mmode">' + esc(modeTxt(r.m)) + "</span>" + status + '</header><p class="meff"><b>' + esc(t("colEffect")) + ":</b> " + esc(effTxt(r.m)) + "</p>" + s1 + s2 + s3 + s4 + s5 + s6 + s7 + "</article>");
-  });
-  const sumTable = '<table class="sheet sum"><thead><tr><th>#</th><th>' + t("colComp") + "</th><th>" + t("colMode") + "</th><th>S</th><th>O</th><th>D</th><th>" + t("colAP0") + "</th><th>AP</th><th>" + t("kStatus") + "</th></tr></thead><tbody>" + sumRows.join("") + "</tbody></table>";
   const testsPanel = '<div class="stack"><h3>' + t("newTestsTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("newTestsHint") + "</p>" +
     ((S.newTests || []).length ? '<ul class="tests">' + S.newTests.map((x) => '<li><span class="mono">' + esc(x.id) + "</span><span>" + esc(x.desc) + '</span><button class="x" type="button" data-rmtest="' + esc(x.id) + '" aria-label="' + esc(t("del")) + '">×</button></li>').join("") + "</ul>" : "") +
     '<form class="addtest" id="addTest"><input id="newTestDesc" placeholder="' + esc(t("newTestPh")) + '" aria-label="' + esc(t("newTestsTitle")) + '"><button class="btn" type="submit">' + t("addTest") + "</button></form></div>";
-  const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '" title="' + esc(TIP(Object.keys(I18N[LANG]).find((k) => I18N[LANG][k] === label) || "")) + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
-  view.innerHTML =
-    '<div class="row" style="justify-content:space-between"><h2>' + t("sheet") + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + "</span></div>" +
-    '<div class="grid2"><div class="panel stack"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side === "bottom") + '">' + t("bottom") + '</button><button type="button" id="sideSch" aria-pressed="' + (S.side === "sch") + '">' + t("schematic") + "</button></div></div>" +
-      '<div id="boardBox">' + (S.side === "sch" ? schSVG(S.sel, refs) : boardSVG(S.side === "top", S.sel, refs)) + "</div>" +
-      connPanel() +
-      '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
-      '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel + "</div>" +
-      '<div class="stack"><div class="panel ctxbox"><span class="label">' + t("ctxTitle") + "</span><p>" + esc(t("ctx")) + "</p></div>" +
-      '<details class="panel help"' + (isDemo() ? " open" : "") + "><summary>" + t("howTitle") + '</summary><ol class="task">' + t("how").map((x) => "<li>" + esc(x) + "</li>").join("") +
-      (isDemo() ? "<li><b>" + esc(t("howDemo")) + "</b></li>" : "") + "</ol></details></div></div>" +
-    '<div class="stack refs"><span class="label">' + t("refTables") + "</span>" + refTables() + "</div>" +
-    ftPanel() +
-    '<div class="panel stack"><h3>' + t("summary") + '</h3><div class="meters">' +
-      meter(t("mDone"), now.done + " / " + now.n, base.done + " / " + base.n) +
-      meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
-      meter(t("mRes"), now.res, base.res, now.done && !now.res ? "good" : now.res ? "risk" : "") + meter(t("mCov"), now.cov + "%", base.cov + "%", now.done && now.cov === 100 ? "good" : "") +
-      meter(t("mRA"), now.ra + " / " + now.res, "–", now.res && now.ra === now.res ? "good" : now.res ? "risk" : "") +
-    "</div></div>" +
-    '<div class="panel stack"><h3>' + t("kSumTitle") + '</h3><p class="muted" style="font-size:0.9rem;margin:0">' + t("kSumHint") + '</p><div class="tablewrap">' + sumTable + "</div></div>" +
-    '<div class="stack"><h3>' + t("kCardsTitle") + '</h3><div class="mcards">' + cards.join("") + "</div></div>" +
-    '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
-      CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>";
-
+  return '<div class="panel stack boardpanel"><div class="row" style="justify-content:space-between"><span class="label">' + t("board") + '</span><div class="seg" role="group"><button type="button" id="sideTop" aria-pressed="' + (S.side === "top") + '">' + t("top") + '</button><button type="button" id="sideBot" aria-pressed="' + (S.side === "bottom") + '">' + t("bottom") + '</button><button type="button" id="sideSch" aria-pressed="' + (S.side === "sch") + '">' + t("schematic") + "</button></div></div>" +
+    '<div id="boardBox">' + (S.side === "sch" ? schSVG(S.sel, refs) : boardSVG(S.side === "top", S.sel, refs)) + "</div>" + connPanel() +
+    (withTP ? '<div class="stack"><h3>' + t("tpTitle") + '</h3><p class="muted" style="font-size:0.9rem">' + t("tpHint") + "</p>" + nets +
+      '<label class="toggle"><input type="checkbox" id="aoiBottom"' + (S.aoiBottom ? " checked" : "") + "> " + t("aoiBottom") + "</label></div>" + testsPanel : "") + "</div>";
+}
+function renderAnalysis(view) {
+  if (!STEP_TABS.includes(S.tab)) S.tab = "s1";
+  const tab = S.tab; const idxs = V(); const env = ENV_NOW();
+  const refs = new Set(idxs.map((i) => MODES[i].ref)); CUR_REFS = refs;
+  const now = summary(env), base = summary(ENV_BASE);
+  const hasNew = (S.newTests || []).length > 0;
+  const dOpts = AIAG.D.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[1]) + (tr(x[3]) ? " · " + tr(x[3]) : "")]);
+  const oOpts = AIAG.OP.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[2]) + " · " + tr(x[3])]);
+  const ap = (x) => '<span class="ap ' + (x || "na") + '">' + (x || "–") + "</span>";
+  const dv = (v, why) => '<span class="dv ' + (v === 1 ? "d1" : v === 10 ? "d10" : "dm") + '">' + v + "</span>" + (why ? '<span class="why">' + esc(why) + "</span>" : "");
+  const sel = (i, name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"' + (val ? "" : ' class="empty"') + '><option value="">' + t("choose") + "</option>" +
+    opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
+  const modeCells = (i, k, r) => '<td class="num">' + (k + 1) + '</td><td class="ref"><button type="button" class="mref' + (S.sel === r.m.ref ? " on" : "") + '" data-sel="' + r.m.ref + '" title="' + esc(t("kShow")) + '">' + esc(r.m.ref) + "</button>" + (r.m.pin === "–" ? "" : '<span class="muted small"> ' + esc(r.m.pin) + "</span>") + "</td><td>" + esc(modeTxt(r.m)) + "</td>";
+  const head = (cols) => "<thead><tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th>" + cols.map((c) => "<th>" + c + "</th>").join("") + "</tr></thead>";
+  const help = (key) => '<div class="notice stephelp">' + t(key).map((x) => "<p>" + esc(x) + "</p>").join("") + (isDemo() && t(key + "Demo") ? '<p><b>' + esc(t(key + "Demo")) + "</b></p>" : "") + "</div>";
+  const ref = (titleKey, html, open) => '<details class="ref"' + (open ? " open" : "") + "><summary>" + esc(t(titleKey)) + "</summary><div>" + html + "</div></details>";
+  const rowsData = idxs.map((i, k) => ({ i: i, k: k, r: evalRow(i, env), r0: evalRow(i, ENV_BASE), u: S.rows[i] || {} }));
+  let main = "", side = "";
+  if (tab === "s1") {
+    const sev = '<table class="mini"><tr><th>' + t("colClass") + "</th><th>S</th><th></th></tr>" + SEVERITY.map((x) => '<tr><td class="c">' + x[0] + '</td><td class="c">' + x[1] + "</td><td>" + esc(tr(x[2])) + "</td></tr>").join("") + "</table>";
+    main = help("h_s1") + '<div class="tablewrap"><table class="sheet stept">' + head([t("colEffect"), t("colClass"), "S"]) + "<tbody>" +
+      rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="eff">' + esc(effTxt(x.r.m)) + "</td><td>" + sel(x.i, "cls", SEVERITY.map((q) => [q[0], q[0] + " · S " + q[1]]), x.u.cls, t("colClass")) + '</td><td class="num"><b>' + (x.r.s || "–") + "</b></td></tr>").join("") +
+      "</tbody></table></div>" + ref("sevTitle", sev, true) + ref("sevScaleTitle", AIAG.table("S", LANG, esc));
+  } else if (tab === "s2") {
+    const guide = '<table class="mini p2"><tr><th>' + esc(t("p2Ctl")) + "</th><th>" + esc(t("p2Eff")) + "</th><th>O</th></tr>" + t("p2Rows").map((x) => "<tr><td>" + esc(x[0]) + "</td><td>" + esc(x[1]) + '</td><td class="c"><b>' + x[2] + "</b></td></tr>").join("") + "</table>";
+    main = help("h_s2") + '<div class="panel stack"><span class="label">' + esc(t("p2Title")) + "</span>" + guide + "</div>" +
+      '<div class="tablewrap"><table class="sheet stept">' + head([t("p2Proc"), t("prevTyp"), "O"]) + "<tbody>" +
+      rowsData.map((x) => { const pv = prevOf(x.r.m); return "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="eff"><b>' + esc(tr(pv[2])) + '</b><br><span class="muted small">' + esc(t("p2CtlShort")) + ": " + esc(tr(pv[3])) + "</span></td>" +
+        '<td class="eff small">' + esc(tr(pv[0])) + "</td><td>" + sel(x.i, "o", oOpts, x.u.o, "O") + (isDemo() ? '<div class="muted small">H0: O ' + pv[1] + "</div>" : "") + "</td></tr>"; }).join("") +
+      "</tbody></table></div>" + ref("occTitle", AIAG.table("OP", LANG, esc));
+  } else if (tab === "det") {
+    const sub = S.detSub === "ft" ? "ft" : "auto";
+    main = '<div class="subtabs" role="tablist"><button type="button" role="tab" data-sub="auto" aria-selected="' + (sub === "auto") + '">' + esc(t("subAuto")) + '</button><button type="button" role="tab" data-sub="ft" aria-selected="' + (sub === "ft") + '">' + esc(t("subFT")) + (tabStatus("det") === "done" ? " ✓" : "") + "</button></div>";
+    if (sub === "auto") {
+      main += help("h_det3") + '<div class="tablewrap"><table class="sheet stept">' + head(["AOI", "AXI", "ICT"]) + "<tbody>" +
+        rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="num">' + dv(x.r.det.aoi, x.r.det.aoiWhy) + '</td><td class="num">' + dv(x.r.det.axi, x.r.det.axiWhy) + '</td><td class="num">' + dv(x.r.det.ict, x.r.det.ictWhy) + "</td></tr>").join("") + "</tbody></table></div>" +
+        ref("detTitle", AIAG.table("D", LANG, esc));
+    } else {
+      main += help("h_det4") + '<div class="tablewrap"><table class="sheet stept ftstep">' + head([t("colEffect"), t("kFTtest"), t("colFTd"), t("kFTj")]) + "<tbody>" +
+        rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="eff small">' + esc(effTxt(x.r.m)) + "</td><td>" + sel(x.i, "fttest", FT_LIST.map((q) => [q.id, q.id + " · " + tr(q.name)]).concat([["none", t("ftNone")]]), x.u.fttest, t("kFTtest")) + "</td><td>" +
+          (x.u.fttest && x.u.fttest !== "none" ? sel(x.i, "ft", dOpts, x.u.ft, t("colFTd")) : x.u.fttest === "none" ? '<b class="mono">10</b>' : "") + '</td><td><textarea class="ftj' + ((x.u.ftj || "").trim() ? "" : " empty") + '" data-ftj="' + x.i + '" placeholder="' + esc(t("ftJustPh")) + '">' + esc(x.u.ftj || "") + "</textarea></td></tr>").join("") +
+        "</tbody></table></div>" + ftPanel() + ref("detTitle", AIAG.table("D", LANG, esc));
+    }
+    side = boardPanel(refs, false);
+  } else if (tab === "ap") {
+    const meter = (label, val, was, cls) => '<div class="meter ' + (cls || "") + '"><span class="label">' + esc(label) + '</span><span class="val">' + val + '</span><span class="was">' + esc(t("before")) + ": " + was + "</span></div>";
+    main = help("h_ap") + '<div class="meters">' + meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) + meter(t("mCov"), now.cov + "%", base.cov + "%", now.done && now.cov === 100 ? "good" : "") + "</div>" +
+      '<div class="tablewrap"><table class="sheet stept">' + head(["S", "O", "AOI", "AXI", "ICT", "FT"].concat(hasNew ? [t("colFTnew")] : []).concat(["D", t("colAP0"), "AP"])) + "<tbody>" +
+      rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="num">' + (x.r.s || "–") + '</td><td class="num">' + (x.r.o || "–") + '</td><td class="num">' + dv(x.r.det.aoi) + '</td><td class="num">' + dv(x.r.det.axi) + '</td><td class="num">' + dv(x.r.det.ict) + '</td><td class="num">' + (x.r.ft0 ? dv(x.r.ft0) : "–") + "</td>" +
+        (hasNew ? "<td>" + sel(x.i, "nfttest", S.newTests.map((q) => [q.id, q.id + " · " + q.desc]), x.u.nfttest, t("colFTnew")) + (x.u.nfttest ? sel(x.i, "nft", dOpts, x.u.nft, t("colFTd")) : "") + "</td>" : "") +
+        '<td class="num"><b class="mono">' + (x.r.d || "–") + '</b></td><td class="num">' + ap(x.r0.ap) + '</td><td class="num">' + ap(x.r.ap) + "</td></tr>").join("") + "</tbody></table></div>" +
+      ref("apTitle", AIAG.table("AP", LANG, esc));
+    side = boardPanel(refs, true);
+  } else if (tab === "ra") {
+    const hm = rowsData.filter((x) => needsRA(x.r.ap));
+    main = help("h_ra") + (hm.length ? hm.map((x) => '<div class="panel stack rablock' + (raDone(x.u) ? " done" : "") + '"><div class="row"><b>#' + (x.k + 1) + " " + esc(x.r.m.ref) + (x.r.m.pin === "–" ? "" : " · " + esc(x.r.m.pin)) + "</b><span>" + esc(modeTxt(x.r.m)) + "</span>" + ap(x.r.ap) +
+        '<span class="muted small">S ' + x.r.s + " · O " + x.r.o + " · D " + x.r.d + "</span></div>" +
+        '<div class="ragrid"><label class="fl"><span>' + esc(t("kRAdec")) + ' <b class="req">*</b></span><select data-row="' + x.i + '" data-k="rad"><option value="">' + t("choose") + "</option>" + [["acc", t("raAcc")], ["act", t("raAct")]].map((o) => '<option value="' + o[0] + '"' + (x.u.rad === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>").join("") + "</select></label>" +
+        '<label class="fl"><span>' + esc(t("kRAwhy")) + ' <b class="req">*</b></span><textarea data-raw="' + x.i + '" placeholder="' + esc(t("raWhyPh")) + '">' + esc(x.u.raw || "") + "</textarea></label>" +
+        '<label class="fl"><span>' + esc(t("kRAwhat")) + ' <b class="req">*</b></span><textarea data-ra="' + x.i + '" placeholder="' + esc(t("raPh")) + '">' + esc(x.u.ra || "") + "</textarea></label></div></div>").join("")
+      : '<p class="notice">' + esc(rowsData.every((x) => x.r.ap) ? t("raNone") : t("raWait")) + "</p>");
+  } else {
+    main = help("h_concl") + '<div class="panel stack">' + CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>";
+  }
+  const curN = { s1: "1", s2: "2", det: "3–4", ap: "5–6", ra: "7", concl: "8" }[tab];
+  const pos = STEP_TABS.indexOf(tab);
+  const nav = '<div class="row stepnav">' + (pos > 0 ? '<button type="button" class="btn" data-goto-tab="' + STEP_TABS[pos - 1] + '">← ' + esc(t("tab_" + STEP_TABS[pos - 1])) + "</button>" : "<span></span>") +
+    (pos < STEP_TABS.length - 1 ? '<button type="button" class="btn primary" data-goto-tab="' + STEP_TABS[pos + 1] + '">' + esc(t("tab_" + STEP_TABS[pos + 1])) + " →</button>" : '<button type="button" class="btn primary" data-goto-tab="report">' + esc(t("tabReport")) + " →</button>") + "</div>";
+  view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + esc(t("stepWord")) + " " + curN + " · " + esc(t("tabT_" + tab)) + '</h2><span class="chip">ASIL B · ' + esc(S.variant) + " · H " + now.H + " · M " + now.M + " · L " + now.L + "</span></div>" +
+    (side ? '<div class="steplay"><div class="stack">' + main + nav + "</div>" + side + "</div>" : '<div class="stack">' + main + nav + "</div>");
+  bindAnalysis(view);
+}
+function bindAnalysis(view) {
+  const on = (sel, ev, fn) => { const n = view.querySelector(sel); if (n) n.addEventListener(ev, fn); };
   view.querySelectorAll("select[data-row]").forEach((n) => n.addEventListener("change", () => {
     const i = n.dataset.row; S.rows[i] = S.rows[i] || {}; S.rows[i][n.dataset.k] = n.value;
     if (n.dataset.k === "fttest" && n.value === "none") S.rows[i].ft = "10";
     save(); render();
   }));
-  view.querySelectorAll("textarea[data-ftj]").forEach((n) => n.addEventListener("input", () => { const i = n.dataset.ftj; S.rows[i] = S.rows[i] || {}; S.rows[i].ftj = n.value; save(); }));
+  view.querySelectorAll("textarea[data-ftj]").forEach((n) => {
+    n.addEventListener("input", () => { const i = n.dataset.ftj; S.rows[i] = S.rows[i] || {}; S.rows[i].ftj = n.value; n.classList.toggle("empty", !n.value.trim()); save(); });
+    n.addEventListener("change", () => renderTabs());
+  });
   view.querySelectorAll("textarea[data-ra], textarea[data-raw]").forEach((n) => {
     const k = n.hasAttribute("data-raw") ? "raw" : "ra";
     n.addEventListener("input", () => { const i = n.dataset[k]; S.rows[i] = S.rows[i] || {}; S.rows[i][k] = n.value; save(); });
-    /* re-render after the focus has moved, then give the focus back (e.g. from one risk field to the other) */
-    n.addEventListener("change", () => setTimeout(() => {
-      const a = document.activeElement; let sel = "";
-      if (a && a !== document.body && a.attributes) { for (const at of a.attributes) if (at.name.startsWith("data-")) { sel = a.tagName.toLowerCase() + "[" + at.name + '="' + at.value + '"]'; break; } if (!sel && a.id) sel = "#" + a.id; }
-      render();
-      if (sel) { const b = document.querySelector(sel); if (b) { b.focus(); if (b.setSelectionRange && typeof b.value === "string") b.setSelectionRange(b.value.length, b.value.length); } }
-    }, 0));
+    n.addEventListener("change", () => renderTabs());
   });
-  view.querySelector("#addTest").addEventListener("submit", (e) => {
+  view.querySelectorAll("[data-sub]").forEach((b) => b.addEventListener("click", () => { S.detSub = b.dataset.sub; save(); render(); }));
+  view.querySelectorAll("[data-goto-tab]").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.gotoTab; save(); render(); window.scrollTo({ top: 0 }); }));
+  on("#addTest", "submit", (e) => {
     e.preventDefault(); const d = view.querySelector("#newTestDesc").value.trim(); if (!d) return;
     S.newTests = S.newTests || []; let n = 9; while (S.newTests.some((x) => x.id === "FT" + n)) n++;
     S.newTests.push({ id: "FT" + n, desc: d }); save(); render(); toast(fmtT("testAdded", { id: "FT" + n }));
@@ -811,24 +887,23 @@ function renderAnalysis(view) {
     Object.keys(S.rows).forEach((i) => { if (S.rows[i].nfttest === id) { S.rows[i].nfttest = ""; S.rows[i].nft = ""; } }); save(); render();
   }));
   view.querySelectorAll("input[data-tp]").forEach((n) => n.addEventListener("change", () => { S.tps[n.dataset.tp] = n.checked; save(); render(); }));
-  view.querySelector("#aoiBottom").addEventListener("change", (e) => { S.aoiBottom = e.target.checked; save(); render(); });
-  view.querySelector("#sideTop").addEventListener("click", () => { S.side = "top"; save(); render(); });
-  view.querySelector("#sideBot").addEventListener("click", () => { S.side = "bottom"; save(); render(); });
-  view.querySelector("#sideSch").addEventListener("click", () => { S.side = "sch"; save(); render(); });
+  on("#aoiBottom", "change", (e) => { S.aoiBottom = e.target.checked; save(); render(); });
+  on("#sideTop", "click", () => { S.side = "top"; save(); render(); });
+  on("#sideBot", "click", () => { S.side = "bottom"; save(); render(); });
+  on("#sideSch", "click", () => { S.side = "sch"; save(); render(); });
   const pick = (ref) => { const same = S.sel === ref; S.sel = same ? "" : ref; S.pin = ""; S.net = ""; save(); render(); };
   const pickPin = (k) => { if (S.pin === k) { S.pin = ""; } else { S.pin = k; S.sel = k.split(":")[0]; } S.net = ""; save(); render(); };
   view.querySelectorAll("[data-pinsel]").forEach((n) => n.addEventListener("click", () => pickPin(n.dataset.pinsel)));
   view.querySelectorAll(".padhit, .pinhit").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); pickPin(n.dataset.pin); }));
   view.querySelectorAll("[data-net]").forEach((n) => n.addEventListener("click", () => { S.net = S.net === n.dataset.net ? "" : n.dataset.net; S.sel = ""; S.pin = ""; save(); render(); }));
-  const cc = view.querySelector("#connClear"); if (cc) cc.addEventListener("click", () => { S.sel = ""; S.net = ""; S.pin = ""; save(); render(); });
+  on("#connClear", "click", () => { S.sel = ""; S.net = ""; S.pin = ""; save(); render(); });
   view.querySelectorAll("[data-sel]").forEach((n) => n.addEventListener("click", () => pick(n.dataset.sel)));
   view.querySelectorAll("[data-pick]").forEach((n) => n.addEventListener("click", () => { S.sel = n.dataset.pick; S.pin = ""; S.net = ""; save(); render(); }));
   view.querySelectorAll(".board .comp, .sch .comp").forEach((n) => {
     n.addEventListener("click", () => pick(n.dataset.ref));
     n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(n.dataset.ref); } });
   });
-  view.querySelectorAll("textarea[data-concl]").forEach((n) => n.addEventListener("input", () => { S.concl[n.dataset.concl] = n.value; save(); }));
-  view.querySelectorAll("tr[data-goto]").forEach((n) => n.addEventListener("click", () => { const c = document.getElementById("mc" + n.dataset.goto); if (c) { c.scrollIntoView({ behavior: "smooth", block: "start" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1200); } }));
+  view.querySelectorAll("textarea[data-concl]").forEach((n) => { n.addEventListener("input", () => { S.concl[n.dataset.concl] = n.value; save(); }); n.addEventListener("change", () => renderTabs()); });
 }
 
 /* ---------------------------------------------------------------- report */
@@ -958,7 +1033,7 @@ document.getElementById("studentForm").addEventListener("submit", (e) => {
   const code = document.getElementById("stVariant").value.trim().toUpperCase();
   if (!VARIANTS[code]) { toast(t("badVariant")); return; }
   S.variant = code; document.getElementById("stVariant").value = code;
-  if (S.tab === "start") S.tab = "analysis";
+  if (S.tab === "start") S.tab = "s1";
   save(); render(); toast(t("variantLoaded").replace("{v}", code));
 });
 /* start over: two clicks within 5 s clear this app's saved work */
