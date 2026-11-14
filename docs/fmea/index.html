@@ -640,13 +640,15 @@ const SW_FN_FC = {
   INT: [L("Starea bus-off nu e tratată înaintea validării", "Bus-off state not handled before validation"), L("Rezultatul sensor_value_plausible() ignorat", "Result of sensor_value_plausible() ignored"),
     L("Ramura default returnează RX_ACCEPTED", "The default branch returns RX_ACCEPTED"), L("Parametrii lui can_frame_is_valid() în ordine greșită", "Parameters of can_frame_is_valid() in the wrong order")]
 };
+/* SW: since 14.11 the cause level has one element too; the categories below only feed the suggestions */
+const SW_N3 = [["C0", L("Designul software al funcției (cerințe, constante, logică, tipuri de date, interfață)", "Software design of the function (requirements, constants, logic, data types, interface)")]];
 const SW_L3 = [["C1", L("Cerințele software (SWR)", "Software requirements (SWR)")], ["C2", L("Constante și parametri (#define)", "Constants and parameters (#define)")],
   ["C3", L("Logica de decizie (condiții, operatori)", "Decision logic (conditions, operators)")], ["C4", L("Tipuri de date și domenii de valori", "Data types and value ranges")],
   ["C5", L("Interfața (apeluri, valori returnate)", "Interface (calls, return values)")]];
 function elements(kind) {
   const v = VARIANTS[S.variant];
   const l2 = kind === "hw" ? HW_SIGNALS[v.hw].name : L("Funcția " + SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + SW_SIG[v.sig].lbl.ro : ""), "Function " + SW_FUNCS[v.sw].fn + "()" + (v.sig ? " · " + SW_SIG[v.sig].lbl.en : ""));
-  const l3 = (kind === "hw" ? HW_N3 : SW_L3).map((x) => ({ id: x[0], lvl: 3, name: x[1] }));
+  const l3 = (kind === "hw" ? HW_N3 : SW_N3).map((x) => ({ id: x[0], lvl: 3, name: x[1] }));
   return [{ id: "L1", lvl: 1, name: L1_NAME }, { id: "L2", lvl: 2, name: l2 }].concat(l3);
 }
 
@@ -693,6 +695,7 @@ const SUG_FN = {
   },
   L3: {
     sw: {
+      C0: [L("Asigură cerințe, constante, logică, tipuri de date și interfață corecte pentru funcția analizată", "Ensures correct requirements, constants, logic, data types and interface for the analysed function")],
       C1: [L("Asigură definirea completă și corectă a cerințelor funcției", "Ensures the function requirements are complete and correct"), L("Asigură trasabilitatea cerințelor față de cerințele de sistem", "Ensures traceability to the system requirements")],
       C2: [L("Asigură valori corecte ale limitelor (#define), conform specificației", "Ensures the limit values (#define) match the specification"), L("Asigură unitățile de măsură corecte ale constantelor", "Ensures the constants use the correct units")],
       C3: [L("Asigură operatorii de comparație corecți la limite", "Ensures the correct comparison operators at the boundaries"), L("Asigură combinarea corectă a condițiilor (&&, ||)", "Ensures conditions are combined correctly (&&, ||)")],
@@ -756,7 +759,7 @@ function provenance(kind, what, text) {
 function culprits(kind, catId) {
   const v = V();
   if (kind === "hw") return HW_COMP[v.hw].map((c) => ({ id: c.ref || "PCB", name: tr(c.name) }));
-  if (catId === "C1") return SW_FUNCS[v.sw].reqs(v.sig).map((r) => ({ id: r[0], name: r[1] }));
+  if (catId === "C0" || catId === "C1") return SW_FUNCS[v.sw].reqs(v.sig).map((r) => ({ id: r[0], name: r[1] }));
   return [];
 }
 /* failure suggestions for the effect level (radar) and the mode level (signal / function) */
@@ -891,12 +894,12 @@ const I18N = {
     demoNote: "F0 este varianta demo: o facem împreună la laborator, pe filtrele RC de pe CANH / CANL (HW) și pe verificarea de plauzibilitate a unghiului azimut (SW). Acasă lucrezi pe varianta primită (F1–F6).",
     ctxTitle: "Context",
     ctxHw: "Ești în echipa de design a nodului CAN. Analizezi semnalul din varianta ta: nivelul efect (N1) e radarul, nivelul mod (N2) e semnalul, iar nivelul cauză (N3) e designul hardware al semnalului: alegerea și dimensionarea componentelor, schema și layout-ul. Fiecare element are o singură funcție. La fiecare cauză alegi din listă componenta vinovată (cele de pe semnal, evidențiate pe placă și în schemă). Defectele de fabricație ale acelorași componente (lipituri, componentă lipsă sau inversată) țin de PFMEA și de laboratorul TCA HW.",
-    ctxSw: "Ești în echipa de design a nodului CAN. Analizezi funcția software din varianta ta: nivelul efect (N1) e radarul, nivelul mod (N2) e funcția, iar nivelul cauză (N3) sunt categoriile de cauze de design software (cerințe, constante, logică, tipuri de date, interfață). La cauzele din categoria cerințelor poți alege cerința vinovată.",
+    ctxSw: "Ești în echipa de design a nodului CAN. Analizezi funcția software din varianta ta: nivelul efect (N1) e radarul, nivelul mod (N2) e funcția, iar nivelul cauză (N3) e designul software al funcției: cerințe, constante, logică, tipuri de date, interfață. Fiecare element are o singură funcție. La fiecare cauză poți alege din listă cerința de care se leagă.",
     howStep: "Cum se face",
-    how_s23: ["Selectează N1 (radarul) și scrie funcțiile lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 și scrie funcțiile elementului analizat, pornind de la cerințele din dreapta.",
-      "La N3 alegi categoriile de cauze în care vezi probleme și le scrii câte o funcție: ce trebuie să asigure designul (alegere, dimensionare, niveluri, conexiuni, plasare). Lista de sugestii e comună pentru toate nivelurile: decizi tu unde se potrivește fiecare.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
+    how_s23: ["Selectează N1 (radarul) și scrie funcția lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 și scrie funcția elementului analizat, pornind de la cerințele din dreapta.",
+      "Selectează N3 (designul software al funcției) și scrie funcția lui: ce trebuie să asigure designul (cerințe, constante, logică, tipuri de date, interfață). Fiecare element are o singură funcție. Lista de sugestii e comună pentru toate nivelurile: decizi tu unde se potrivește fiecare.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
     how_s4: ["La N1 scrii efectele: pierderea sau degradarea funcțiilor radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcțiilor (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
-      "La N3 scrii cauzele: de ce nu e asigurată funcția categoriei. Pe fiecare cauză alegi vinovatul: componenta (HW) sau cerința (SW, la categoria cerințelor).", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
+      "La N3 scrii cauzele: de ce nu asigură designul funcția. Pe fiecare cauză poți alege din listă cerința de care se leagă.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
     how_s23_hw: ["Selectează N1 (radarul) și scrie funcția lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 (semnalul) și scrie funcția lui, pornind de la cerințele din dreapta.",
       "Selectează N3 (designul hardware al semnalului) și scrie funcția lui: ce trebuie să asigure designul pentru componentele semnalului. Fiecare element are o singură funcție. Lista de sugestii e comună pentru toate nivelurile: decizi tu unde se potrivește fiecare.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
     how_s4_hw: ["La N1 scrii efectele: pierderea sau degradarea funcției radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcției semnalului (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
@@ -906,8 +909,8 @@ const I18N = {
     demo_s23: "Demo F0: la N3: „Asigură componente alese, dimensionate, conectate și plasate corect pentru semnalul analizat”. La N2: „Atenuează perturbațiile de înaltă frecvență de pe CANH și CANL (EMC)”.",
     demo_s4: "Demo F0: efect „Emisii electromagnetice peste limitele reglementate (EMC)”, S 9 (neconformitate cu reglementările); mod „Asimetrie între filtrele de pe CANH și CANL”; cauză la N3: „Toleranță prea mare pentru funcție”, vinovat C2.",
     demo_s56: "Demo F0: prevenție „Calculul filtrului RC” și „Componente din lista aprobată”; detecție „Verificarea BOM față de schemă” și „Test EMC”. Pentru D, gândește-te când se face testul față de lansare și ce găsește (tabelul D3).",
-    demoSw_s23: "Demo F0 (SW): la N2, funcția „Respinge valorile din afara domeniului [MIN, MAX]” pentru unghiul azimut (±60,0°). La N3 alegi categoria „Constante și parametri (#define)”: „Asigură unitățile de măsură corecte ale constantelor”.",
-    demoSw_s4: "Demo F0 (SW): efect la N1 „Un obiect real nu e raportat (detecție ratată, frânare lipsă)”, S 8 (pierderea funcției principale, la nivel de senzor); mod la N2 „Respinge o valoare validă”; cauză la „Constante și parametri (#define)”: „Unitate de măsură greșită a constantei” (SENSOR_MAX scris în grade, 60, în loc de 600 în unități de 0,1°, deci obiectele de peste 6° sunt respinse).",
+    demoSw_s23: "Demo F0 (SW): la N2, funcția „Respinge valorile din afara domeniului [MIN, MAX]” pentru unghiul azimut (±60,0°). La N3: „Asigură cerințe, constante, logică, tipuri de date și interfață corecte pentru funcția analizată”.",
+    demoSw_s4: "Demo F0 (SW): efect la N1 „Un obiect real nu e raportat (detecție ratată, frânare lipsă)”, S 8 (pierderea funcției principale, la nivel de senzor); mod la N2 „Respinge o valoare validă”; cauză la N3: „Unitate de măsură greșită a constantei” (SENSOR_MAX scris în grade, 60, în loc de 600 în unități de 0,1°, deci obiectele de peste 6° sunt respinse).",
     demoSw_s56: "Demo F0 (SW): prevenție „Review de cod față de specificația senzorului”, O 4; detecție „Testare pe cerințe (requirements-based)” și „Teste la limite (boundary values)”, D 3, deci AP M. Acțiune de tip P: „Constante generate automat din specificația senzorului”, care coboară O (de exemplu la 2, AP L).",
     provTitle: "De unde vin valorile",
     prov: [["S", "Tabelul D1 (AIAG-VDA DFMEA), pe efectul de la nivelul vehiculului (N1). Modul preia S max din efectele legate de el."],
@@ -991,12 +994,12 @@ const I18N = {
     demoNote: "F0 is the demo variant: we do it together in the lab, on the RC filters on CANH / CANL (HW) and on the plausibility check of the azimuth angle (SW). At home you work on the variant you received (F1–F6).",
     ctxTitle: "Context",
     ctxHw: "You are in the design team of the CAN node. You analyse the signal of your variant: the effect level (N1) is the radar, the mode level (N2) is the signal, and the cause level (N3) is the hardware design of the signal: component selection and dimensioning, schematic and layout. Each element has one function. On each cause you pick the culprit component from the list (the ones on the signal, highlighted on the board and in the schematic). Manufacturing defects of the same components (solder joints, missing or reversed parts) belong to PFMEA and to the HW TCA lab.",
-    ctxSw: "You are in the design team of the CAN node. You analyse the software function of your variant: the effect level (N1) is the radar, the mode level (N2) is the function, and the cause level (N3) is the software design-cause categories (requirements, constants, logic, data types, interface). On causes in the requirements category you can pick the culprit requirement.",
+    ctxSw: "You are in the design team of the CAN node. You analyse the software function of your variant: the effect level (N1) is the radar, the mode level (N2) is the function, and the cause level (N3) is the software design of the function: requirements, constants, logic, data types, interface. Each element has one function. On each cause you can pick from the list the requirement it relates to.",
     howStep: "How to do it",
-    how_s23: ["Select N1 (the radar) and write its vehicle-level functions: what the ADAS ECU receives from the radar.", "Select N2 and write the functions of the analysed element, starting from the requirements on the right.",
-      "At N3 choose the cause categories where you see problems and write one function for each: what the design must ensure (selection, dimensioning, levels, connections, placement). The suggestion list is shared by all levels: you decide where each item fits.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
+    how_s23: ["Select N1 (the radar) and write its vehicle-level function: what the ADAS ECU receives from the radar.", "Select N2 and write the function of the analysed element, starting from the requirements on the right.",
+      "Select N3 (the software design of the function) and write its function: what the design must ensure (requirements, constants, logic, data types, interface). Each element has one function. The suggestion list is shared by all levels: you decide where each item fits.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
     how_s4: ["At N1 write the effects: loss or degradation of the radar functions. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the functions (none, partial, intermittent, unintended, out of limits).",
-      "At N3 write the causes: why the category's function is not ensured. On each cause pick the culprit: the component (HW) or the requirement (SW, requirements category).", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
+      "At N3 write the causes: why the design does not ensure the function. On each cause you can pick from the list the requirement it relates to.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
     how_s23_hw: ["Select N1 (the radar) and write its vehicle-level function: what the ADAS ECU receives from the radar.", "Select N2 (the signal) and write its function, starting from the requirements on the right.",
       "Select N3 (the hardware design of the signal) and write its function: what the design must ensure for the signal's components. Each element has one function. The suggestion list is shared by all levels: you decide where each item fits.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
     how_s4_hw: ["At N1 write the effects: loss or degradation of the radar function. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the signal's function (none, partial, intermittent, unintended, out of limits).",
@@ -1006,8 +1009,8 @@ const I18N = {
     demo_s23: "Demo F0: at N3: “Ensures the components of the analysed signal are correctly chosen, dimensioned, connected and placed”. At N2: “Attenuates the high-frequency disturbances on CANH and CANL (EMC)”.",
     demo_s4: "Demo F0: effect “Electromagnetic emissions above the regulated limits (EMC)”, S 9 (noncompliance with regulations); mode “Asymmetry between the CANH and CANL filters”; cause at N3: “Tolerance too wide for the function”, culprit C2.",
     demo_s56: "Demo F0: prevention “RC filter calculation” and “Components from the approved list”; detection “BOM check against the schematic” and “EMC test”. For D, think about when the test runs relative to release and what it finds (table D3).",
-    demoSw_s23: "Demo F0 (SW): at N2, the function “Rejects values outside [MIN, MAX]” for the azimuth angle (±60.0°). At N3 choose the category “Constants and parameters (#define)”: “Ensures the constants use the correct units”.",
-    demoSw_s4: "Demo F0 (SW): effect at N1 “A real object is not reported (missed detection, no braking)”, S 8 (loss of the main function, at sensor level); mode at N2 “Rejects a valid value”; cause under “Constants and parameters (#define)”: “Wrong unit of the constant” (SENSOR_MAX written in degrees, 60, instead of 600 in 0.1° units, so objects beyond 6° are rejected).",
+    demoSw_s23: "Demo F0 (SW): at N2, the function “Rejects values outside [MIN, MAX]” for the azimuth angle (±60.0°). At N3: “Ensures correct requirements, constants, logic, data types and interface for the analysed function”.",
+    demoSw_s4: "Demo F0 (SW): effect at N1 “A real object is not reported (missed detection, no braking)”, S 8 (loss of the main function, at sensor level); mode at N2 “Rejects a valid value”; cause at N3: “Wrong unit of the constant” (SENSOR_MAX written in degrees, 60, instead of 600 in 0.1° units, so objects beyond 6° are rejected).",
     demoSw_s56: "Demo F0 (SW): prevention “Code review against the sensor specification”, O 4; detection “Requirements-based testing” and “Boundary value tests”, D 3, so AP M. Action of type P: “Constants generated automatically from the sensor specification”, which lowers O (e.g. to 2, AP L).",
     provTitle: "Where the values come from",
     prov: [["S", "Table D1 (AIAG-VDA DFMEA), on the vehicle-level effect (N1). The mode takes the S max of its linked effects."],
@@ -1659,8 +1662,8 @@ function renderReport(view) {
 load(); LANG = S.lang || "ro";
 if (!S.hw) S.hw = blankA(); if (!S.sw) S.sw = blankA();
 if (!S.concl) S.concl = { dec: "", act: "", lim: "" };
-/* HW cause level reduced to one element (14.11): functions written on the old categories C1–C5 move to it */
-if (S.hw && S.hw.fns) { S.hw.fns.forEach((f) => { if (/^C[1-5]$/.test(f.el)) f.el = "C0"; }); if (/^C[1-5]$/.test(S.hw.selEl || "")) S.hw.selEl = "C0"; }
+/* cause level reduced to one element, HW and SW (14.11): functions written on the old categories C1–C5 move to it */
+["hw", "sw"].forEach((k) => { const A = S[k]; if (!A || !A.fns) return; A.fns.forEach((f) => { if (/^C[1-5]$/.test(f.el)) f.el = "C0"; }); if (/^C[1-5]$/.test(A.selEl || "")) A.selEl = "C0"; });
 if ((S.conclusion || "").trim() && !S.concl.dec) { S.concl.dec = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
 if (window.LabReport) window.LabReport.track("FMEA");
 document.getElementById("stName").value = S.name; document.getElementById("stVariant").value = S.variant;
