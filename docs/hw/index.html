@@ -746,7 +746,13 @@ function renderAnalysis(view) {
   view.querySelectorAll("textarea[data-ra], textarea[data-raw]").forEach((n) => {
     const k = n.hasAttribute("data-raw") ? "raw" : "ra";
     n.addEventListener("input", () => { const i = n.dataset[k]; S.rows[i] = S.rows[i] || {}; S.rows[i][k] = n.value; save(); });
-    n.addEventListener("change", () => render());
+    /* re-render after the focus has moved, then give the focus back (e.g. from one risk field to the other) */
+    n.addEventListener("change", () => setTimeout(() => {
+      const a = document.activeElement; let sel = "";
+      if (a && a !== document.body && a.attributes) { for (const at of a.attributes) if (at.name.startsWith("data-")) { sel = a.tagName.toLowerCase() + "[" + at.name + '="' + at.value + '"]'; break; } if (!sel && a.id) sel = "#" + a.id; }
+      render();
+      if (sel) { const b = document.querySelector(sel); if (b) { b.focus(); if (b.setSelectionRange && typeof b.value === "string") b.setSelectionRange(b.value.length, b.value.length); } }
+    }, 0));
   });
   view.querySelector("#addTest").addEventListener("submit", (e) => {
     e.preventDefault(); const d = view.querySelector("#newTestDesc").value.trim(); if (!d) return;
