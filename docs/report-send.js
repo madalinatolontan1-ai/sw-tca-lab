@@ -271,6 +271,13 @@
     }).join("") + "</div>";
   }
   /* a step is done when n of n is complete, partial when some, not done when none; total 0 → not applicable */
+  /* a conclusion field counts only with real content: at least 3 words and not a "none"-type answer */
+  function meaningful(txt) {
+    const s = String(txt || "").trim().toLowerCase();
+    if (!s) return false;
+    if (/^(none|nothing|n\/?a|no|nu|nimic|niciuna?|niciunul|-+|–+|\.+|ok|da|yes)[.!]?$/.test(s)) return false;
+    return s.split(/\s+/).filter(Boolean).length >= 3;
+  }
   function stepStatus(have, total) { return total === 0 ? "na" : have >= total ? "done" : have > 0 ? "part" : "todo"; }
 
   /* ---------------------------------------------------------------- anonymous feedback
@@ -344,5 +351,5 @@
     });
     if (d.showModal) d.showModal(); else d.setAttribute("open", "");
   }
-  window.LabReport = { mount: mount, askFeedback: askFeedback, track: track, snapshot: snapshot, resetWork: resetWork, preTest: preTest, stepsHtml: stepsHtml, stepsText: stepsText, stepsBar: stepsBar, stepStatus: stepStatus };
+  window.LabReport = { meaningful: meaningful, mount: mount, askFeedback: askFeedback, track: track, snapshot: snapshot, resetWork: resetWork, preTest: preTest, stepsHtml: stepsHtml, stepsText: stepsText, stepsBar: stepsBar, stepStatus: stepStatus };
 })();

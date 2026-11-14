@@ -490,7 +490,7 @@ const I18N = {
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
     apTitle: "Tabelul AP (AIAG-VDA)",
     whyRule: "regula", whyC7: "C7 marcaj", whyC5: "C5 THT pe BOTTOM", whyAOIb: "AOI cu BOTTOM activ", whyAOItop: "AOI fără BOTTOM", whyTP: "TP direct", whyNoTP: "fără TP direct (cluster / indirect)", whyNoNet: "pin neconectat",
-    conclusion: "Concluzia (apare în raport)", cO: "Logica folosită pentru O", cImpr: "Îmbunătățirile propuse și efectul lor asupra AP", cLim: "Limitele analizei: ce nu poate vedea testarea sau analiza", c_conclF: "Concluzie: lipsește „{f}”.",
+    conclusion: "Concluzia (apare în raport)", cO: "Logica folosită pentru O", cImpr: "Îmbunătățirile propuse și efectul lor asupra AP", cLim: "Limitele analizei: ce nu poate vedea testarea sau analiza", c_conclShort: "Concluzie: „{f}” e prea scurtă; scrie concret (cel puțin o propoziție).", c_conclF: "Concluzie: lipsește „{f}”.",
     reportTitle: "Fișa de evaluare a riscului · HW TCA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.",
@@ -541,7 +541,7 @@ const I18N = {
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
     apTitle: "AP table (AIAG-VDA)",
     whyRule: "rule", whyC7: "C7 marking", whyC5: "C5 THT on BOTTOM", whyAOIb: "AOI with BOTTOM active", whyAOItop: "AOI without BOTTOM", whyTP: "direct TP", whyNoTP: "no direct TP (cluster / indirect)", whyNoNet: "pin not connected",
-    conclusion: "Conclusion (included in the report)", cO: "The logic used for O", cImpr: "The proposed improvements and their effect on AP", cLim: "Limits of the analysis: what testing or the analysis cannot see", c_conclF: "Conclusion: “{f}” is missing.",
+    conclusion: "Conclusion (included in the report)", cO: "The logic used for O", cImpr: "The proposed improvements and their effect on AP", cLim: "Limits of the analysis: what testing or the analysis cannot see", c_conclShort: "Conclusion: “{f}” is too short; be specific (at least one sentence).", c_conclF: "Conclusion: “{f}” is missing.",
     reportTitle: "Risk assessment sheet · HW TCA", download: "Download report (.html)", copy: "Copy report text",
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.",
@@ -883,7 +883,7 @@ function stepList() {
     if (needsRA(r.ap)) { hm++; if (raDone(u)) ra++; } });
   const tps = Object.keys(S.tps || {}).filter((k) => S.tps[k]).length, nt = (S.newTests || []).length;
   const nImpr = tps + (S.aoiBottom ? 1 : 0) + nt;
-  const cDone = CONCL.filter((c) => (S.concl[c[0]] || "").trim()).length;
+  const cDone = CONCL.filter((c) => (window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())).length;
   const of = (a, b) => a + " / " + b;
   return [
     { n: "1", name: ro ? "Severitatea (S): clasa de efect pe fiecare rând" : "Severity (S): the effect class on every row", status: st(cls, n), detail: of(cls, n) },
@@ -920,7 +920,7 @@ function checks() {
     if (u.fttest && !(u.ftj || "").trim()) f("c_ftj");
     if (needsRA(r.ap)) { if (!u.rad) f("c_ra", { ap: r.ap }); else if (!raDone(u)) f("c_raTxt"); }
   });
-  CONCL.forEach((c) => { if (!(S.concl[c[0]] || "").trim()) out.push(fmtT("c_conclF", { f: t(c[1]) })); });
+  CONCL.forEach((c) => { if (!(window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())) out.push(fmtT((S.concl[c[0]] || "").trim() ? "c_conclShort" : "c_conclF", { f: t(c[1]) })); });
   return out;
 }
 function renderReport(view) {

@@ -641,6 +641,10 @@ const SW_FN_FC = {
     L("Ramura default returnează RX_ACCEPTED", "The default branch returns RX_ACCEPTED"), L("Parametrii lui can_frame_is_valid() în ordine greșită", "Parameters of can_frame_is_valid() in the wrong order")]
 };
 /* SW: since 14.11 the cause level has one element too; the categories below only feed the suggestions */
+/* the action owner is a role, never a person's name (the reports are research data) */
+const ROLES = [["hwd", L("Proiectant HW", "HW designer")], ["lay", L("Proiectant layout", "Layout engineer")], ["swd", L("Dezvoltator SW", "SW developer")],
+  ["tst", L("Inginer de test și validare", "Test and validation engineer")], ["fsa", L("Inginer de siguranță funcțională", "Functional safety engineer")], ["qa", L("Inginer de calitate", "Quality engineer")]];
+const roleTxt = (k) => { const x = ROLES.find((r) => r[0] === k); return x ? tr(x[1]) : ""; };
 const SW_N3 = [["C0", L("Designul software al funcției (cerințe, constante, logică, tipuri de date, interfață)", "Software design of the function (requirements, constants, logic, data types, interface)")]];
 const SW_L3 = [["C1", L("Cerințele software (SWR)", "Software requirements (SWR)")], ["C2", L("Constante și parametri (#define)", "Constants and parameters (#define)")],
   ["C3", L("Logica de decizie (condiții, operatori)", "Decision logic (conditions, operators)")], ["C4", L("Tipuri de date și domenii de valori", "Data types and value ranges")],
@@ -882,7 +886,7 @@ const I18N = {
     c_noFn: "Elementul „{el}” nu are funcții.", c_noFail: "Nu există moduri de defectare la nivelul mod.", c_modeNoEff: "Modul „{m}” nu e legat de niciun efect.", c_modeNoCause: "Modul „{m}” nu e legat de nicio cauză.",
     c_noS: "Efectul „{e}” nu are S.", c_orphanE: "Efectul „{e}” nu e legat de niciun mod.", c_orphanC: "Cauza „{c}” nu e legată de niciun mod.",
     c_noO: "„{m} ← {c}”: lipsește O.", c_noD: "„{m} ← {c}”: lipsește D.", c_noPC: "„{m} ← {c}”: nu are control de prevenție.", c_noDC: "„{m} ← {c}”: nu are control de detecție.",
-    c_noRev: "„{m} ← {c}”: AP {ap}; lipsesc acțiunile din starea revizuită.", c_revOD: "„{m} ← {c}”: completează O nou și D nou în starea revizuită.", c_noResult: "„{m} ← {c}”: acțiunea „{a}” e finalizată, dar nu are rezultat (PASS / FAIL).", c_failAct: "„{m} ← {c}”: o acțiune a ieșit FAIL; defectul e confirmat. Adaugă după ea o acțiune corectivă de design (P) și reevaluează O nou și D nou.", c_actInc: "„{m} ← {c}”: o acțiune nu are text, responsabil sau termen.",
+    c_oNoP: "„{m} ← {c}”: O nou e mai mic decât O, dar nicio acțiune de prevenție (P) nu e finalizată. O scade doar după o acțiune P finalizată.", c_dNoD: "„{m} ← {c}”: D nou e mai mic decât D, dar nicio acțiune de detecție (D) nu e finalizată cu PASS.", c_doneFuture: "„{m} ← {c}”: acțiunea „{a}” e marcată finalizată, dar termenul e în viitor.", c_dcNone: "„{m} ← {c}”: fără control de detecție, D este 10.", c_noRev: "„{m} ← {c}”: AP {ap}; lipsesc acțiunile din starea revizuită.", c_revOD: "„{m} ← {c}”: completează O nou și D nou în starea revizuită.", c_noResult: "„{m} ← {c}”: acțiunea „{a}” e finalizată, dar nu are rezultat (PASS / FAIL).", c_failAct: "„{m} ← {c}”: o acțiune a ieșit FAIL; defectul e confirmat. Adaugă după ea o acțiune corectivă de design (P) și reevaluează O nou și D nou.", c_actInc: "„{m} ← {c}”: o acțiune nu are text, responsabil sau termen.",
     c_noExtra: "„{m} ← {c}”: după revizie AP {ap}; propune o acțiune suplimentară.", c_extraD: "„{m} ← {c}”: acțiunea suplimentară de tip D nu are D estimat.", c_noResid: "„{m} ← {c}”: riscul rămâne {ap}; justifică riscul rezidual.",
     reportTitle: "Raport DFMEA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.", student: "Student", generated: "Generat", structure: "Structură și funcții", netR: "Rețeaua de defectare", form: "Formularul DFMEA",
@@ -982,7 +986,7 @@ const I18N = {
     c_noFn: "Element “{el}” has no functions.", c_noFail: "There are no failure modes at mode level.", c_modeNoEff: "Mode “{m}” is not linked to any effect.", c_modeNoCause: "Mode “{m}” is not linked to any cause.",
     c_noS: "Effect “{e}” has no S.", c_orphanE: "Effect “{e}” is not linked to any mode.", c_orphanC: "Cause “{c}” is not linked to any mode.",
     c_noO: "“{m} ← {c}”: O is missing.", c_noD: "“{m} ← {c}”: D is missing.", c_noPC: "“{m} ← {c}”: no prevention control.", c_noDC: "“{m} ← {c}”: no detection control.",
-    c_noRev: "“{m} ← {c}”: AP {ap}; the revised state has no actions.", c_revOD: "“{m} ← {c}”: fill in the new O and new D in the revised state.", c_noResult: "“{m} ← {c}”: action “{a}” is completed but has no result (PASS / FAIL).", c_failAct: "“{m} ← {c}”: an action FAILED; the defect is confirmed. Add a corrective design action (P) after it and re-rate the new O and new D.", c_actInc: "“{m} ← {c}”: an action has no text, responsible or due date.",
+    c_oNoP: "“{m} ← {c}”: the new O is lower than O, but no prevention (P) action is completed. O drops only after a completed P action.", c_dNoD: "“{m} ← {c}”: the new D is lower than D, but no detection (D) action is completed with PASS.", c_doneFuture: "“{m} ← {c}”: action “{a}” is marked completed, but its due date is in the future.", c_dcNone: "“{m} ← {c}”: with no detection control, D is 10.", c_noRev: "“{m} ← {c}”: AP {ap}; the revised state has no actions.", c_revOD: "“{m} ← {c}”: fill in the new O and new D in the revised state.", c_noResult: "“{m} ← {c}”: action “{a}” is completed but has no result (PASS / FAIL).", c_failAct: "“{m} ← {c}”: an action FAILED; the defect is confirmed. Add a corrective design action (P) after it and re-rate the new O and new D.", c_actInc: "“{m} ← {c}”: an action has no text, responsible or due date.",
     c_noExtra: "“{m} ← {c}”: after the revision AP {ap}; propose an additional action.", c_extraD: "“{m} ← {c}”: the additional D action has no expected D.", c_noResid: "“{m} ← {c}”: the risk stays {ap}; justify the residual risk.",
     reportTitle: "DFMEA report", download: "Download report (.html)", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.", student: "Student", generated: "Generated", structure: "Structure and functions", netR: "Failure net", form: "DFMEA form",
@@ -1153,6 +1157,15 @@ function checks(kind) {
         if (!a.result) add("warn", "c_noResult", ao);
       });
       if (ev.failOpen) add("err", "c_failAct", o);
+      /* the revised O and D may only credit actions that are completed (and passed, for detection) */
+      const acts = r.acts || [];
+      const doneP = acts.some((a) => a.type === "P" && a.status === "done");
+      const doneD = acts.some((a) => a.type === "D" && a.status === "done" && a.result === "pass");
+      if (r.o && r.o2 && +r.o2 < +r.o && !doneP) add("warn", "c_oNoP", o);
+      if (r.d && r.d2 && +r.d2 < +r.d && !doneD) add("warn", "c_dNoD", o);
+      const today = new Date().toISOString().slice(0, 10);
+      acts.forEach((a) => { if (a.status === "done" && a.due && a.due > today) add("warn", "c_doneFuture", Object.assign({ a: short(a.text || "–") }, o)); });
+      if ((r.dc || []).length && (r.dc || []).every((x) => /^(none|niciun(ul|a)?|nu exist[ăa])\.?$/i.test(String(x).trim())) && r.d && +r.d < 10) add("warn", "c_dcNone", o);
       if (ev.extraNeeded && !r.xt) add("err", "c_noExtra", Object.assign({ ap: ev.ap1 }, o));
       if (ev.extraNeeded && r.xt && r.xtype === "P" && !r.xo) add("err", "c_extraO", o);
       if (ev.extraNeeded && r.xt && r.xtype !== "P" && !r.xd) add("err", "c_extraD", o);
@@ -1471,7 +1484,8 @@ function renderRisk(body, kind) {
       const need = ev.ap0 === "H" || ev.ap0 === "M";
       const acts = (r.acts || []).map((a, i) => '<div class="act"><select class="in" data-act="' + k + "|" + i + '|type" aria-label="' + esc(t("type")) + '"><option' + (a.type === "P" ? " selected" : "") + '>P</option><option' + (a.type === "D" ? " selected" : "") + ">D</option></select>" +
         '<input class="in" list="dl-' + kind + '-all" data-act="' + k + "|" + i + '|text" value="' + esc(a.text) + '" placeholder="' + esc(t("actions")) + '" aria-label="' + esc(t("actions")) + '">' +
-        '<div class="full"><input class="in" data-act="' + k + "|" + i + '|resp" value="' + esc(a.resp) + '" placeholder="' + esc(t("resp")) + '" aria-label="' + esc(t("resp")) + '">' +
+        '<div class="full"><select class="in" data-act="' + k + "|" + i + '|resp" aria-label="' + esc(t("resp")) + '"><option value="">' + esc(t("resp")) + "…</option>" +
+          ROLES.map((x) => '<option value="' + x[0] + '"' + (a.resp === x[0] ? " selected" : "") + ">" + esc(tr(x[1])) + "</option>").join("") + "</select>" +
         '<input class="in" type="date" data-act="' + k + "|" + i + '|due" value="' + esc(a.due) + '" aria-label="' + esc(t("due")) + '">' +
         '<select class="in" data-act="' + k + "|" + i + '|status" aria-label="' + esc(t("status")) + '">' + [["planned", "stPlanned"], ["progress", "stProg"], ["done", "stDone"]].map((o) => '<option value="' + o[0] + '"' + (a.status === o[0] ? " selected" : "") + ">" + esc(t(o[1])) + "</option>").join("") + "</select>" +
         (a.status === "done" ? '<select class="in res-' + (a.result || "none") + '" data-act="' + k + "|" + i + '|result" aria-label="' + esc(t("result")) + '"><option value="">' + esc(t("result")) + "…</option>" +
@@ -1540,12 +1554,12 @@ function analysisReport(kind, text) {
     const effs = effectsOf(A, m.id);
     causesOf(A, m.id).forEach((c) => {
       const ev = evalRisk(A, m.id, c.id); const r = ev.r;
-      const acts = (r.acts || []).map((a) => "[" + a.type + "] " + esc(a.text) + (a.resp ? " · " + esc(a.resp) : "") + (a.due ? " · " + esc(a.due) : "") + " · " + esc(t(a.status === "done" ? "stDone" : a.status === "progress" ? "stProg" : "stPlanned")) + (a.status === "done" && a.result ? ' · <b class="' + (a.result === "pass" ? "L" : "H") + '">' + a.result.toUpperCase() + "</b>" : "")).join("<br>");
+      const acts = (r.acts || []).map((a) => "[" + a.type + "] " + esc(a.text) + (a.resp ? " · " + esc(roleTxt(a.resp)) : "") + (a.due ? " · " + esc(a.due) : "") + " · " + esc(t(a.status === "done" ? "stDone" : a.status === "progress" ? "stProg" : "stPlanned")) + (a.status === "done" && a.result ? ' · <b class="' + (a.result === "pass" ? "L" : "H") + '">' + a.result.toUpperCase() + "</b>" : "")).join("<br>");
       rows += "<tr><td>" + effs.map((e) => esc(e.text) + " (S " + (e.s || "–") + ")").join("<br>") + "</td><td>" + (ev.s || "–") + "</td><td>" + esc(m.text) + "</td><td><i>" + esc(elOfFail(kind, c) + culOf(c)) + "</i><br>" + esc(c.text) + "</td><td>" + (r.pc || []).map(esc).join("<br>") + "</td><td>" + (r.o || "–") +
         "</td><td>" + (r.dc || []).map(esc).join("<br>") + "</td><td>" + (r.d || "–") + '</td><td class="' + (ev.ap0 || "") + '">' + (ev.ap0 || "–") + "</td><td>" + (acts || "–") + "</td><td>" + (r.o2 || "–") + "</td><td>" + (r.d2 || "–") + '</td><td class="' + (ev.ap1 || "") + '">' + (ev.ap1 || "–") +
         "</td><td>" + (r.xt ? "[" + (r.xtype === "P" ? "P" : "D") + "] " + esc(r.xt) + (r.xtype === "P" ? (r.xo ? " (O " + r.xo + ")" : "") : (r.xd ? " (D " + r.xd + ")" : "")) + (r.resid ? "<br><i>" + esc(r.resid) + "</i>" : "") : "–") + '</td><td class="' + (ev.fin || "") + '">' + (ev.fin || "–") + "</td></tr>";
       text.push("FM: " + m.text + " | FE: " + effs.map((e) => e.text + " (S " + (e.s || "-") + ")").join("; ") + " | FC: [" + elOfFail(kind, c) + culOf(c) + "] " + c.text + " | PC: " + (r.pc || []).join("; ") + " | O=" + (r.o || "-") + " | DC: " + (r.dc || []).join("; ") + " | D=" + (r.d || "-") +
-        " | AP=" + (ev.ap0 || "-") + " | rev: " + (r.acts || []).map((a) => "[" + a.type + "] " + a.text + " / " + a.resp + " / " + a.due + " / " + a.status + (a.status === "done" && a.result ? " / " + a.result.toUpperCase() : "")).join("; ") + " O'=" + (r.o2 || "-") + " D'=" + (r.d2 || "-") + " AP'=" + (ev.ap1 || "-") +
+        " | AP=" + (ev.ap0 || "-") + " | rev: " + (r.acts || []).map((a) => "[" + a.type + "] " + a.text + " / " + roleTxt(a.resp) + " / " + a.due + " / " + a.status + (a.status === "done" && a.result ? " / " + a.result.toUpperCase() : "")).join("; ") + " O'=" + (r.o2 || "-") + " D'=" + (r.d2 || "-") + " AP'=" + (ev.ap1 || "-") +
         " | extra: [" + (r.xtype === "P" ? "P" : "D") + "] " + (r.xt || "-") + (r.xtype === "P" ? " O=" + (r.xo || "-") : " D=" + (r.xd || "-")) + " | AP final=" + (ev.fin || "-") + (r.resid ? " | residual: " + r.resid : ""));
       if (ev.s && r.o && r.d) {
         const ki = sBand(ev.s) + "|" + oBand(+r.o) + "|" + dIdx(+r.d); cnt.i[ki] = (cnt.i[ki] || 0) + 1; sum.i[ev.ap0]++;
@@ -1612,7 +1626,7 @@ function stepList() {
   const num = { s23: "2–3", s4: "4", s5: "5", s6: "6" };
   const out = [{ n: "1", name: ro ? "Planificare: domeniul analizei (semnalul HW și funcția SW ale variantei)" : "Planning: scope of the analysis (the HW signal and the SW function of the variant)", status: "done", detail: hwLabel() + " · " + swLabel() }];
   ["s23", "s4", "s5", "s6"].forEach((k) => { out.push({ n: num[k] + " HW", name: nm[k], status: H.st[k], detail: H.det[k] }); out.push({ n: num[k] + " SW", name: nm[k], status: W.st[k], detail: W.det[k] }); });
-  const cDone = CONCL.filter((c) => (S.concl[c[0]] || "").trim()).length;
+  const cDone = CONCL.filter((c) => (window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())).length;
   out.push({ n: "7", name: ro ? "Documentare: concluziile (decizii, acțiuni, limite) și raportul" : "Documentation: the conclusions (decisions, actions, limits) and the report",
     status: window.LabReport ? window.LabReport.stepStatus(cDone, CONCL.length) : "todo", detail: cDone + " / " + CONCL.length });
   return out;
@@ -1663,6 +1677,8 @@ load(); LANG = S.lang || "ro";
 if (!S.hw) S.hw = blankA(); if (!S.sw) S.sw = blankA();
 if (!S.concl) S.concl = { dec: "", act: "", lim: "" };
 /* cause level reduced to one element, HW and SW (14.11): functions written on the old categories C1–C5 move to it */
+/* free-text owners (names) from before 15.11 are dropped: the owner is now a role */
+["hw", "sw"].forEach((k) => { const A = S[k]; if (!A || !A.risk) return; Object.values(A.risk).forEach((r) => (r.acts || []).forEach((x) => { if (x.resp && !ROLES.some((q) => q[0] === x.resp)) x.resp = ""; })); });
 ["hw", "sw"].forEach((k) => { const A = S[k]; if (!A || !A.fns) return; A.fns.forEach((f) => { if (/^C[1-5]$/.test(f.el)) f.el = "C0"; }); if (/^C[1-5]$/.test(A.selEl || "")) A.selEl = "C0"; });
 if ((S.conclusion || "").trim() && !S.concl.dec) { S.concl.dec = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
 if (window.LabReport) window.LabReport.track("FMEA");

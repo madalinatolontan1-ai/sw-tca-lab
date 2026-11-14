@@ -1568,7 +1568,7 @@ function stepList() {
     return { n: ex.num, name: t(ex.tab) + " · " + c.map((x) => x[1]).join(", "), status: !S.ran[k] ? "todo" : window.LabReport ? window.LabReport.stepStatus(ok, c.length) : "todo",
       detail: (ro ? "lipsește: " : "missing: ") + (c.filter((x) => !x[0]).map((x) => x[1]).join(", ") || "–") };
   });
-  const cDone = CONCL.filter((c) => (S.concl[c[0]] || "").trim()).length;
+  const cDone = CONCL.filter((c) => (window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())).length;
   out.push({ n: "5", name: ro ? "Raportul: concluzia (ce arată acoperirea și ce nu arată)" : "Report: the conclusion (what coverage shows and what it does not)",
     status: window.LabReport ? window.LabReport.stepStatus(cDone, CONCL.length) : "todo", detail: cDone + " / " + CONCL.length });
   return out;
