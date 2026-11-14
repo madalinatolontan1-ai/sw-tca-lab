@@ -834,6 +834,7 @@ const I18N = {
     tabStart: "Pasul 1 · Planificare", tabReport: "Pasul 7 · Raport",
     badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu F2).", variantLoaded: "Varianta {v} a fost încărcată.",
     introTitle: "Analiza modurilor de defectare și a efectelor (DFMEA)",
+    introScen: "Scenariul: tehnologia nu este nouă. Produsul se fabrică deja, iar acum îl cumpără un alt client, care vrea același hardware, dar și câteva funcții software noi.",
     introP1: "Faci două analize DFMEA pentru nodul CAN al radarului frontal: una pentru un semnal hardware și una pentru o funcție software. Metoda e aceeași pentru amândouă: cei 7 pași AIAG-VDA.",
     introP2: "La fiecare analiză scrii funcțiile elementelor din structură și defectările lor, apoi legi efectul, modul de defectare și cauza într-o rețea de defectare. Pe fiecare legătură mod–cauză evaluezi riscul (S, O, D, AP) și propui optimizări.",
     introP3: "Introdu numele și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
@@ -934,6 +935,7 @@ const I18N = {
     tabStart: "Step 1 · Planning", tabReport: "Step 7 · Report",
     badVariant: "This variant code does not exist. Use the code you received in the lab (for example F2).", variantLoaded: "Variant {v} loaded.",
     introTitle: "Failure mode and effects analysis (DFMEA)",
+    introScen: "Scenario: the technology is not new. The product is already in production, and now another customer buys it: the same hardware, plus a few new software functions.",
     introP1: "You perform two DFMEAs for the CAN node of the front radar: one for a hardware signal and one for a software function. The method is the same for both: the 7 AIAG-VDA steps.",
     introP2: "In each analysis you write the functions of the structure elements and their failures, then link effect, failure mode and cause in a failure net. On every mode–cause link you rate the risk (S, O, D, AP) and propose optimizations.",
     introP3: "Enter your name and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
@@ -1199,7 +1201,7 @@ function render() {
 }
 function renderStart(view) {
   const v = V();
-  let h = '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p>" +
+  let h = '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p class=\"scen\"><b>" + esc(t("introScen")) + "</b></p><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p>" +
     '<p class="notice">' + esc(v ? t("variantLoaded").replace("{v}", S.variant) : t("introP3")) + "</p>" + (isDemo() ? '<p class="notice">' + esc(t("demoNote")) + "</p>" : "") + "</section>";
   h += '<div class="grid-start"><div class="panel stack"><h3>' + esc(t("sysTitle")) + "</h3>" + t("sys").map((p) => "<p>" + esc(p) + "</p>").join("") + "</div>";
   h += '<div class="panel stack"><h3>' + esc(t("howTitle")) + '</h3><ol style="margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px">' + t("how").map((p) => "<li>" + esc(p) + "</li>").join("") + "</ol></div></div>";

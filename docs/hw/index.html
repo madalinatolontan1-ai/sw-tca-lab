@@ -485,6 +485,7 @@ const I18N = {
     badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu H2).",
     variantLoaded: "Varianta {v} a fost încărcată.",
     introTitle: "Analiza acoperirii testelor de producție (HW TCA)",
+    introScen: "Scenariul: tehnologia nu este nouă. Produsul se fabrică deja, iar acum îl cumpără un alt client, care vrea același hardware, dar și câteva funcții software noi.",
     introP1: "Analizezi cât de bine detectează testele de producție defectele de fabricație ale modulului CAN (MCP2551) folosit de radarul frontal. Primești o listă de moduri de defectare, fiecare cu efectul ei.",
     introP2: "Pentru fiecare mod alegi severitatea (S) și ocurența (O) din tabele. Aplicația prezice detecția (D) pentru AOI, AXI și ICT din regulile de detecție; detecția la testul funcțional (FT) o stabilești tu. Din S, O și D minim rezultă prioritatea de acțiune (AP), după tabelul AIAG-VDA.",
     introP3: "La final propui îmbunătățiri (test point-uri, AOI pe fața BOTTOM, teste FT) și verifici cât scade riscul rezidual. Raportul se descarcă din tab-ul Raport.",
@@ -550,6 +551,7 @@ const I18N = {
     badVariant: "This variant code does not exist. Use the code you received in the lab (for example H2).",
     variantLoaded: "Variant {v} loaded.",
     introTitle: "Production test coverage analysis (HW TCA)",
+    introScen: "Scenario: the technology is not new. The product is already in production, and now another customer buys it: the same hardware, plus a few new software functions.",
     introP1: "You analyse how well the production tests detect the manufacturing defects of the CAN module (MCP2551) used by the front radar. You receive a list of failure modes, each with its effect.",
     introP2: "For every mode you choose the severity (S) and occurrence (O) from the tables. The app predicts the detection (D) for AOI, AXI and ICT from the detection rules; you set the detection of the functional test (FT). S, O and the minimum D give the action priority (AP) from the AIAG-VDA table.",
     introP3: "Finally you propose improvements (test points, AOI on the BOTTOM side, FT tests) and check how much the residual risk drops. Download the report from the Report tab.",
@@ -709,7 +711,7 @@ function render() {
   if (window.LabReport && !isDemo()) window.LabReport.preTest("HW-TCA", LANG);
 }
 function renderStart() {
-  return '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p><p>" + esc(t("introP3")) + '</p><p class="stdbox">' + esc(t("introStd")) + "</p>" +
+  return '<section class="intro"><h2>' + esc(t("introTitle")) + "</h2><p class=\"scen\"><b>" + esc(t("introScen")) + "</b></p><p>" + esc(t("introP1")) + "</p><p>" + esc(t("introP2")) + "</p><p>" + esc(t("introP3")) + '</p><p class="stdbox">' + esc(t("introStd")) + "</p>" +
     '<p class="notice">' + esc(V() ? t("variantLoaded").replace("{v}", S.variant) : t("introP4")) + "</p></section>" +
     '<section class="stack"><span class="label">' + esc(t("stepsTitle")) + '</span><div class="steps">' +
     ["s1", "s2", "s3", "s4", "s5"].map((k, i) => '<div class="step"><h3>' + (i + 1) + '</h3><p class="muted">' + esc(t(k)) + "</p></div>").join("") + "</div></section>";

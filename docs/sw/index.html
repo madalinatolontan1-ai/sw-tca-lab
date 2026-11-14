@@ -254,6 +254,7 @@ const I18N = {
     badVariant: "Codul de variantă nu există. Folosește codul primit la laborator (de exemplu V3).",
     variantLoaded: "Varianta {v} a fost încărcată.",
     introTitle: "Analiza acoperirii testelor software",
+    introScen: "Scenariul: tehnologia nu este nouă. Produsul se fabrică deja, iar acum îl cumpără un alt client, care vrea același hardware, dar și câteva funcții software noi.",
     introP1: "Lucrezi pe firmware-ul unui nod CAN care transmite datele unui radar frontal (ASIL B). Pentru fiecare funcție scrii teste pornind de la cerințe, le rulezi și urmărești ce parte din cod au exercitat.",
     introP2: "Aplicația măsoară acoperirea de instrucțiuni (statement), de decizii (branch) și MC/DC, cum o face un instrument de acoperire. Codul afișat este exact codul testat. Este un simulator didactic: într-un proiect real, acoperirea vine dintr-o unealtă evaluată sau calificată conform ISO 26262-8 clauza 11, rulată pe cod instrumentat.",
     introP3: "Introdu numele și codul de variantă primit la laborator, apoi apasă „Încarcă varianta”. Lucrul se salvează în acest browser.",
@@ -322,6 +323,7 @@ const I18N = {
     badVariant: "This variant code does not exist. Use the code you received in the lab (for example V3).",
     variantLoaded: "Variant {v} loaded.",
     introTitle: "Software test coverage analysis",
+    introScen: "Scenario: the technology is not new. The product is already in production, and now another customer buys it: the same hardware, plus a few new software functions.",
     introP1: "You work on the firmware of a CAN node that transmits the data of a front radar (ASIL B). For every function you write tests from the requirements, run them and see which part of the code they exercised.",
     introP2: "The app measures statement, decision (branch) and MC/DC coverage, the way a coverage tool does. The code you see is exactly the code under test. It is a teaching simulator: in a real project, coverage comes from a tool evaluated or qualified per ISO 26262-8 clause 11, run on instrumented code.",
     introP3: "Enter your name and the variant code you received in the lab, then press “Load variant”. Your work is saved in this browser.",
@@ -1205,7 +1207,7 @@ function renderStart() {
   const v = V();
   return '<section class="intro">' +
     '<h2>' + esc(t("introTitle")) + '</h2>' +
-    '<p>' + esc(t("introP1")) + '</p><p>' + esc(t("introP2")) + '</p>' +
+    '<p class="scen"><b>' + esc(t("introScen")) + '</b></p><p>' + esc(t("introP1")) + '</p><p>' + esc(t("introP2")) + '</p>' +
     (v ? '<p class="notice">' + esc(t("variantLoaded").replace("{v}", S.variant)) + '</p>' : '<p class="notice">' + esc(t("introP3")) + '</p>') +
     '</section>' +
     '<section class="stack"><span class="label">' + esc(t("introSteps")) + '</span><div class="steps">' +
