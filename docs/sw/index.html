@@ -1186,10 +1186,9 @@ function applyI18n() {
 function renderTabs() {
   const box = document.getElementById("tabs");
   const items = [["start", t("tabStart"), ""]].concat(EX_KEYS.map((k) => [k, t(EX[k].tab), EX[k].num])).concat([["report", t("tabReport"), "5"]]);
-  const mark = {}; if (V()) stepList().forEach((x) => { if (x.status === "done") mark[x.n] = ' <span style="color:var(--ok)" aria-label="✓">✓</span>'; });
   box.innerHTML = items.map((it) =>
     '<button role="tab" data-tab="' + it[0] + '" aria-selected="' + (S.tab === it[0]) + '"' +
-    ((it[0] !== "start" && !V()) ? " disabled" : "") + ">" + (it[2] ? '<span class="num">' + it[2] + "</span>" : "") + esc(it[1]) + (mark[it[2]] || "") + "</button>").join("");
+    ((it[0] !== "start" && !V()) ? " disabled" : "") + ">" + (it[2] ? '<span class="num">' + it[2] + "</span>" : "") + esc(it[1]) + "</button>").join("");
   box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.tab; save(); render(); }));
 }
 

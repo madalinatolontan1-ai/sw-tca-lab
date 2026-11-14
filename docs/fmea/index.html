@@ -706,8 +706,11 @@ function pool(arr) {
   return out.sort((a, b) => a.localeCompare(b, LANG));
 }
 /* distractors: two functions and two modes of an unrelated signal / function, mixed into the lists so that choosing
-   from the list is a real decision; the report data records which entries came from them */
-const DISTRACT = { hw: { TXD: "TERM", RXD: "TERM", VDD: "TERM", CAN: "RXD", RS: "TERM", TERM: "TXD", FILT: "TXD" }, sw: { F1: "F3", F2: "F3", F3: "F1", INT: "F1" } };
+   from the list is a real decision; the report data records which entries came from them.
+   The step status is shown only in the Report tab, so that the first copy of the analysis (taken when the Report tab
+   is first opened) is made before the student has seen any completeness feedback other than the Checks list.
+   CAN (variant F4) has no HW distractors: every other signal of the transceiver is a plausible effect or cause there. */
+const DISTRACT = { hw: { TXD: "TERM", RXD: "TERM", VDD: "TERM", CAN: "", RS: "TERM", TERM: "TXD", FILT: "TXD" }, sw: { F1: "F3", F2: "F3", F3: "F1", INT: "F1" } };
 const distractFrom = (kind) => DISTRACT[kind][kind === "hw" ? V().hw : V().sw];
 function fnPool(kind) {
   const v = V(); let a = SUG_FN.L1.common.concat(SUG_FN.L1[kind], SUG_FN.L2[kind === "hw" ? v.hw : v.sw], (SUG_FN.L2[distractFrom(kind)] || []).slice(0, 2));
@@ -1255,8 +1258,7 @@ function renderAnalysis(view, kind) {
   const A = S[kind];
   const steps = [["s23", "2–3", t("st23")], ["s4", "4", t("st4")], ["s56", "5–6", t("st56")]];
   let h = '<div class="row between"><h2>' + esc(kind === "hw" ? t("hwAnalysis") + " · " + hwLabel() : t("swAnalysis") + " · " + swLabel()) + '</h2><span class="chip">' + esc(S.variant) + " · ASIL B</span></div>";
-  const ss = stepState(kind).st; const ok = (k) => (k === "s56" ? ss.s5 === "done" && (ss.s6 === "done" || ss.s6 === "na") : ss[k] === "done");
-  h += '<nav class="steps" aria-label="Steps">' + steps.map((s) => '<button type="button" data-step="' + s[0] + '"' + (A.step === s[0] ? ' aria-current="step"' : "") + '><span class="n">' + (LANG === "ro" ? "Pașii " : "Steps ") + s[1] + (ok(s[0]) ? ' <span style="color:var(--ok)">✓</span>' : "") + '</span><span class="tt">' + esc(s[2]) + "</span></button>").join("") + "</nav>";
+  h += '<nav class="steps" aria-label="Steps">' + steps.map((s) => '<button type="button" data-step="' + s[0] + '"' + (A.step === s[0] ? ' aria-current="step"' : "") + '><span class="n">' + (LANG === "ro" ? "Pașii " : "Steps ") + s[1] + '</span><span class="tt">' + esc(s[2]) + "</span></button>").join("") + "</nav>";
   h += helpPanel(kind, A.step);
   h += checksPanel(kind);
   h += '<div id="stepBody"></div>';

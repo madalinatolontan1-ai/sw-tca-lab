@@ -732,7 +732,7 @@ function renderAnalysis(view) {
       meter(t("mH"), now.H, base.H, now.H ? "risk" : "") + meter(t("mM"), now.M, base.M, now.M ? "risk" : "") + meter(t("mL"), now.L, base.L) +
       meter(t("mRes"), now.res, base.res, now.done && !now.res ? "good" : now.res ? "risk" : "") + meter(t("mCov"), now.cov + "%", base.cov + "%", now.done && now.cov === 100 ? "good" : "") +
       meter(t("mRA"), now.ra + " / " + now.res, "–", now.res && now.ra === now.res ? "good" : now.res ? "risk" : "") +
-    "</div>" + (window.LabReport ? window.LabReport.stepsBar(stepList(), LANG) : "") + "</div>" +
+    "</div></div>" +
     '<div class="panel stack"><div class="tablewrap"><table class="sheet"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div></div>" +
     '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
       CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>";
