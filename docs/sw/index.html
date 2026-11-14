@@ -1590,7 +1590,7 @@ function renderReport(view) {
   const r = buildReport();
   view.innerHTML = '<div class="row" style="justify-content:space-between"><h2>' + t("reportTitle") + '</h2><div class="row">' +
     '<button class="btn primary" id="dl" type="button">' + t("download") + '</button><button class="btn" id="cp" type="button">' + t("copy") + "</button></div></div>" +
-    '<p class="muted">' + t("reportHint") + "</p>" + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
+    '<p class="muted">' + t("reportHint") + "</p>" + '<div id="stepsBox">' + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + "</div>" + '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
     CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>" +
     '<div id="sendBox"></div><div class="report-frame" id="rframe">' + r.body + "</div>" +
     '<textarea id="reportText" readonly hidden></textarea>';
@@ -1601,7 +1601,8 @@ function renderReport(view) {
   } });
   view.querySelectorAll("textarea[data-concl]").forEach((n) => {
     n.addEventListener("input", () => { S.concl[n.dataset.concl] = n.value; save(); });
-    n.addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body; });
+    n.addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body;
+      const sb = view.querySelector("#stepsBox"); if (sb && window.LabReport) sb.innerHTML = window.LabReport.stepsHtml(stepList(), LANG, false); });
   });
   view.querySelector("#dl").addEventListener("click", () => {
     const b = new Blob([buildReport().html], { type: "text/html" });

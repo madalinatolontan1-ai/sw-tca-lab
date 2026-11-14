@@ -1616,7 +1616,7 @@ function renderReport(view) {
   if (window.LabReport) window.LabReport.snapshot("FMEA", reportData);
   const r = buildReport();
   view.innerHTML = '<div class="row between"><h2>' + esc(t("reportTitle")) + '</h2><div class="row"><button class="btn primary" id="dl" type="button">' + esc(t("download")) + '</button><button class="btn" id="cp" type="button">' + esc(t("copy")) + "</button></div></div>" +
-    '<p class="muted">' + esc(t("reportHint")) + "</p>" + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
+    '<p class="muted">' + esc(t("reportHint")) + "</p>" + '<div id="stepsBox">' + (window.LabReport ? window.LabReport.stepsHtml(stepList(), LANG, false) : "") + "</div>" + '<div class="panel stack"><h3>' + esc(t("conclusion")) + "</h3>" +
     CONCL.map((c) => '<label class="label" for="concl_' + c[0] + '">' + esc(t(c[1])) + '</label><textarea class="in" id="concl_' + c[0] + '" data-concl="' + c[0] + '">' + esc(S.concl[c[0]] || "") + "</textarea>").join("") + "</div>" +
     '<div id="sendBox"></div><div class="report-frame" id="rframe">' + r.body + '</div><textarea class="in" id="reportText" readonly hidden></textarea>';
   if (window.LabReport) window.LabReport.mount(view.querySelector("#sendBox"), { lab: "FMEA", lang: LANG, demo: !!(V() && V().demo), getPayload: () => {
@@ -1628,7 +1628,8 @@ function renderReport(view) {
   } });
   view.querySelectorAll("textarea[data-concl]").forEach((n) => {
     n.addEventListener("input", () => { S.concl[n.dataset.concl] = n.value; save(); });
-    n.addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body; });
+    n.addEventListener("change", () => { view.querySelector("#rframe").innerHTML = buildReport().body;
+      const sb = view.querySelector("#stepsBox"); if (sb && window.LabReport) sb.innerHTML = window.LabReport.stepsHtml(stepList(), LANG, false); });
   });
   view.querySelector("#dl").addEventListener("click", () => {
     const b = new Blob([buildReport().html], { type: "text/html" }); const a = document.createElement("a");
