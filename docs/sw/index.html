@@ -1505,7 +1505,10 @@ function stepList() {
     if (an.mcdc[1] > 0) add(full(an.mcdc), "MC/DC 100%");
     if (an.thr) add(an.thr.every((x) => x.at && x.over), ro ? "valori la limită (BVA)" : "boundary values (BVA)");
     add(an.warned.reduce((a, r) => a + r.chk.warnings.length, 0) === 0, ro ? "fără avertismente la teste" : "no test warnings");
-    if (k === bugTab()) add(S.bug.test && S.bug.line && S.bug.fix, ro ? "raportul de incident" : "the incident report");
+    if (k === bugTab()) {
+      add(S.bug.test && S.bug.line && S.bug.fix, ro ? "raportul de incident: testul, linia, corectura" : "the incident report: test, line, fix");
+      add((S.bug.desc || "").trim(), ro ? "descrierea greșelii: cerința, rezultatul obținut și cel așteptat" : "the defect description: requirement, actual and expected result");
+    }
     if (k === "int") {
       add(ex.funcs.every((f) => an.funcs.has(f)) && ex.calls.every((cl) => an.calls.has(cl[0])), ro ? "funcții și apeluri 100%" : "functions and calls 100%");
       add((S.just || "").trim(), ro ? "justificarea codului neacoperit" : "the justification of uncovered code");
