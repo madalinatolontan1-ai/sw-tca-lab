@@ -1480,6 +1480,7 @@ function buildReport() {
   const html = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><title>SW TCA ' + esc(S.variant) + " " + esc(S.name) + "</title><style>" + css + "</style></head><body>" + parts.join("\n") + "</body></html>";
   return { html: html, body: parts.join("\n"), text: text.join("\n") };
 }
+const UNREACH_INT = { lines: [67, 68], line: 54, outcome: "default" };  /* defensive default of can_rx_handler() */
 /* the lab steps (tabs 1-5), with what was achieved in each (shown on the tabs, in the Report tab and in the report) */
 function stepList() {
   const ro = LANG === "ro"; const v = V(); if (!v) return [];
@@ -1490,8 +1491,17 @@ function stepList() {
     if (k === "f1") add(S.asil.stmt && S.asil.branch && S.asil.mcdc, ro ? "ASIL: nivelurile ISO 26262-6" : "ASIL: the ISO 26262-6 levels");
     add(S.ran[k], ro ? "teste rulate" : "tests run");
     add(full(an.req), ro ? "toate cerințele au test" : "every requirement has a test");
-    add(full(an.stmt), "statement 100%");
-    add(full(an.dec), "branch 100%");
+    if (k === "int") {
+      /* the default branch (lines 67-68, outcome "default" of the switch) cannot be reached by normal inputs:
+         "complete" here means every reachable statement and outcome is covered and the rest is justified */
+      const unl = an.stmtLines.filter((n) => an.hits[n] === 0);
+      const miss = []; an.decisions.forEach((d) => d.missing.forEach((o) => miss.push([d.line, o])));
+      add(unl.every((n) => UNREACH_INT.lines.includes(n)), ro ? "statement: tot codul accesibil (liniile 67–68 nu pot fi atinse)" : "statement: all reachable code (lines 67–68 cannot be reached)");
+      add(miss.every((m) => m[0] === UNREACH_INT.line && m[1] === UNREACH_INT.outcome), ro ? "branch: toate ramurile accesibile (default nu poate fi atins)" : "branch: all reachable outcomes (default cannot be reached)");
+    } else {
+      add(full(an.stmt), "statement 100%");
+      add(full(an.dec), "branch 100%");
+    }
     if (an.mcdc[1] > 0) add(full(an.mcdc), "MC/DC 100%");
     if (an.thr) add(an.thr.every((x) => x.at && x.over), ro ? "valori la limită (BVA)" : "boundary values (BVA)");
     add(an.warned.reduce((a, r) => a + r.chk.warnings.length, 0) === 0, ro ? "fără avertismente la teste" : "no test warnings");
