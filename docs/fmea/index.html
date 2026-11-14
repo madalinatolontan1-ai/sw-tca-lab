@@ -708,31 +708,17 @@ const SUG_FN = {
     }
   }
 };
-/* one common list per analysis (HW or SW) with the suggestions of every level, sorted alphabetically,
-   so the student decides the level (effect, mode, cause) instead of reading it off the list */
-function pool(arr) {
-  const seen = new Set(); const out = [];
-  arr.forEach((x) => { const v = tr(x); if (v && !seen.has(v)) { seen.add(v); out.push(v); } });
-  return out.sort((a, b) => a.localeCompare(b, LANG));
-}
-/* distractors: two functions and two modes of an unrelated signal / function, mixed into the lists so that choosing
-   from the list is a real decision; the report data records which entries came from them.
+/* distractors: two functions and two modes of an unrelated signal / function, mixed into the N2 function list and the
+   mode list (each input offers only the suggestions of its own level, see levelPool), so that choosing from the list is a real decision; the report data records which entries came from them.
    The step status is shown only in the Report tab, so that the first copy of the analysis (taken when the Report tab
    is first opened) is made before the student has seen any completeness feedback other than the Checks list.
    CAN (variant F4) has no HW distractors: every other signal of the transceiver is a plausible effect or cause there. */
 const DISTRACT = { hw: { TXD: "TERM", RXD: "TERM", VDD: "TERM", CAN: "", RS: "TERM", TERM: "TXD", FILT: "TXD" }, sw: { F1: "F3", F2: "F3", F3: "F1", INT: "F1" } };
 const distractFrom = (kind) => DISTRACT[kind][kind === "hw" ? V().hw : V().sw];
-function fnPool(kind) {
-  const v = V(); let a = SUG_FN.L1.common.concat(SUG_FN.L1[kind], SUG_FN.L2[kind === "hw" ? v.hw : v.sw], (SUG_FN.L2[distractFrom(kind)] || []).slice(0, 2));
-  if (kind === "hw") { Object.keys(HW_CAT_FN).forEach((k) => { a = a.concat(HW_CAT_FN[k]); }); HW_COMP[v.hw].forEach((c) => { a = a.concat(c.fn); }); }
-  else Object.keys(SUG_FN.L3.sw).forEach((k) => { a = a.concat(SUG_FN.L3.sw[k]); });
-  return pool(a);
-}
-function failPool(kind) {
-  const v = V(); let a = SUG_EFFECT.common.concat(SUG_EFFECT[kind], SUG_MODE[kind === "hw" ? v.hw : v.sw], (SUG_MODE[distractFrom(kind)] || []).slice(0, 2));
-  if (kind === "hw") { a = a.concat(HW_CAT_FC); HW_COMP[v.hw].forEach((c) => { a = a.concat(c.fc); }); }
-  else a = a.concat(SW_CAT_FC, SW_FN_FC[v.sw] || []);
-  return pool(a);
+/* suggestions for one level only (fn: L1 / L2 / L3; fail: eff / mode / cause), so each input offers a short list */
+function levelPool(kind, what, lvl) {
+  const out = []; sugIndex(kind, what).forEach((meta, k) => { if (meta.lvl === lvl) out.push(k); });
+  return out.sort((a, b) => a.localeCompare(b, LANG));
 }
 /* where a suggestion comes from: text → { lvl, dis } (lvl: L1 / L2 / L3 for functions, eff / mode / cause for failures) */
 function sugIndex(kind, what) {
@@ -901,11 +887,11 @@ const I18N = {
     ctxSw: "Ești în echipa de design a nodului CAN. Analizezi funcția software din varianta ta: nivelul efect (N1) e radarul, nivelul mod (N2) e funcția, iar nivelul cauză (N3) e designul software al funcției: cerințe, constante, logică, tipuri de date, interfață. Fiecare element are o singură funcție. La fiecare cauză poți alege din listă cerința de care se leagă.",
     howStep: "Cum se face",
     how_s23: ["Selectează N1 (radarul) și scrie funcția lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 și scrie funcția elementului analizat, pornind de la cerințele din dreapta.",
-      "Selectează N3 (designul software al funcției) și scrie funcția lui: ce trebuie să asigure designul (cerințe, constante, logică, tipuri de date, interfață). Fiecare element are o singură funcție. Lista de sugestii e comună pentru toate nivelurile: decizi tu unde se potrivește fiecare.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
+      "Selectează N3 (designul software al funcției) și scrie funcția lui: ce trebuie să asigure designul (cerințe, constante, logică, tipuri de date, interfață). Fiecare element are o singură funcție. Lista de sugestii arată doar funcțiile potrivite nivelului selectat.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
     how_s4: ["La N1 scrii efectele: pierderea sau degradarea funcțiilor radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcțiilor (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
       "La N3 scrii cauzele: de ce nu asigură designul funcția. Pe fiecare cauză poți alege din listă cerința de care se leagă.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
     how_s23_hw: ["Selectează N1 (radarul) și scrie funcția lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 (semnalul) și scrie funcția lui, pornind de la cerințele din dreapta.",
-      "Selectează N3 (designul hardware al semnalului) și scrie funcția lui: ce trebuie să asigure designul pentru componentele semnalului. Fiecare element are o singură funcție. Lista de sugestii e comună pentru toate nivelurile: decizi tu unde se potrivește fiecare.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
+      "Selectează N3 (designul hardware al semnalului) și scrie funcția lui: ce trebuie să asigure designul pentru componentele semnalului. Fiecare element are o singură funcție. Lista de sugestii arată doar funcțiile potrivite nivelului selectat.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
     how_s4_hw: ["La N1 scrii efectele: pierderea sau degradarea funcției radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcției semnalului (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
       "La N3 scrii cauzele: de ce nu asigură designul funcția (alegere, dimensionare, schemă, layout). Pe fiecare cauză alegi din listă componenta vinovată.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
     how_s56: ["Pentru fiecare legătură mod–cauză adaugi prevenția existentă (ce împiedică apariția cauzei) și alegi O din tabelul D2.", "Adaugi detecția existentă (testul sau analiza care găsește cauza sau modul înainte de lansare) și alegi D din tabelul D3.",
@@ -1001,11 +987,11 @@ const I18N = {
     ctxSw: "You are in the design team of the CAN node. You analyse the software function of your variant: the effect level (N1) is the radar, the mode level (N2) is the function, and the cause level (N3) is the software design of the function: requirements, constants, logic, data types, interface. Each element has one function. On each cause you can pick from the list the requirement it relates to.",
     howStep: "How to do it",
     how_s23: ["Select N1 (the radar) and write its vehicle-level function: what the ADAS ECU receives from the radar.", "Select N2 and write the function of the analysed element, starting from the requirements on the right.",
-      "Select N3 (the software design of the function) and write its function: what the design must ensure (requirements, constants, logic, data types, interface). Each element has one function. The suggestion list is shared by all levels: you decide where each item fits.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
+      "Select N3 (the software design of the function) and write its function: what the design must ensure (requirements, constants, logic, data types, interface). Each element has one function. The suggestion list shows only the functions that fit the selected level.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
     how_s4: ["At N1 write the effects: loss or degradation of the radar functions. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the functions (none, partial, intermittent, unintended, out of limits).",
       "At N3 write the causes: why the design does not ensure the function. On each cause you can pick from the list the requirement it relates to.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
     how_s23_hw: ["Select N1 (the radar) and write its vehicle-level function: what the ADAS ECU receives from the radar.", "Select N2 (the signal) and write its function, starting from the requirements on the right.",
-      "Select N3 (the hardware design of the signal) and write its function: what the design must ensure for the signal's components. Each element has one function. The suggestion list is shared by all levels: you decide where each item fits.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
+      "Select N3 (the hardware design of the signal) and write its function: what the design must ensure for the signal's components. Each element has one function. The suggestion list shows only the functions that fit the selected level.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
     how_s4_hw: ["At N1 write the effects: loss or degradation of the radar function. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the signal's function (none, partial, intermittent, unintended, out of limits).",
       "At N3 write the causes: why the design does not ensure the function (selection, dimensioning, schematic, layout). On each cause pick the culprit component from the list.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
     how_s56: ["For every mode–cause link add the existing prevention (what keeps the cause from occurring) and choose O from table D2.", "Add the existing detection (the test or analysis that finds the cause or the mode before release) and choose D from table D3.",
@@ -1322,7 +1308,7 @@ function renderStructure(body, kind) {
   const list = fns.length ? '<div class="fnlist">' + fns.map((f) => '<div class="fnitem"><span class="txt">' + esc(f.text) + '</span><button class="x ed" type="button" data-edfn="' + f.id + '" aria-label="' + esc(t("edit")) + '" title="' + esc(t("edit")) + '">✎</button><button class="x" type="button" data-delfn="' + f.id + '" aria-label="' + esc(t("del")) + '" title="' + esc(t("del")) + '">×</button></div>').join("") + "</div>" : '<p class="empty">' + esc(t("noFn")) + "</p>";
   body.innerHTML = '<div class="grid-struct"><div class="panel stack"><span class="label">' + esc(t("structTree")) + "</span>" + tree + '<p class="muted small">N1 ' + esc(t("lvl1")) + " · N2 " + esc(t("lvl2")) + " · N3 " + esc(t("lvl3")) + "</p></div>" +
     '<div class="panel stack"><span class="label">' + esc(lvlName(sel.lvl)) + "</span><h3>" + esc(tr(sel.name)) + "</h3><h4>" + esc(t("fnOf")) + "</h4>" + list +
-    '<datalist id="dl-fn">' + fnPool(kind).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>" +
+    '<datalist id="dl-fn">' + levelPool(kind, "fn", "L" + sel.lvl).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>" +
     (fns.length ? '<p class="muted small">' + esc(t("fnOne")) + "</p>" : '<form class="addrow" id="addFn"><input class="in" id="fnText" list="dl-fn" placeholder="' + esc(t("fnPh")) + '" aria-label="' + esc(t("fnOf")) + '"><button class="btn primary" type="submit">' + esc(t("add")) + '</button></form><p class="muted small">' + esc(t("fnHint")) + "</p>") + "</div>" +
     (kind === "hw" ? '<div class="stack sidecol">' + boardPanel(false) + contextPanel(kind) + "</div>" : contextPanel(kind)) + "</div>";
   if (kind === "hw") wireBoard(body);
@@ -1387,14 +1373,14 @@ function renderNet(body, kind) {
       inner += '<div class="grp">' + (lvl === 3 ? '<span class="el">' + esc(tr(e.name)) + "</span>" : "");
       fns.forEach((fn) => {
         inner += '<span class="fn">' + esc(fn.text) + "</span>" + A.fails.filter((f) => f.fn === fn.id).map((f) => card(f, lvl)).join("") +
-          '<form class="addf" data-addf="' + fn.id + '"><input class="in" list="dl-fail" placeholder="' + esc(t("failPhSug")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
+          '<form class="addf" data-addf="' + fn.id + '"><input class="in" list="dl-fail-' + lvl + '" placeholder="' + esc(t("failPhSug")) + '" aria-label="' + esc(t("failPh")) + '" data-fin="' + fn.id + '"><button class="btn sm" type="submit">+</button></form>';
       });
       inner += "</div>";
     });
     if (!any) inner = '<p class="empty">' + esc(t("noFns")) + "</p>";
     return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span></div>" + inner + "</div>";
   };
-  const dls = '<datalist id="dl-fail">' + failPool(kind).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>";
+  const dls = [[1, "eff"], [2, "mode"], [3, "cause"]].map((q) => '<datalist id="dl-fail-' + q[0] + '">' + levelPool(kind, "fail", q[1]).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>").join("");
   body.innerHTML = dls + '<div class="stack"><p class="muted">' + esc(t("netHelp")) + "</p>" + (kind === "hw" ? boardPanel(true) : "") + '<div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
     column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + refTables() + "</div>";
   if (kind === "hw") wireBoard(body);
@@ -1402,7 +1388,7 @@ function renderNet(body, kind) {
   const net = body.querySelector("#net");
   body.querySelectorAll("[data-sev]").forEach((n) => n.addEventListener("change", () => { const f = failById(A, n.dataset.sev); f.s = n.value; save(); render(); }));
   body.querySelectorAll("[data-delf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); removeFail(A, n.dataset.delf); save(); render(); }));
-  body.querySelectorAll("[data-edf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); editInline(n.closest(".fcard").querySelector(".ft"), failById(A, n.dataset.edf), kind, "fail", "dl-fail"); }));
+  body.querySelectorAll("[data-edf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); editInline(n.closest(".fcard").querySelector(".ft"), failById(A, n.dataset.edf), kind, "fail", "dl-fail-" + n.closest(".fcard").dataset.lvl); }));
   body.querySelectorAll("[data-cul]").forEach((n) => n.addEventListener("click", (e) => {
     e.stopPropagation(); const i = n.dataset.cul.indexOf("|"); const f = failById(A, n.dataset.cul.slice(0, i)); const id = n.dataset.cul.slice(i + 1);
     f.comp = f.comp || []; if (f.comp.includes(id)) f.comp = f.comp.filter((x) => x !== id); else { f.comp.push(id); if (kind === "hw" && id !== "PCB") A.selComp = id; }
