@@ -164,7 +164,13 @@ table.sheet.stept td.eff { max-width: 280px; white-space: normal; font-size: 0.8
 table.sheet.stept select { min-width: 120px; max-width: 260px; }
 table.sheet.stept select.empty, table.sheet.stept textarea.empty { border-color: var(--warn); background: var(--warn-bg); }
 table.sheet.stept .why { display: block; max-width: 170px; }
-table.sheet.ftstep textarea { min-width: 220px; min-height: 52px; font-size: 0.85rem; }
+table.sheet.ftstep textarea { width: 100%; min-width: 200px; min-height: 64px; font-size: 0.85rem; }
+table.sheet.ftstep select { width: 230px; max-width: 230px; }
+table.sheet.ftstep .ftd { margin-top: 4px; }
+table.sheet.ftstep td.eff { max-width: 220px; }
+table.sheet.stept th { white-space: normal; min-width: 0; }
+table.sheet.stept td.ref .small { display: block; margin-top: 2px; }
+table.sheet.ftstep th:last-child { min-width: 200px; }
 .mref { font-family: var(--font-mono); font-weight: 700; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); padding: 1px 6px; cursor: pointer; }
 .mref.on { border-color: var(--accent); background: var(--accent-soft); }
 .stephelp p { margin: 0 0 4px; } .stephelp p:last-child { margin: 0; }
@@ -803,7 +809,7 @@ function renderAnalysis(view) {
     opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
   const modeCells = (i, k, r) => '<td class="num">' + (k + 1) + '</td><td class="ref"><button type="button" class="mref' + (S.sel === r.m.ref ? " on" : "") + '" data-sel="' + r.m.ref + '" title="' + esc(t("kShow")) + '">' + esc(r.m.ref) + "</button>" + (r.m.pin === "–" ? "" : '<span class="muted small"> ' + esc(r.m.pin) + "</span>") + "</td><td>" + esc(modeTxt(r.m)) + "</td>";
   const head = (cols) => "<thead><tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th>" + cols.map((c) => "<th>" + c + "</th>").join("") + "</tr></thead>";
-  const help = (key) => '<div class="notice stephelp">' + t(key).map((x) => "<p>" + esc(x) + "</p>").join("") + (isDemo() && t(key + "Demo") ? '<p><b>' + esc(t(key + "Demo")) + "</b></p>" : "") + "</div>";
+  const help = (key) => '<div class="notice stephelp">' + t(key).map((x) => "<p>" + esc(x) + "</p>").join("") + (isDemo() && I18N[LANG][key + "Demo"] !== undefined ? '<p><b>' + esc(t(key + "Demo")) + "</b></p>" : "") + "</div>";
   const ref = (titleKey, html, open) => '<details class="ref"' + (open ? " open" : "") + "><summary>" + esc(t(titleKey)) + "</summary><div>" + html + "</div></details>";
   const rowsData = idxs.map((i, k) => ({ i: i, k: k, r: evalRow(i, env), r0: evalRow(i, ENV_BASE), u: S.rows[i] || {} }));
   let main = "", side = "";
@@ -827,9 +833,9 @@ function renderAnalysis(view) {
         rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="num">' + dv(x.r.det.aoi, x.r.det.aoiWhy) + '</td><td class="num">' + dv(x.r.det.axi, x.r.det.axiWhy) + '</td><td class="num">' + dv(x.r.det.ict, x.r.det.ictWhy) + "</td></tr>").join("") + "</tbody></table></div>" +
         ref("detTitle", AIAG.table("D", LANG, esc));
     } else {
-      main += help("h_det4") + '<div class="tablewrap"><table class="sheet stept ftstep">' + head([t("colEffect"), t("kFTtest"), t("colFTd"), t("kFTj")]) + "<tbody>" +
-        rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="eff small">' + esc(effTxt(x.r.m)) + "</td><td>" + sel(x.i, "fttest", FT_LIST.map((q) => [q.id, q.id + " · " + tr(q.name)]).concat([["none", t("ftNone")]]), x.u.fttest, t("kFTtest")) + "</td><td>" +
-          (x.u.fttest && x.u.fttest !== "none" ? sel(x.i, "ft", dOpts, x.u.ft, t("colFTd")) : x.u.fttest === "none" ? '<b class="mono">10</b>' : "") + '</td><td><textarea class="ftj' + ((x.u.ftj || "").trim() ? "" : " empty") + '" data-ftj="' + x.i + '" placeholder="' + esc(t("ftJustPh")) + '">' + esc(x.u.ftj || "") + "</textarea></td></tr>").join("") +
+      main += help("h_det4") + '<div class="tablewrap"><table class="sheet stept ftstep">' + head([t("colEffect"), t("kFTtest") + " · " + t("colFTd"), t("kFTj")]) + "<tbody>" +
+        rowsData.map((x) => "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="eff small">' + esc(effTxt(x.r.m)) + "</td><td>" + sel(x.i, "fttest", FT_LIST.map((q) => [q.id, q.id + " · " + tr(q.name)]).concat([["none", t("ftNone")]]), x.u.fttest, t("kFTtest")) + '<div class="ftd">' +
+          (x.u.fttest && x.u.fttest !== "none" ? sel(x.i, "ft", dOpts, x.u.ft, t("colFTd")) : x.u.fttest === "none" ? '<span class="muted small">D FT = </span><b class="mono">10</b>' : "") + '</div></td><td><textarea class="ftj' + ((x.u.ftj || "").trim() ? "" : " empty") + '" data-ftj="' + x.i + '" placeholder="' + esc(t("ftJustPh")) + '">' + esc(x.u.ftj || "") + "</textarea></td></tr>").join("") +
         "</tbody></table></div>" + ftPanel() + ref("detTitle", AIAG.table("D", LANG, esc));
     }
     side = boardPanel(refs, false);
