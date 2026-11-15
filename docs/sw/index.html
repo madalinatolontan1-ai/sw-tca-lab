@@ -162,6 +162,15 @@ table.tests th[title] { text-decoration: underline dotted; text-underline-offset
 /* tests */
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
 table.tests { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+table.tests tr.tracerow td { background: var(--bg); padding: 6px 10px 10px; }
+table.tests tr.tracerow summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+table.tests tr.tracerow pre { margin: 6px 0 0; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; }
+.reqtab { margin-top: 12px; }
+.reqtab table { border-collapse: collapse; font-size: 0.82rem; margin-top: 6px; }
+.reqtab th, .reqtab td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+.reqtab th { background: var(--bg); font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+.reqtab td b { font-family: var(--font-mono); font-size: 0.78rem; display: block; }
+.reqtab .rid { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
 table.tests th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--line); background: var(--bg); white-space: nowrap; }
 table.tests td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 table.tests tr:last-child td { border-bottom: 0; }
@@ -277,6 +286,11 @@ const I18N = {
     reqMissing: "Cerințe fără test valid", none: "niciuna",
     failTest: "FAIL · incident – cauză probabilă: testul", failBug: "FAIL · incident – cauză probabilă: codul",
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). Rezultatul așteptat contrazice cerințele, deci cauza probabilă e specificația testului: corectează testul, nu codul.",
+    traceTitle: "Traseul testului {t}: ce a calculat codul, pas cu pas",
+    traceHint: "Fiecare condiție, cu valorile testului puse în ea (T = adevărat, F = fals). Compară cu cerința: primul rând unde codul ia altă decizie decât cerința arată linia suspectă.",
+    traceLine: "linia",
+    reqTabTitle: "Tabelul cerințelor SWR-F3 (rezultatul așteptat)",
+    reqTabNote: "Scris doar din cerințe, nu din cod. Alegi rândul după TEC și coloana după REC; celula dă rezultatul așteptat și cerința care îl impune.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomalie, ISO 26262-2, 5.4.3.2). Rezultatul așteptat respectă cerințele, dar codul dă altceva, deci cauza probabilă e obiectul testat: completează raportul de incident.",
     ctxTitle: "Context: ce face funcția", howTitle: "Cum se face", provTitle: "De unde vin valorile",
     thrWarn: "Acoperirea codului e completă, dar testarea nu e: la {n} din {m} limite lipsește testul pe limită sau cel imediat după (valori la limită, BVA). Greșelile de tip > în loc de >= stau exact acolo, iar acoperirea nu le poate vedea.",
@@ -346,6 +360,11 @@ const I18N = {
     reqMissing: "Requirements without a valid test", none: "none",
     failTest: "FAIL · incident – probable cause: the test", failBug: "FAIL · incident – probable cause: the code",
     failTestTip: "Incident (ISO/IEC/IEEE 29119-1). The expected result contradicts the requirements, so the probable cause is the test specification: fix the test, not the code.",
+    traceTitle: "Trace of test {t}: what the code computed, step by step",
+    traceHint: "Every condition with the test values put in (T = true, F = false). Compare with the requirement: the first row where the code decides differently from the requirement points to the suspect line.",
+    traceLine: "line",
+    reqTabTitle: "Requirements table SWR-F3 (expected result)",
+    reqTabNote: "Written from the requirements only, not from the code. Pick the row by TEC and the column by REC; the cell gives the expected result and the requirement that sets it.",
     failBugTip: "Incident (ISO/IEC/IEEE 29119-1; anomaly, ISO 26262-2, 5.4.3.2). The expected result follows the requirements, but the code returns something else, so the probable cause is the test object: fill in the incident report.",
     ctxTitle: "Context: what the function does", howTitle: "How to do it", provTitle: "Where the values come from",
     thrWarn: "Code coverage is complete, but testing is not: {n} of {m} limits miss the test on the limit or the one just after it (boundary values, BVA). Defects like > instead of >= sit exactly there, and coverage cannot see them.",
@@ -657,6 +676,56 @@ function parseInputs(ex, raw) {
 }
 
 /* ---------------------------------------------------------------- coverage */
+/* step-by-step trace of one test, with the operands substituted, shown under a failing test (like a debugger) */
+function traceOf(exKey, x, v) {
+  const out = []; const TF = (b) => (b ? "T" : "F");
+  const ln = (n, txt, depth) => out.push({ n: n, txt: txt, d: depth || 0 });
+  const skip = L("nu se evaluează: rezultatul e deja sigur", "not evaluated: the result is already decided");
+  const hx = (n) => "0x" + n.toString(16).toUpperCase();
+  const f1 = (d) => {
+    const op = v && v.f1bug ? ">=" : ">";
+    ln(8, "extended → " + x.extended + " = " + TF(x.extended) + (x.extended ? "  → max_id = CAN_EXT_ID_MAX (0x1FFFFFFF)" : "  → max_id = CAN_STD_ID_MAX (0x7FF)"), d);
+    const maxId = x.extended ? 0x1FFFFFFF : 0x7FF;
+    const c2 = x.dlc > 8; ln(11, "dlc > CAN_MAX_DLC → " + x.dlc + " > 8 = " + TF(c2) + (c2 ? "  → return false" : ""), d);
+    if (c2) return false;
+    const c3 = op === ">=" ? x.id >= maxId : x.id > maxId; ln(14, "id " + op + " max_id → " + hx(x.id) + " " + op + " " + hx(maxId) + " = " + TF(c3) + "  → return " + !c3, d);
+    return !c3;
+  };
+  const f2 = (d) => {
+    const sg = SIGNALS[v.sig]; let delta = x.value - x.previous;
+    ln(23, "delta = value − previous → " + x.value + " − (" + x.previous + ") = " + delta, d);
+    if (delta < 0) { ln(25, "delta < 0 → T  → delta = " + (-delta), d); delta = -delta; } else ln(25, "delta < 0 → F", d);
+    const a = x.value >= sg.min; ln(28, "A  value >= SENSOR_MIN → " + x.value + " >= " + sg.min + " = " + TF(a), d);
+    if (!a) { ln(28, "B, C, D: " + skip + "  → return false", d); return false; }
+    const b = x.value <= sg.max; ln(28, "B  value <= SENSOR_MAX → " + x.value + " <= " + sg.max + " = " + TF(b), d);
+    if (!b) { ln(28, "C, D: " + skip + "  → return false", d); return false; }
+    ln(29, "C  first_sample → " + x.first_sample + " = " + TF(x.first_sample), d);
+    if (x.first_sample) { ln(29, "D: " + skip + "  → return true", d); return true; }
+    const dd = delta <= sg.step; ln(29, "D  delta <= SENSOR_MAX_STEP → " + delta + " <= " + sg.step + " = " + TF(dd) + "  → return " + dd, d);
+    return dd;
+  };
+  const f3 = (d) => {
+    const o = f3Ops(v);
+    const c = cmp(o.busoff, x.tec, 255); ln(38, "tec " + o.busoff + " CAN_BUSOFF_LIMIT → " + x.tec + " " + o.busoff + " 255 = " + TF(c) + (c ? "  → return BUS_OFF" : ""), d);
+    if (c) return "BUS_OFF";
+    const a = cmp(o.tecP, x.tec, 127); ln(41, "A  tec " + o.tecP + " CAN_PASSIVE_LIMIT → " + x.tec + " " + o.tecP + " 127 = " + TF(a), d);
+    if (a) { ln(41, "B: " + skip + "  → return ERROR_PASSIVE", d); return "ERROR_PASSIVE"; }
+    const b = cmp(o.recP, x.rec, 127); ln(41, "B  rec " + o.recP + " CAN_PASSIVE_LIMIT → " + x.rec + " " + o.recP + " 127 = " + TF(b) + "  → " + (b ? "return ERROR_PASSIVE" : L("linia 44: return ERROR_ACTIVE", "line 44: return ERROR_ACTIVE")), d);
+    return b ? "ERROR_PASSIVE" : "ERROR_ACTIVE";
+  };
+  if (exKey === "f1") f1(0);
+  else if (exKey === "f2") f2(0);
+  else if (exKey === "f3") f3(0);
+  else {
+    ln(52, "state = can_error_state(" + x.tec + ", " + x.rec + ")", 0); const st = f3(1); ln(52, "state = " + st, 0);
+    if (st === "BUS_OFF") { ln(63, "case CAN_STATE_BUS_OFF → result = RX_BUS_OFF", 0); return out; }
+    ln(57, "can_frame_is_valid(" + hx(x.id) + ", " + x.dlc + ", " + x.extended + ")", 0); const ok1 = f1(1); ln(57, "→ " + ok1, 0);
+    if (!ok1) { ln(57, "sensor_value_plausible(): " + skip + "  → result = RX_REJECTED", 0); return out; }
+    ln(58, "sensor_value_plausible(" + x.value + ", " + x.previous + ", " + x.first_sample + ")", 0); const ok2 = f2(1);
+    ln(58, "→ " + ok2 + "  → result = " + (ok2 ? "RX_ACCEPTED" : "RX_REJECTED"), 0);
+  }
+  return out;
+}
 function analyse(exKey, v, tests) {
   const ex = EX[exKey];
   const code = ex.code(v);
@@ -1252,6 +1321,15 @@ function renderCode(exKey, an) {
     '</span><span><i style="background:var(--warn-bg)"></i>' + esc(t("legendPart")) + '</span><span title="' + tip("tf") + '">' + esc(t("legendTF")) + "</span></div>";
 }
 
+/* the F3 requirements as a decision table: written from SWR-F3 only, so the expected result can be read off it */
+function f3ReqTable() {
+  const c = (st, r) => "<td><b>" + st + '</b><span class="rid">' + r + "</span></td>";
+  return '<div class="reqtab"><span class="label">' + esc(t("reqTabTitle")) + '</span><table><tr><th></th><th>REC ≤ 127</th><th>REC ≥ 128</th></tr>' +
+    "<tr><th>TEC ≤ 127</th>" + c("ERROR_ACTIVE", "SWR-F3-03") + c("ERROR_PASSIVE", "SWR-F3-02") + "</tr>" +
+    "<tr><th>128 ≤ TEC ≤ 255</th>" + c("ERROR_PASSIVE", "SWR-F3-02") + c("ERROR_PASSIVE", "SWR-F3-02") + "</tr>" +
+    "<tr><th>TEC ≥ 256</th>" + c("BUS_OFF", "SWR-F3-01") + c("BUS_OFF", "SWR-F3-01") + "</tr></table>" +
+    '<p class="muted small">' + esc(t("reqTabNote")) + "</p></div>";
+}
 function renderTests(exKey, an) {
   const ex = EX[exKey]; const v = V();
   const reqIds = ex.reqs(v).map((r) => r[0]);
@@ -1291,7 +1369,9 @@ function renderTests(exKey, an) {
     return '<tr' + (warns.length ? ' class="haswarn"' : "") + '><td class="tid">' + esc(tst.id) + (tst.example ? ' <span class="chip neutral">' + t("exampleRow") + "</span>" : "") + "</td>" + cells +
       "<td>" + expSel + "</td><td>" + reqSel + '</td><td class="act">' + act + "</td><td>" + verdict + "</td>" +
       '<td><button class="xbtn" data-del="' + idx + '" data-ex="' + exKey + '" aria-label="' + t("deleteTest") + '" title="' + t("deleteTest") + '">×</button></td></tr>' +
-      (warns.length ? '<tr class="warnrow"><td colspan="' + (ex.inputs.length + 6) + '">' + warns.map((w) => "<div>⚠ <strong>" + esc(tst.id) + "</strong> " + esc(w) + "</div>").join("") + "</td></tr>" : "");
+      (warns.length ? '<tr class="warnrow"><td colspan="' + (ex.inputs.length + 6) + '">' + warns.map((w) => "<div>⚠ <strong>" + esc(tst.id) + "</strong> " + esc(w) + "</div>").join("") + "</td></tr>" : "") +
+      (r && !r.bad && r.verdict === "fail" ? '<tr class="tracerow"><td colspan="' + (ex.inputs.length + 6) + '"><details open><summary>' + esc(t("traceTitle").replace("{t}", tst.id)) + '</summary><p class="muted small">' + esc(t("traceHint")) + "</p><pre>" +
+        traceOf(exKey, r.vals, v).map((q) => esc("  ".repeat(q.d) + t("traceLine") + " " + q.n + ": " + q.txt)).join("\n") + "</pre></details></td></tr>" : "");
   }).join("");
   return '<div class="tablewrap"><table class="tests"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
 }
@@ -1415,7 +1495,7 @@ function renderExercise(view, exKey) {
     '<div class="grid2">' +
       '<div class="stack"><div class="panel stack"><span class="label">' + t("task") + '</span><div class="task"><ol>' + t(ex.task).map((s) => "<li>" + esc(s) + "</li>").join("") + "</ol></div></div>" +
       hb.how +
-      '<div class="panel"><span class="label">' + t("requirements") + "</span>" + reqs + "</div></div>" +
+      '<div class="panel"><span class="label">' + t("requirements") + "</span>" + reqs + (exKey === "f3" ? f3ReqTable() : "") + "</div></div>" +
       '<div class="stack"><div class="panel stack"><span class="label">' + t("code") + " · can_node.c</span>" + renderCode(exKey, an) + "</div>" + hb.prov + "</div>" +
     "</div>" +
     '<div class="panel stack"><div class="row" style="justify-content:space-between"><h3>' + t("tests") + '</h3><div class="row">' +
