@@ -143,6 +143,8 @@ pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line);
 .net svg.links g.del:hover text { fill: var(--bad); }
 .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; z-index: 1; }
 .colhead { border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+.cfilt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.cfilt select { font-size: 0.8rem; padding: 2px 4px; max-width: 100%; }
 .grp { display: flex; flex-direction: column; gap: 6px; }
 .grp .el { font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; }
 .grp .fn { color: var(--fn); font-size: 0.84rem; font-weight: 500; overflow-wrap: anywhere; }
@@ -715,6 +717,21 @@ const SUG_FN = {
    CAN (variant F4) has no HW distractors: every other signal of the transceiver is a plausible effect or cause there. */
 const DISTRACT = { hw: { TXD: "TERM", RXD: "TERM", VDD: "TERM", CAN: "", RS: "TERM", TERM: "TXD", FILT: "TXD" }, sw: { F1: "F3", F2: "F3", F3: "F1", INT: "F1" } };
 const distractFrom = (kind) => DISTRACT[kind][kind === "hw" ? V().hw : V().sw];
+/* cause suggestions narrowed by a filter: HW by design step or by the signal's components (the one selected on the
+   board, if any), SW by category or the function-specific causes */
+const CAUSE_CATS = { hw: ["comp", "choice", "dim", "spec", "sch", "lay"], sw: ["fn", "req", "const", "logic", "types", "iface"] };
+const CAUSE_SLICE = { hw: { choice: [0, 4], dim: [4, 8], spec: [8, 12], sch: [12, 16], lay: [16, 20] },
+                      sw: { req: [0, 4], const: [4, 7], logic: [7, 11], types: [11, 14], iface: [14, 18] } };
+function causePool(kind, cat) {
+  const v = V(); const A = S[kind]; let a;
+  if (!cat || cat === "all") return levelPool(kind, "fail", "cause");
+  if (kind === "hw" && cat === "comp") {
+    const comps = HW_COMP[v.hw]; const one = A.selComp ? comps.find((c) => c.ref === A.selComp) : null;
+    a = []; (one ? [one] : comps).forEach((c) => { a = a.concat(c.fc); });
+  } else if (kind === "sw" && cat === "fn") a = SW_FN_FC[v.sw] || [];
+  else { const r = CAUSE_SLICE[kind][cat]; a = (kind === "hw" ? HW_CAT_FC : SW_CAT_FC).slice(r[0], r[1]); }
+  const seen = new Set(); return a.map((x) => tr(x)).filter((x) => x && !seen.has(x) && seen.add(x)).sort((p, q) => p.localeCompare(q, LANG));
+}
 /* suggestions for one level only (fn: L1 / L2 / L3; fail: eff / mode / cause), so each input offers a short list */
 function levelPool(kind, what, lvl) {
   const out = []; sugIndex(kind, what).forEach((meta, k) => { if (meta.lvl === lvl) out.push(k); });
@@ -858,6 +875,8 @@ const I18N = {
     fnOf: "Funcțiile elementului", fnHint: "Scrie o funcție: verb + obiect + condiție măsurabilă. Fiecare element are o singură funcție.", fnOne: "Elementul are funcția lui (una singură pe element). O poți modifica (✎) sau șterge (×) ca să alegi alta.", fnPh: "alege din listă sau scrie (ex.: Asigură ... în limitele ...)", add: "Adaugă", noFn: "Încă nu ai adăugat funcții pentru acest element.",
     context: "Date de intrare", path: "Traseul semnalului", hwReqs: "Cerințe și date din datasheet", swReqs: "Cerințe software", code: "Codul",
     netHelp: "Scrie defectările sub fiecare funcție (cu roșu). Leagă: trage de la punctul unei defectări până pe o defectare din coloana vecină. Alternativ: dă clic pe un mod din mijloc, apoi pe „leagă” la efecte sau cauze. Ștergi o legătură cu × de pe linie.",
+    cfLabel: "Sugestii de cauze:", cf_all: "toate", cf_comp: "componentele semnalului", cf_compOne: "componenta {r} (selectată pe placă)", cf_choice: "alegerea componentei", cf_dim: "dimensionare", cf_spec: "specificația semnalului", cf_sch: "schemă", cf_lay: "layout",
+    cf_fn: "specifice funcției", cf_req: "cerințe", cf_const: "constante", cf_logic: "logica de decizie", cf_types: "tipuri de date", cf_iface: "interfață",
     colEff: "Efecte", colMode: "Moduri de defectare", colCause: "Cauze", failPh: "defectare nouă…", failPhSug: "alege din listă sau scrie…", noFns: "Adaugă întâi funcții la pasul 2–3.",
     sev: "S", smax: "S max", link: "leagă", unlink: "dezleagă", del: "Șterge", edit: "Modifică textul (Enter salvează, Esc renunță)",
     riskHelp: "Fiecare legătură mod–cauză are o evaluare. S vine din efectele legate de mod (maximul). O se evaluează pe cauză, cu prevenția existentă; D pe detecția existentă.",
@@ -890,11 +909,11 @@ const I18N = {
     how_s23: ["Selectează N1 (radarul) și scrie funcția lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 și scrie funcția elementului analizat, pornind de la cerințele din dreapta.",
       "Selectează N3 (designul software al funcției) și scrie funcția lui: ce trebuie să asigure designul (cerințe, constante, logică, tipuri de date, interfață). Fiecare element are o singură funcție. Lista de sugestii arată doar funcțiile potrivite nivelului selectat.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
     how_s4: ["La N1 scrii efectele: pierderea sau degradarea funcțiilor radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcțiilor (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
-      "La N3 scrii cauzele: de ce nu asigură designul funcția. Pe fiecare cauză poți alege din listă cerința de care se leagă.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
+      "La N3 scrii cauzele: de ce nu asigură designul funcția. Pe fiecare cauză poți alege din listă cerința de care se leagă.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate.", "Lista de cauze se poate restrânge din „Sugestii de cauze”: cerințe, constante, logica de decizie, tipuri de date, interfață sau cauzele specifice funcției."],
     how_s23_hw: ["Selectează N1 (radarul) și scrie funcția lui la nivel de vehicul: ce primește ECU-ul ADAS de la radar.", "Selectează N2 (semnalul) și scrie funcția lui, pornind de la cerințele din dreapta.",
       "Selectează N3 (designul hardware al semnalului) și scrie funcția lui: ce trebuie să asigure designul pentru componentele semnalului. Fiecare element are o singură funcție. Lista de sugestii arată doar funcțiile potrivite nivelului selectat.", "O funcție bună are verb + obiect + condiție măsurabilă (ex.: Asigură 120 Ω ±1 % între CANH și CANL)."],
     how_s4_hw: ["La N1 scrii efectele: pierderea sau degradarea funcției radarului. Dai S fiecărui efect din tabelul D1.", "La N2 scrii modurile de defectare: negarea funcției semnalului (lipsă, parțial, intermitent, nedorit, în afara limitelor).",
-      "La N3 scrii cauzele: de ce nu asigură designul funcția (alegere, dimensionare, schemă, layout). Pe fiecare cauză alegi din listă componenta vinovată.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate."],
+      "La N3 scrii cauzele: de ce nu asigură designul funcția (alegere, dimensionare, schemă, layout). Pe fiecare cauză alegi din listă componenta vinovată.", "Legi fiecare mod de cel puțin un efect și o cauză. S max al modului vine din efectele legate.", "Lista de cauze se poate restrânge din „Sugestii de cauze”: componentele semnalului (sau doar componenta selectată pe placă) ori pasul de design: alegere, dimensionare, specificație, schemă, layout."],
     how_s56: ["Pentru fiecare legătură mod–cauză adaugi prevenția existentă (ce împiedică apariția cauzei) și alegi O din tabelul D2.", "Adaugi detecția existentă (testul sau analiza care găsește cauza sau modul înainte de lansare) și alegi D din tabelul D3.",
       "AP rezultă din S, O și D. La H și M propui acțiuni cu responsabil și termen, apoi evaluezi O nou și D nou.", "Dacă o acțiune iese FAIL, defectul e confirmat: adaugi o acțiune corectivă de design (P) și reevaluezi O și D. Dacă riscul rămâne H sau M, propui o acțiune suplimentară (P scade O, D scade D) și justifici riscul rezidual."],
     demo_s23: "Demo F0: la N3: „Asigură componente alese, dimensionate, conectate și plasate corect pentru semnalul analizat”. La N2: „Atenuează perturbațiile de înaltă frecvență de pe CANH și CANL (EMC)”.",
@@ -959,6 +978,8 @@ const I18N = {
     fnOf: "Functions of the element", fnHint: "Write a function: verb + object + measurable condition. Each element has one function.", fnOne: "The element has its function (one per element). You can edit it (✎) or delete it (×) to choose another.", fnPh: "choose from the list or type (e.g.: Ensures ... within ...)", add: "Add", noFn: "No functions added for this element yet.",
     context: "Inputs", path: "Signal path", hwReqs: "Requirements and datasheet data", swReqs: "Software requirements", code: "Code",
     netHelp: "Write the failures under each function (in red). To link, drag from the dot of a failure onto a failure in the neighbouring column. Alternatively click a mode in the middle, then “link” on effects or causes. Remove a link with the × on the line.",
+    cfLabel: "Cause suggestions:", cf_all: "all", cf_comp: "the signal's components", cf_compOne: "component {r} (selected on the board)", cf_choice: "component choice", cf_dim: "dimensioning", cf_spec: "signal specification", cf_sch: "schematic", cf_lay: "layout",
+    cf_fn: "specific to the function", cf_req: "requirements", cf_const: "constants", cf_logic: "decision logic", cf_types: "data types", cf_iface: "interface",
     colEff: "Effects", colMode: "Failure modes", colCause: "Causes", failPh: "new failure…", failPhSug: "choose from the list or type…", noFns: "Add functions in step 2–3 first.",
     sev: "S", smax: "S max", link: "link", unlink: "unlink", del: "Delete", edit: "Edit the text (Enter saves, Esc cancels)",
     riskHelp: "Every mode–cause link gets a rating. S comes from the effects linked to the mode (the maximum). O is rated on the cause with the existing prevention; D on the existing detection.",
@@ -991,11 +1012,11 @@ const I18N = {
     how_s23: ["Select N1 (the radar) and write its vehicle-level function: what the ADAS ECU receives from the radar.", "Select N2 and write the function of the analysed element, starting from the requirements on the right.",
       "Select N3 (the software design of the function) and write its function: what the design must ensure (requirements, constants, logic, data types, interface). Each element has one function. The suggestion list shows only the functions that fit the selected level.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
     how_s4: ["At N1 write the effects: loss or degradation of the radar functions. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the functions (none, partial, intermittent, unintended, out of limits).",
-      "At N3 write the causes: why the design does not ensure the function. On each cause you can pick from the list the requirement it relates to.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
+      "At N3 write the causes: why the design does not ensure the function. On each cause you can pick from the list the requirement it relates to.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects.", "The cause list can be narrowed with “Cause suggestions”: requirements, constants, decision logic, data types, interface, or the causes specific to the function."],
     how_s23_hw: ["Select N1 (the radar) and write its vehicle-level function: what the ADAS ECU receives from the radar.", "Select N2 (the signal) and write its function, starting from the requirements on the right.",
       "Select N3 (the hardware design of the signal) and write its function: what the design must ensure for the signal's components. Each element has one function. The suggestion list shows only the functions that fit the selected level.", "A good function has verb + object + measurable condition (e.g. Provides 120 Ω ±1 % between CANH and CANL)."],
     how_s4_hw: ["At N1 write the effects: loss or degradation of the radar function. Rate each effect's S from table D1.", "At N2 write the failure modes: the negation of the signal's function (none, partial, intermittent, unintended, out of limits).",
-      "At N3 write the causes: why the design does not ensure the function (selection, dimensioning, schematic, layout). On each cause pick the culprit component from the list.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects."],
+      "At N3 write the causes: why the design does not ensure the function (selection, dimensioning, schematic, layout). On each cause pick the culprit component from the list.", "Link every mode to at least one effect and one cause. The mode's S max comes from the linked effects.", "The cause list can be narrowed with “Cause suggestions”: the signal's components (or only the component selected on the board) or the design step: choice, dimensioning, specification, schematic, layout."],
     how_s56: ["For every mode–cause link add the existing prevention (what keeps the cause from occurring) and choose O from table D2.", "Add the existing detection (the test or analysis that finds the cause or the mode before release) and choose D from table D3.",
       "The AP follows from S, O and D. For H and M propose actions with owner and due date, then rate the new O and new D.", "If an action FAILS, the defect is confirmed: add a corrective design action (P) and re-rate O and D. If the risk stays H or M, propose an additional action (P lowers O, D lowers D) and justify the residual risk."],
     demo_s23: "Demo F0: at N3: “Ensures the components of the analysed signal are correctly chosen, dimensioned, connected and placed”. At N2: “Attenuates the high-frequency disturbances on CANH and CANL (EMC)”.",
@@ -1380,14 +1401,17 @@ function renderNet(body, kind) {
       inner += "</div>";
     });
     if (!any) inner = '<p class="empty">' + esc(t("noFns")) + "</p>";
-    return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span></div>" + inner + "</div>";
+    const cf = lvl === 3 ? '<label class="cfilt"><span class="muted small">' + esc(t("cfLabel")) + '</span><select id="causeCat" aria-label="' + esc(t("cfLabel")) + '"><option value="all">' + esc(t("cf_all")) + "</option>" +
+      CAUSE_CATS[kind].map((c) => '<option value="' + c + '"' + (A.causeCat === c ? " selected" : "") + ">" + esc(c === "comp" && A.selComp ? fmt(t("cf_compOne"), { r: A.selComp }) : t("cf_" + c)) + "</option>").join("") + "</select></label>" : "";
+    return '<div class="col"><div class="colhead"><h3>' + esc(title) + '</h3><span class="muted small">' + esc(lvl === 1 ? tr(L1_NAME) : lvl === 2 ? tr(els[1].name) : t("lvl3")) + "</span>" + cf + "</div>" + inner + "</div>";
   };
-  const dls = [[1, "eff"], [2, "mode"], [3, "cause"]].map((q) => '<datalist id="dl-fail-' + q[0] + '">' + levelPool(kind, "fail", q[1]).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>").join("");
+  const dls = [[1, "eff"], [2, "mode"], [3, "cause"]].map((q) => '<datalist id="dl-fail-' + q[0] + '">' + (q[0] === 3 ? causePool(kind, A.causeCat) : levelPool(kind, "fail", q[1])).map((x) => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>").join("");
   body.innerHTML = dls + '<div class="stack"><p class="muted">' + esc(t("netHelp")) + "</p>" + (kind === "hw" ? boardPanel(true) : "") + '<div class="netwrap"><div class="net" id="net"><svg class="links" id="links"></svg>' +
     column(1, t("colEff")) + column(2, t("colMode")) + column(3, t("colCause")) + "</div></div>" + refTables() + "</div>";
   if (kind === "hw") wireBoard(body);
 
   const net = body.querySelector("#net");
+  const cc = body.querySelector("#causeCat"); if (cc) cc.addEventListener("change", () => { A.causeCat = cc.value; save(); render(); });
   body.querySelectorAll("[data-sev]").forEach((n) => n.addEventListener("change", () => { const f = failById(A, n.dataset.sev); f.s = n.value; save(); render(); }));
   body.querySelectorAll("[data-delf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); removeFail(A, n.dataset.delf); save(); render(); }));
   body.querySelectorAll("[data-edf]").forEach((n) => n.addEventListener("click", (e) => { e.stopPropagation(); editInline(n.closest(".fcard").querySelector(".ft"), failById(A, n.dataset.edf), kind, "fail", "dl-fail-" + n.closest(".fcard").dataset.lvl); }));
