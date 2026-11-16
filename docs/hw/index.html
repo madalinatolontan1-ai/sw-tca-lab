@@ -170,6 +170,7 @@ table.sheet.ftstep .ftd { margin-top: 4px; }
 table.sheet.ftstep td.eff { max-width: 220px; }
 table.sheet.stept th { white-space: normal; min-width: 0; }
 table.sheet.stept td.ref .small { display: block; margin-top: 2px; }
+table.sheet.stept .memo { margin-top: 4px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 table.sheet.ftstep th:last-child { min-width: 200px; }
 .mref { font-family: var(--font-mono); font-weight: 700; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); padding: 1px 6px; cursor: pointer; }
 .mref.on { border-color: var(--accent); background: var(--accent-soft); }
@@ -512,7 +513,7 @@ const I18N = {
     nc: "neconectat",
     sheet: "Fișa de analiză", colComp: "Componentă", colMode: "Mod de defectare", colEffect: "Efect", colClass: "Clasă efect", colS: "S", colO: "O",
     colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "Test FT", colFT: "FT · test, D și justificare", colFTnew: "Test FT nou (îmbun.)", colFTd: "D FT", ftNone: "NONE (niciun test nu se potrivește)", ftJustPh: "de ce ai ales testul și valoarea?", tab_s1: "1 · Severitate", tab_s2: "2 · Ocurență", tab_det: "3–4 · Detecție", tab_ap: "5–6 · AP și îmbunătățiri", tab_ra: "7 · Risc rezidual", tab_concl: "8 · Concluzie",
-    tabT_s1: "Severitatea (S)", tabT_s2: "Ocurența (O)", tabT_det: "Detecția (D)", tabT_ap: "Prioritatea (AP) și îmbunătățirile", tabT_ra: "Riscul rezidual", tabT_concl: "Concluzia", stepWord: "Pasul",
+    tabT_s1: "Severitatea (S)", tabT_s2: "Ocurența (O)", tabT_det: "Detecția (D)", tabT_ap: "Prioritatea (AP) și îmbunătățirile", tabT_ra: "Riscul rezidual", tabT_concl: "Concluzia", memoTip: "Valorile alese în pașii anteriori", stepWord: "Pasul",
     subAuto: "3 · AOI · AXI · ICT (calculat)", subFT: "4 · Testul funcțional (FT)",
     h_s1: ["Pentru fiecare mod, citește efectul și alege clasa de efect din tabelul de clase de mai jos; S rezultă din clasă.", "Efectele EMC (filtre, decuplare) sunt E9, chiar dacă funcția nu e afectată."],
     h_s1Demo: "",
@@ -577,7 +578,7 @@ const I18N = {
     nc: "not connected",
     sheet: "Analysis sheet", colComp: "Component", colMode: "Failure mode", colEffect: "Effect", colClass: "Effect class", colS: "S", colO: "O",
     colAOI: "AOI", colAXI: "AXI", colICT: "ICT", colFTtest: "FT test", colFT: "FT · test, D and justification", colFTnew: "New FT test (impr.)", colFTd: "D FT", ftNone: "NONE (no test fits)", ftJustPh: "why did you choose this test and value?", tab_s1: "1 · Severity", tab_s2: "2 · Occurrence", tab_det: "3–4 · Detection", tab_ap: "5–6 · AP and improvements", tab_ra: "7 · Residual risk", tab_concl: "8 · Conclusion",
-    tabT_s1: "Severity (S)", tabT_s2: "Occurrence (O)", tabT_det: "Detection (D)", tabT_ap: "Priority (AP) and improvements", tabT_ra: "Residual risk", tabT_concl: "Conclusion", stepWord: "Step",
+    tabT_s1: "Severity (S)", tabT_s2: "Occurrence (O)", tabT_det: "Detection (D)", tabT_ap: "Priority (AP) and improvements", tabT_ra: "Residual risk", tabT_concl: "Conclusion", memoTip: "Values chosen in the previous steps", stepWord: "Step",
     subAuto: "3 · AOI · AXI · ICT (computed)", subFT: "4 · Functional test (FT)",
     h_s1: ["For every mode, read the effect and choose the effect class from the class table below; S follows from the class.", "EMC effects (filters, decoupling) are E9, even when the function is not affected."],
     h_s1Demo: "",
@@ -805,7 +806,14 @@ function renderAnalysis(view) {
   const dv = (v, why) => '<span class="dv ' + (v === 1 ? "d1" : v === 10 ? "d10" : "dm") + '">' + v + "</span>" + (why ? '<span class="why">' + esc(why) + "</span>" : "");
   const sel = (i, name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"' + (val ? "" : ' class="empty"') + '><option value="">' + t("choose") + "</option>" +
     opts.map((o) => { const v = Array.isArray(o) ? o[0] : o; const l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(val) === String(v) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>";
-  const modeCells = (i, k, r) => '<td class="num">' + (k + 1) + '</td><td class="ref"><button type="button" class="mref' + (S.sel === r.m.ref ? " on" : "") + '" data-sel="' + r.m.ref + '" title="' + esc(t("kShow")) + '">' + esc(r.m.ref) + "</button>" + (r.m.pin === "–" ? "" : '<span class="muted small"> ' + esc(r.m.pin) + "</span>") + "</td><td>" + esc(modeTxt(r.m)) + "</td>";
+  const modeCells = (i, k, r) => '<td class="num">' + (k + 1) + '</td><td class="ref"><button type="button" class="mref' + (S.sel === r.m.ref ? " on" : "") + '" data-sel="' + r.m.ref + '" title="' + esc(t("kShow")) + '">' + esc(r.m.ref) + "</button>" + (r.m.pin === "–" ? "" : '<span class="muted small"> ' + esc(r.m.pin) + "</span>") + "</td><td>" + esc(modeTxt(r.m)) + memo(i, r) + "</td>";
+  /* reminder of the values chosen in the previous steps, so they need not be remembered from tab to tab */
+  function memo(i, r) {
+    const u = S.rows[i] || {}, ft = S.detSub === "ft";
+    const lines = tab === "s2" ? [(u.cls || "E–") + " · S " + (r.s || "–")]
+      : tab === "det" ? ["S " + (r.s || "–") + " · O " + (r.o || "–")].concat(ft ? ["AOI " + r.det.aoi + " · AXI " + r.det.axi + " · ICT " + r.det.ict] : []) : [];
+    return lines.length ? '<div class="memo" title="' + esc(t("memoTip")) + '">' + lines.map((l) => "<div>" + l + "</div>").join("") + "</div>" : "";
+  }
   const head = (cols) => "<thead><tr><th>#</th><th>" + t("colComp") + "</th><th>" + t("colMode") + "</th>" + cols.map((c) => "<th>" + c + "</th>").join("") + "</tr></thead>";
   const help = (key) => '<div class="notice stephelp">' + t(key).map((x) => "<p>" + esc(x) + "</p>").join("") + (isDemo() && I18N[LANG][key + "Demo"] !== undefined ? '<p><b>' + esc(t(key + "Demo")) + "</b></p>" : "") + "</div>";
   const ref = (titleKey, html, open) => '<details class="ref"' + (open ? " open" : "") + "><summary>" + esc(t(titleKey)) + "</summary><div>" + html + "</div></details>";
