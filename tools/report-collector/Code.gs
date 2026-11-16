@@ -4,6 +4,7 @@
  * The lab apps (HW TCA, SW TCA, FMEA) POST each finished report here. For every report the script
  *   1. saves the HTML report in Drive, in "Rapoarte laboratoare/<lab>",
  *   2. saves the structured data of the report (values, work data, first copy of the analysis) as a JSON file next to it,
+ *   2b. saves a PDF copy of the HTML report next to it (since 16 Nov 2026; if the conversion fails, the report is still saved),
  *   3. appends a row to the sheet tab of that lab (time, name, group, variant, summary, links, active time, pastes, test scores).
  * After a report, the apps may send an anonymous feedback form (kind: "feedback"): no name, group or variant;
  * it goes to the "Feedback" tab with the date only, at a random row, so it cannot be matched to a report.
@@ -16,7 +17,7 @@ const TZ = "Europe/Bucharest";
 const MAX_HTML = 3 * 1024 * 1024;
 /* the collection spreadsheet; used when the script is not opened from the sheet (Extensions → Apps Script) */
 const SHEET_ID = "1eMkpwfwd6qLFUVOAyjTyhx1PH0IPEYksB_Z8L51ah3k";
-const HEADER = ["Primit", "Nume", "Grupa", "Varianta", "Rezumat", "Raport (Drive)", "Limba", "Date (JSON)", "Timp activ (min)", "Modificări", "Lipiri", "Test inițial (din 5)", "Test final (din 5)"];
+const HEADER = ["Primit", "Nume", "Grupa", "Varianta", "Rezumat", "Raport (Drive)", "Limba", "Date (JSON)", "Timp activ (min)", "Modificări", "Lipiri", "Test inițial (din 5)", "Test final (din 5)", "Raport PDF"];
 const MAX_JSON = 2 * 1024 * 1024;
 
 function doPost(e) {
@@ -37,6 +38,13 @@ function doPost(e) {
     const fileName = [lab, group, variant, name, stamp].join("_").replace(/[^\w\-.]+/g, "_") + ".html";
     const file = labFolder_(lab).createFile(fileName, html, MimeType.HTML);
 
+    /* PDF copy for reading; the data analysis uses only the JSON, so the PDF changes nothing there */
+    let pdfUrl = "";
+    try {
+      const pdf = Utilities.newBlob(html, MimeType.HTML, fileName).getAs(MimeType.PDF).setName(fileName.replace(/\.html$/, ".pdf"));
+      pdfUrl = labFolder_(lab).createFile(pdf).getUrl();
+    } catch (err) { pdfUrl = "PDF nereușit: " + String(err).slice(0, 120); }
+
     let dataUrl = "", activeMin = "", edits = "", pastes = "", pre = "", post = "";
     if (d.data && typeof d.data === "object") {
       const json = JSON.stringify(Object.assign({ lab: lab, variant: variant, receivedAt: now.toISOString() }, d.data));
@@ -49,7 +57,7 @@ function doPost(e) {
       const sc = (x) => (!x ? "" : x.skipped ? "sărit" : typeof x.score === "number" ? x.score : "");
       pre = sc(qz.pre); post = sc(qz.post);
     }
-    sheetFor_(lab).appendRow([now, safe_(name), safe_(group), safe_(variant), safe_(clean_(d.summary, 500)), file.getUrl(), clean_(d.lang, 5), dataUrl, activeMin, edits, pastes, pre, post]);
+    sheetFor_(lab).appendRow([now, safe_(name), safe_(group), safe_(variant), safe_(clean_(d.summary, 500)), file.getUrl(), clean_(d.lang, 5), dataUrl, activeMin, edits, pastes, pre, post, pdfUrl]);
     return out_({ ok: true, received: Utilities.formatDate(now, TZ, "dd.MM.yyyy HH:mm") });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
@@ -60,7 +68,7 @@ function doPost(e) {
 
 /* Health check: opening the web app URL in a browser shows {"ok":true,...,"version":...}.
    The version tells which code the deployment runs. */
-const VERSION = "2026-11-14b";
+const VERSION = "2026-11-16-pdf";
 function doGet() {
   return out_({ ok: true, service: "lab-reports", version: VERSION, labs: Object.keys(LABS) });
 }

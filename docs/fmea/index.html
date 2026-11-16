@@ -281,6 +281,7 @@ details.ref > div { padding: 0 14px 14px; overflow-x: auto; }
 <script src="../shared/aiag.js"></script>
 <script src="../report-config.js"></script>
 <script src="../report-send.js"></script>
+<script src="../shared/pdf.js"></script>
 <script>
 "use strict";
 /* ================================================================ case study data */
@@ -894,7 +895,7 @@ const I18N = {
     c_noO: "„{m} ← {c}”: lipsește O.", c_noD: "„{m} ← {c}”: lipsește D.", c_noPC: "„{m} ← {c}”: nu are control de prevenție.", c_noDC: "„{m} ← {c}”: nu are control de detecție.",
     c_oNoP: "„{m} ← {c}”: O nou e mai mic decât O, dar nicio acțiune de prevenție (P) nu e finalizată. O scade doar după o acțiune P finalizată.", c_dNoD: "„{m} ← {c}”: D nou e mai mic decât D, dar nicio acțiune de detecție (D) nu e finalizată cu PASS.", c_doneFuture: "„{m} ← {c}”: acțiunea „{a}” e marcată finalizată, dar termenul e în viitor.", c_dcNone: "„{m} ← {c}”: fără control de detecție, D este 10.", c_noRev: "„{m} ← {c}”: AP {ap}; lipsesc acțiunile din starea revizuită.", c_revOD: "„{m} ← {c}”: completează O nou și D nou în starea revizuită.", c_noResult: "„{m} ← {c}”: acțiunea „{a}” e finalizată, dar nu are rezultat (PASS / FAIL).", c_failAct: "„{m} ← {c}”: o acțiune a ieșit FAIL; defectul e confirmat. Adaugă după ea o acțiune corectivă de design (P) și reevaluează O nou și D nou.", c_actInc: "„{m} ← {c}”: o acțiune nu are text, responsabil sau termen.",
     c_noExtra: "„{m} ← {c}”: după revizie AP {ap}; propune o acțiune suplimentară.", c_extraD: "„{m} ← {c}”: acțiunea suplimentară de tip D nu are D estimat.", c_noResid: "„{m} ← {c}”: riscul rămâne {ap}; justifică riscul rezidual.",
-    reportTitle: "Raport DFMEA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
+    reportTitle: "Raport DFMEA", download: "Descarcă raportul (PDF)", pdfMaking: "Se generează PDF-ul…", pdfFail: "PDF-ul nu a putut fi generat; s-a descărcat raportul .html.", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.", student: "Student", generated: "Generat", structure: "Structură și funcții", netR: "Rețeaua de defectare", form: "Formularul DFMEA",
     matrix: "Matricea de risc (număr de legături mod–cauză: inițial / final)", sumR: "Rezumat AP", initial: "inițial", final: "final", fe: "Efect (FE)", fm: "Mod (FM)", fc: "Cauză (FC)",
     revActs: "Acțiuni (revizie)", apFinal: "AP final", none: "–", conclusion: "Concluzia (apare în raport)", cFree: "Concluzie (opțional): ce ai reținut din analiză",
@@ -997,7 +998,7 @@ const I18N = {
     c_noO: "“{m} ← {c}”: O is missing.", c_noD: "“{m} ← {c}”: D is missing.", c_noPC: "“{m} ← {c}”: no prevention control.", c_noDC: "“{m} ← {c}”: no detection control.",
     c_oNoP: "“{m} ← {c}”: the new O is lower than O, but no prevention (P) action is completed. O drops only after a completed P action.", c_dNoD: "“{m} ← {c}”: the new D is lower than D, but no detection (D) action is completed with PASS.", c_doneFuture: "“{m} ← {c}”: action “{a}” is marked completed, but its due date is in the future.", c_dcNone: "“{m} ← {c}”: with no detection control, D is 10.", c_noRev: "“{m} ← {c}”: AP {ap}; the revised state has no actions.", c_revOD: "“{m} ← {c}”: fill in the new O and new D in the revised state.", c_noResult: "“{m} ← {c}”: action “{a}” is completed but has no result (PASS / FAIL).", c_failAct: "“{m} ← {c}”: an action FAILED; the defect is confirmed. Add a corrective design action (P) after it and re-rate the new O and new D.", c_actInc: "“{m} ← {c}”: an action has no text, responsible or due date.",
     c_noExtra: "“{m} ← {c}”: after the revision AP {ap}; propose an additional action.", c_extraD: "“{m} ← {c}”: the additional D action has no expected D.", c_noResid: "“{m} ← {c}”: the risk stays {ap}; justify the residual risk.",
-    reportTitle: "DFMEA report", download: "Download report (.html)", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
+    reportTitle: "DFMEA report", download: "Download report (PDF)", pdfMaking: "Making the PDF…", pdfFail: "The PDF could not be made; the .html report was downloaded instead.", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.", student: "Student", generated: "Generated", structure: "Structure and functions", netR: "Failure net", form: "DFMEA form",
     matrix: "Risk matrix (number of mode–cause links: initial / final)", sumR: "AP summary", initial: "initial", final: "final", fe: "Effect (FE)", fm: "Mode (FM)", fc: "Cause (FC)",
     revActs: "Actions (revision)", apFinal: "Final AP", none: "–", conclusion: "Conclusion (included in the report)", cFree: "Conclusion (optional): what you take away from the analysis",
@@ -1671,9 +1672,12 @@ function renderReport(view) {
       const sb = view.querySelector("#stepsBox"); if (sb && window.LabReport) sb.innerHTML = window.LabReport.stepsHtml(stepList(), LANG, false); });
   });
   view.querySelector("#dl").addEventListener("click", () => {
-    const b = new Blob([buildReport().html], { type: "text/html" }); const a = document.createElement("a");
-    a.href = URL.createObjectURL(b); a.download = "DFMEA_" + S.variant + "_" + (S.name || "student").replace(/[^\w\-]+/g, "_") + ".html";
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    const rep = buildReport(); const base = "DFMEA_" + S.variant + "_" + (S.name || "student").replace(/[^\w\-]+/g, "_");
+    const saveHtml = () => { const b = new Blob([rep.html], { type: "text/html" }); const a = document.createElement("a");
+      a.href = URL.createObjectURL(b); a.download = base + ".html"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+    const btn = view.querySelector("#dl"); if (!window.LabPDF) { saveHtml(); return; }
+    btn.disabled = true; toast(t("pdfMaking"));
+    window.LabPDF.download(rep.html, base + ".pdf", () => { btn.disabled = false; }, () => { btn.disabled = false; saveHtml(); toast(t("pdfFail")); });
   });
   view.querySelector("#cp").addEventListener("click", () => {
     const txt = buildReport().text; const ta = view.querySelector("#reportText");

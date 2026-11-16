@@ -251,6 +251,7 @@ textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); border-
 
 <script src="../report-config.js"></script>
 <script src="../report-send.js"></script>
+<script src="../shared/pdf.js"></script>
 <script>
 "use strict";
 
@@ -319,7 +320,7 @@ const I18N = {
     justTitle: "Justificarea codului neacoperit",
     justHint: "Pentru fiecare instrucțiune care rămâne neacoperită: de ce nu poate fi atinsă și de ce e acceptabil. ISO 26262-6, 9.4.4 cere fie teste suplimentare, fie o justificare bazată pe alte metode. Pentru ramura default ai ambele variante: justificarea (cod defensiv, MISRA C:2012 regula 16.4) sau un test prin injectare de defecte (fault injection, Tabelul 7, 1l), care forțează o stare coruptă. Spune ce ai ales și de ce.",
     funcTitle: "Acoperirea funcțiilor și a apelurilor", called: "apelată", notCalled: "neapelată", exec: "executat", notExec: "neexecutat",
-    reportTitle: "Raport de laborator", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
+    reportTitle: "Raport de laborator", download: "Descarcă raportul (PDF)", pdfMaking: "Se generează PDF-ul…", pdfFail: "PDF-ul nu a putut fi generat; s-a descărcat raportul .html.", copy: "Copiază textul raportului",
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator. Raportul conține testele, acoperirea și răspunsurile tale.",
     student: "Student", generated: "Generat", answer: "Răspuns", summary: "Rezumat",
@@ -393,7 +394,7 @@ const I18N = {
     justTitle: "Justification of uncovered code",
     justHint: "For every statement that stays uncovered: why it cannot be reached and why that is acceptable. ISO 26262-6, 9.4.4 asks for either additional test cases or a rationale based on other methods. For the default branch you have both options: the rationale (defensive code, MISRA C:2012 rule 16.4) or a fault injection test (Table 7, 1l) that forces a corrupted state. State what you chose and why.",
     funcTitle: "Function and call coverage", called: "called", notCalled: "not called", exec: "executed", notExec: "not executed",
-    reportTitle: "Lab report", download: "Download report (.html)", copy: "Copy report text",
+    reportTitle: "Lab report", download: "Download report (PDF)", pdfMaking: "Making the PDF…", pdfFail: "The PDF could not be made; the .html report was downloaded instead.", copy: "Copy report text",
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab. It contains your tests, coverage and answers.",
     student: "Student", generated: "Generated", answer: "Answer", summary: "Summary",
@@ -1684,12 +1685,12 @@ function renderReport(view) {
       const sb = view.querySelector("#stepsBox"); if (sb && window.LabReport) sb.innerHTML = window.LabReport.stepsHtml(stepList(), LANG, false); });
   });
   view.querySelector("#dl").addEventListener("click", () => {
-    const b = new Blob([buildReport().html], { type: "text/html" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(b);
-    a.download = "SW-TCA_" + (S.variant || "V") + "_" + (S.name || "student").replace(/[^\w\-]+/g, "_") + ".html";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    const rep = buildReport(); const base = "SW-TCA_" + (S.variant || "V") + "_" + (S.name || "student").replace(/[^\w\-]+/g, "_");
+    const saveHtml = () => { const b = new Blob([rep.html], { type: "text/html" }); const a = document.createElement("a");
+      a.href = URL.createObjectURL(b); a.download = base + ".html"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+    const btn = view.querySelector("#dl"); if (!window.LabPDF) { saveHtml(); return; }
+    btn.disabled = true; toast(t("pdfMaking"));
+    window.LabPDF.download(rep.html, base + ".pdf", () => { btn.disabled = false; }, () => { btn.disabled = false; saveHtml(); toast(t("pdfFail")); });
   });
   view.querySelector("#cp").addEventListener("click", () => {
     const txt = buildReport().text;

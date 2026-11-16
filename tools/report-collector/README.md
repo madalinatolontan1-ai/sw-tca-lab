@@ -42,6 +42,8 @@ După orice modificare în `Code.gs`:
 
 URL-ul rămâne același.
 
+Din 16.11.2026 (VERSION 2026-11-16-pdf), scriptul salvează lângă HTML și JSON și o copie PDF a raportului, iar în foaie apare coloana „Raport PDF”. Analiza datelor citește doar JSON-ul, deci PDF-ul nu schimbă nimic acolo.
+
 ## Limitări
 
 - Oricine are URL-ul poate trimite date. URL-ul apare în codul public al paginii, deci numele de pe raport nu e verificat. Pentru laborator e de obicei suficient.
