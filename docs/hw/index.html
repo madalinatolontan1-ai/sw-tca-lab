@@ -517,7 +517,6 @@ const I18N = {
     h_s1: ["Pentru fiecare mod, citește efectul și alege clasa de efect din tabelul de clase de mai jos; S rezultă din clasă.", "Efectele EMC (filtre, decuplare) sunt E9, chiar dacă funcția nu e afectată."],
     h_s1Demo: "",
     h_s2: ["O spune cât de probabil apare defectul în producție. Depinde de proces și de cât de bun e controlul de prevenție, nu de cât de comună e piesa.", "Pe fiecare rând ai procesul și tipul controlului. Caută rândul potrivit în tabelul scurt de mai sus (tipul și eficiența controlului) și alege O din banda lui."],
-    h_s2Demo: "Pe H0, sub fiecare listă apare banda corectă.",
     h_det3: ["Aplicația calculează D pentru AOI, AXI și ICT din regulile de detecție. Sub fiecare valoare e motivul. Citește-le: nu completezi nimic aici.", "Apasă pe numele componentei ca s-o vezi pe placă și în schemă, cu net-urile ei și test point-urile."],
     h_det4: ["Pentru fiecare mod, urmărește pe placă netul pinului: dacă ajunge la un conector, testul funcțional poate vedea efectul.", "Alege din lista FT1–FT8 testul care vede efectul (sau NONE), apoi D din scala de detecție, și scrie de ce: ce măsoară testul și dacă localizează defectul."],
     h_ap: ["D este minimul metodelor, iar AP se citește din tabelul AIAG-VDA; aplicația le calculează.", "Pentru modurile cu AP H sau M, încearcă îmbunătățiri în panoul din dreapta: test point-uri, AOI pe BOTTOM, teste FT noi. Coloana „AP fără îmbun.” păstrează rezultatul inițial."],
@@ -583,7 +582,6 @@ const I18N = {
     h_s1: ["For every mode, read the effect and choose the effect class from the class table below; S follows from the class.", "EMC effects (filters, decoupling) are E9, even when the function is not affected."],
     h_s1Demo: "",
     h_s2: ["O says how likely the defect is to occur in production. It depends on the process and on how good the prevention control is, not on how common the part is.", "Every row shows the process and the type of control. Find the matching row in the short table above (type and effectiveness of the control) and choose O from its band."],
-    h_s2Demo: "On H0 the correct band appears under each list.",
     h_det3: ["The app computes D for AOI, AXI and ICT from the detection rules. The reason is under each value. Read them: you fill in nothing here.", "Click the component name to see it on the board and in the schematic, with its nets and test points."],
     h_det4: ["For every mode, follow the pin's net on the board: if it reaches a connector, the functional test can see the effect.", "Choose from the FT1–FT8 list the test that sees the effect (or NONE), then D from the detection scale, and write why: what the test measures and whether it locates the defect."],
     h_ap: ["D is the minimum over the methods, and AP is read from the AIAG-VDA table; the app computes both.", "For the modes with AP H or M, try improvements in the panel on the right: test points, AOI on BOTTOM, new FT tests. The “AP without impr.” column keeps the initial result."],
@@ -802,7 +800,7 @@ function renderAnalysis(view) {
   const now = summary(env), base = summary(ENV_BASE);
   const hasNew = (S.newTests || []).length > 0;
   const dOpts = AIAG.D.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[1]) + (tr(x[3]) ? " · " + tr(x[3]) : "")]);
-  const oOpts = AIAG.OP.slice().reverse().map((x) => [x[0], x[0] + " · " + tr(x[2]) + " · " + tr(x[3])]);
+  const oOpts = AIAG.OP.slice().reverse().map((x) => [x[0], String(x[0])]);
   const ap = (x) => '<span class="ap ' + (x || "na") + '">' + (x || "–") + "</span>";
   const dv = (v, why) => '<span class="dv ' + (v === 1 ? "d1" : v === 10 ? "d10" : "dm") + '">' + v + "</span>" + (why ? '<span class="why">' + esc(why) + "</span>" : "");
   const sel = (i, name, opts, val, label) => '<select data-row="' + i + '" data-k="' + name + '" aria-label="' + esc(label || name) + '"' + (val ? "" : ' class="empty"') + '><option value="">' + t("choose") + "</option>" +
@@ -823,7 +821,7 @@ function renderAnalysis(view) {
     main = help("h_s2") + '<div class="panel stack"><span class="label">' + esc(t("p2Title")) + "</span>" + guide + "</div>" +
       '<div class="tablewrap"><table class="sheet stept">' + head([t("p2Proc"), t("prevTyp"), "O"]) + "<tbody>" +
       rowsData.map((x) => { const pv = prevOf(x.r.m); return "<tr>" + modeCells(x.i, x.k, x.r) + '<td class="eff"><b>' + esc(tr(pv[2])) + '</b><br><span class="muted small">' + esc(t("p2CtlShort")) + ": " + esc(tr(pv[3])) + "</span></td>" +
-        '<td class="eff small">' + esc(tr(pv[0])) + "</td><td>" + sel(x.i, "o", oOpts, x.u.o, "O") + (isDemo() ? '<div class="muted small">H0: O ' + pv[1] + "</div>" : "") + "</td></tr>"; }).join("") +
+        '<td class="eff small">' + esc(tr(pv[0])) + "</td><td>" + sel(x.i, "o", oOpts, x.u.o, "O") + "</td></tr>"; }).join("") +
       "</tbody></table></div>" + ref("occTitle", AIAG.table("OP", LANG, esc));
   } else if (tab === "det") {
     const sub = S.detSub === "ft" ? "ft" : "auto";
