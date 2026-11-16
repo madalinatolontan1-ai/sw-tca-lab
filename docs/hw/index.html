@@ -521,7 +521,7 @@ const I18N = {
     h_det4: ["Pentru fiecare mod, urmărește pe placă netul pinului: dacă ajunge la un conector, testul funcțional poate vedea efectul.", "Alege din lista FT1–FT8 testul care vede efectul (sau NONE), apoi D din scala de detecție, și scrie de ce: ce măsoară testul și dacă localizează defectul."],
     h_ap: ["D este minimul metodelor, iar AP se citește din tabelul AIAG-VDA; aplicația le calculează.", "Pentru modurile cu AP H sau M, încearcă îmbunătățiri în panoul din dreapta: test point-uri, AOI pe BOTTOM, teste FT noi. Coloana „AP fără îmbun.” păstrează rezultatul inițial."],
     h_ra: ["Aici apar doar modurile care rămân H sau M după îmbunătățiri. Pentru fiecare: alege decizia (risc acceptat sau acțiune propusă), spune de ce rămâne riscul și ce se face sau de ce se acceptă."],
-    h_concl: ["Trei câmpuri, scrise concret: logica folosită pentru O, ce aduc îmbunătățirile, ce nu poate vedea testarea sau analiza. Un „nu” sau „-” nu se ia în calcul."],
+    h_concl: ["Pas opțional: dacă vrei, scrie pe scurt ce ai reținut din analiză. Nu e cerut pentru un raport complet."],
     raNone: "Niciun mod nu rămâne H sau M: pasul 7 nu e cazul.", raWait: "Completează întâi pașii 1–4 pentru toate modurile.",
     p2Title: "Cum alegi O (tabelul P2, pe scurt)", p2Ctl: "Tipul controlului de prevenție", p2Eff: "Eficiența", p2Proc: "Procesul", p2CtlShort: "control",
     p2Rows: [["Tehnic: cauza nu poate apărea fizic (geometrie, dispozitiv)", "extrem de eficient", "1"], ["Tehnic, automat, sau bune practici", "foarte eficient", "2–3"], ["Comportamental sau tehnic", "eficient", "4–5"], ["Comportamental sau tehnic", "oarecum eficient", "6–7"], ["Comportamental", "efect mic", "8–9"], ["Niciun control", "–", "10"]], kS: "Severitatea (S): clasa efectului", kO: "Ocurența (O), din tabelul P2", kDet: "Detecția la AOI, AXI și ICT", kAuto: "calculat", kFT: "Testul funcțional (FT)", kFTtest: "Testul care vede efectul", kFTj: "Justificare (obligatorie): de ce acest test și această valoare D", kAP: "Rezultat: D și AP", kDmin: "minimul dintre AOI, AXI, ICT și FT", kAPnow: "AP cu îmbunătățiri", kImpr: "Îmbunătățiri", kImprHint: "Test point-urile, AOI pe BOTTOM și testele FT noi se aleg în panoul de lângă placă; efectul lor apare imediat în D și AP de mai sus. Dacă ai propus un test FT nou care prinde acest mod, alege-l aici.", kRA: "Riscul rezidual: AP rămâne", kRAdec: "Decizia", kRAwhy: "De ce rămâne riscul: ce nu prinde testarea și de ce", kRAwhat: "Ce se face sau de ce se acceptă riscul", kOk: "complet", kMiss: "de completat: {n}", kShow: "arată componenta pe placă și în schemă", kStatus: "Stare", kSumTitle: "Rezumat", kSumHint: "Doar citire. Apasă pe un rând ca să mergi la cardul modului.", kCardsTitle: "Modurile de defectare: completează fiecare card, pașii în ordine", schematic: "SCHEMĂ", colRA: "Evaluarea riscului rezidual", noTest: "niciun test", colD: "D", colAP: "AP", colAP0: "AP fără îmbun.",
@@ -535,7 +535,7 @@ const I18N = {
     c9: ["D FT = 1: efectul se vede la FT și poate fi atribuit componentei (test point, semnătură unică).", "D FT = 5: efectul se vede la FT, dar nu poate fi atribuit componentei (simptom general, ex. lipsă comunicație CAN).", "D FT = 10: efectul nu se vede la FT."],
     apTitle: "Tabelul AP (AIAG-VDA)",
     whyRule: "regula", whyC7: "C7 marcaj", whyC5: "C5 THT pe BOTTOM", whyAOIb: "AOI cu BOTTOM activ", whyAOItop: "AOI fără BOTTOM", whyTP: "TP direct", whyNoTP: "fără TP direct (cluster / indirect)", whyNoNet: "pin neconectat",
-    conclusion: "Concluzia (apare în raport)", cO: "Logica folosită pentru O", cImpr: "Îmbunătățirile propuse și efectul lor asupra AP", cLim: "Limitele analizei: ce nu poate vedea testarea sau analiza", c_conclShort: "Concluzie: „{f}” e prea scurtă; scrie concret (cel puțin o propoziție).", c_conclF: "Concluzie: lipsește „{f}”.",
+    conclusion: "Concluzia (apare în raport)", cFree: "Concluzie (opțional): ce ai reținut din analiză", c_conclShort: "Concluzie: „{f}” e prea scurtă; scrie concret (cel puțin o propoziție).", c_conclF: "Concluzie: lipsește „{f}”.",
     reportTitle: "Fișa de evaluare a riscului · HW TCA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului",
     copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.",
@@ -586,7 +586,7 @@ const I18N = {
     h_det4: ["For every mode, follow the pin's net on the board: if it reaches a connector, the functional test can see the effect.", "Choose from the FT1–FT8 list the test that sees the effect (or NONE), then D from the detection scale, and write why: what the test measures and whether it locates the defect."],
     h_ap: ["D is the minimum over the methods, and AP is read from the AIAG-VDA table; the app computes both.", "For the modes with AP H or M, try improvements in the panel on the right: test points, AOI on BOTTOM, new FT tests. The “AP without impr.” column keeps the initial result."],
     h_ra: ["Only the modes that stay H or M after the improvements appear here. For each: choose the decision (risk accepted or action proposed), say why the risk remains and what is done or why it is accepted."],
-    h_concl: ["Three fields, written concretely: the logic used for O, what the improvements bring, what testing or the analysis cannot see. A “no” or “-” does not count."],
+    h_concl: ["Optional step: if you like, write briefly what you take away from the analysis. It is not required for a complete report."],
     raNone: "No mode stays H or M: step 7 does not apply.", raWait: "First complete steps 1–4 for all modes.",
     p2Title: "How to choose O (table P2, short)", p2Ctl: "Type of prevention control", p2Eff: "Effectiveness", p2Proc: "Process", p2CtlShort: "control",
     p2Rows: [["Technical: the cause cannot physically occur (geometry, fixture)", "extremely effective", "1"], ["Technical, automatic, or best practices", "highly effective", "2–3"], ["Behavioural or technical", "effective", "4–5"], ["Behavioural or technical", "somewhat effective", "6–7"], ["Behavioural", "little effect", "8–9"], ["No control", "–", "10"]], kS: "Severity (S): the effect class", kO: "Occurrence (O), from table P2", kDet: "Detection at AOI, AXI and ICT", kAuto: "computed", kFT: "Functional test (FT)", kFTtest: "The test that sees the effect", kFTj: "Justification (required): why this test and this D value", kAP: "Result: D and AP", kDmin: "minimum of AOI, AXI, ICT and FT", kAPnow: "AP with improvements", kImpr: "Improvements", kImprHint: "Test points, AOI on BOTTOM and new FT tests are chosen in the panel next to the board; their effect shows at once in D and AP above. If you proposed a new FT test that catches this mode, pick it here.", kRA: "Residual risk: AP stays", kRAdec: "Decision", kRAwhy: "Why the risk remains: what testing does not catch and why", kRAwhat: "What is done, or why the risk is accepted", kOk: "complete", kMiss: "to fill in: {n}", kShow: "show the component on the board and in the schematic", kStatus: "Status", kSumTitle: "Summary", kSumHint: "Read only. Click a row to go to the mode's card.", kCardsTitle: "Failure modes: fill in every card, steps in order", schematic: "SCHEMATIC", colRA: "Residual risk assessment", noTest: "no test", colD: "D", colAP: "AP", colAP0: "AP no impr.",
@@ -600,7 +600,7 @@ const I18N = {
     c9: ["D FT = 1: the effect is visible at FT and can be traced to the component (test point, unique signature).", "D FT = 5: the effect is visible at FT but cannot be traced to the component (general symptom, e.g. no CAN communication).", "D FT = 10: the effect is not visible at FT."],
     apTitle: "AP table (AIAG-VDA)",
     whyRule: "rule", whyC7: "C7 marking", whyC5: "C5 THT on BOTTOM", whyAOIb: "AOI with BOTTOM active", whyAOItop: "AOI without BOTTOM", whyTP: "direct TP", whyNoTP: "no direct TP (cluster / indirect)", whyNoNet: "pin not connected",
-    conclusion: "Conclusion (included in the report)", cO: "The logic used for O", cImpr: "The proposed improvements and their effect on AP", cLim: "Limits of the analysis: what testing or the analysis cannot see", c_conclShort: "Conclusion: “{f}” is too short; be specific (at least one sentence).", c_conclF: "Conclusion: “{f}” is missing.",
+    conclusion: "Conclusion (included in the report)", cFree: "Conclusion (optional): what you take away from the analysis", c_conclShort: "Conclusion: “{f}” is too short; be specific (at least one sentence).", c_conclF: "Conclusion: “{f}” is missing.",
     reportTitle: "Risk assessment sheet · HW TCA", download: "Download report (.html)", copy: "Copy report text",
     copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.",
@@ -622,8 +622,8 @@ const tr = (o) => (o && typeof o === "object" ? o[LANG] : o);
 
 /* ---------------------------------------------------------------- state */
 const STORE_KEY = "hwtca-lab-v1";
-let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", concl: { o: "", impr: "", lim: "" }, sel: "", net: "", pin: "" };
-const CONCL = [["o", "cO"], ["impr", "cImpr"], ["lim", "cLim"]];
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", rows: {}, tps: {}, aoiBottom: false, side: "top", conclusion: "", concl: { free: "" }, sel: "", net: "", pin: "" };
+const CONCL = [["free", "cFree"]];
 const raDone = (u) => !!(u.rad && (u.ra || "").trim() && (u.raw || "").trim());
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
@@ -775,7 +775,7 @@ function connPanel() {
 const STEP_TABS = ["s1", "s2", "det", "ap", "ra", "concl"];
 function tabStatus(tab) {
   const st = stepList(); const g = (n) => (st.find((x) => x.n === n) || {}).status;
-  const set = { s1: ["1"], s2: ["2"], det: ["4"], ap: ["5", "6"], ra: ["7"], concl: ["8"] }[tab].map(g).filter((x) => x && x !== "auto");
+  const set = { s1: ["1"], s2: ["2"], det: ["4"], ap: ["5", "6"], ra: ["7"], concl: [] }[tab].map(g).filter((x) => x && x !== "auto");
   if (!set.length) return "";
   if (set.every((x) => x === "done" || x === "na")) return "done";
   return set.some((x) => x === "done" || x === "part") ? "part" : "todo";
@@ -964,7 +964,6 @@ function stepList() {
     if (needsRA(r.ap)) { hm++; if (raDone(u)) ra++; } });
   const tps = Object.keys(S.tps || {}).filter((k) => S.tps[k]).length, nt = (S.newTests || []).length;
   const nImpr = tps + (S.aoiBottom ? 1 : 0) + nt;
-  const cDone = CONCL.filter((c) => (window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())).length;
   const of = (a, b) => a + " / " + b;
   return [
     { n: "1", name: ro ? "Severitatea (S): clasa de efect pe fiecare rând" : "Severity (S): the effect class on every row", status: st(cls, n), detail: of(cls, n) },
@@ -974,8 +973,7 @@ function stepList() {
     { n: "5", name: ro ? "Prioritatea de acțiune (AP), din S, O și D" : "Action priority (AP), from S, O and D", status: st(ap, n), detail: of(ap, n) },
     { n: "6", name: ro ? "Îmbunătățiri pentru modurile cu AP H sau M" : "Improvements for the modes with AP H or M", status: ap < n ? (nImpr ? "part" : "todo") : hm0 === 0 ? "na" : nImpr ? "done" : "todo",
       detail: (ro ? "H/M inițial: " : "initial H/M: ") + hm0 + " · TP " + tps + " · AOI BOTTOM " + (S.aoiBottom ? (ro ? "da" : "yes") : (ro ? "nu" : "no")) + " · " + (ro ? "teste FT noi " : "new FT tests ") + nt },
-    { n: "7", name: ro ? "Riscul rezidual documentat pentru modurile care rămân H sau M" : "Residual risk documented for the modes that stay H or M", status: ap < n ? (ra ? "part" : "todo") : st(ra, hm), detail: of(ra, hm) },
-    { n: "8", name: ro ? "Concluzia: logica pentru O, îmbunătățirile, limitele analizei" : "Conclusion: the logic for O, the improvements, the limits of the analysis", status: st(cDone, CONCL.length), detail: of(cDone, CONCL.length) }
+    { n: "7", name: ro ? "Riscul rezidual documentat pentru modurile care rămân H sau M" : "Residual risk documented for the modes that stay H or M", status: ap < n ? (ra ? "part" : "todo") : st(ra, hm), detail: of(ra, hm) }
   ];
 }
 /* structured copy of the analysis, sent with the report for scoring against the answer key */
@@ -1001,7 +999,6 @@ function checks() {
     if (u.fttest && !(u.ftj || "").trim()) f("c_ftj");
     if (needsRA(r.ap)) { if (!u.rad) f("c_ra", { ap: r.ap }); else if (!raDone(u)) f("c_raTxt"); }
   });
-  CONCL.forEach((c) => { if (!(window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())) out.push(fmtT((S.concl[c[0]] || "").trim() ? "c_conclShort" : "c_conclF", { f: t(c[1]) })); });
   return out;
 }
 function renderReport(view) {
@@ -1029,8 +1026,9 @@ function renderReport(view) {
 
 /* ---------------------------------------------------------------- boot */
 load(); LANG = S.lang || "ro";
-if (!S.concl) S.concl = { o: "", impr: "", lim: "" };
-if ((S.conclusion || "").trim() && !S.concl.impr) { S.concl.impr = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
+if (!S.concl) S.concl = { free: "" };
+if (S.concl.free === undefined) { S.concl = { free: Object.keys(S.concl).map((k) => (S.concl[k] || "").trim()).filter(Boolean).join("\n\n") }; save(); }  /* one optional field since 16 Nov 2026 */
+if ((S.conclusion || "").trim() && !S.concl.free) { S.concl.free = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
 if (window.LabReport) window.LabReport.track("HW-TCA");
 document.getElementById("stName").value = S.name; document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });

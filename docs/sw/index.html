@@ -305,7 +305,7 @@ const I18N = {
     stale: "Ai modificat testele. Apasă din nou „Rulează testele” ca să vezi rezultatele noi.",
     shown: "demonstrată prin perechea", notShown: "nedemonstrată",
     line: "linia", decision: "decizia", outcome: "rezultat",
-    notes: "Observații (apar în raport)", conclusion: "Concluzia (apare în raport)", cCov: "Ce arată acoperirea obținută (statement, branch, MC/DC) despre codul testat", cLim: "Ce nu arată: ce defecte pot rămâne nedetectate chiar cu acoperire 100%",
+    notes: "Observații (apar în raport)", conclusion: "Concluzia (apare în raport)", cFree: "Concluzie (opțional): ce ai reținut din analiză",
     asilTitle: "Înainte de teste: ce cere ISO 26262-6 pentru ASIL B?",
     asilHint: "Alege nivelul de recomandare pentru fiecare metrică la nivel de unitate software (ISO 26262-6, Tabelul 9). Intrările 1a, 1b, 1c sunt alternative: se alege o combinație potrivită pentru ASIL, cu justificare. ISO 26262 nu fixează un procent: cere o valoare-țintă definită și justificată (9.4.4, NOTA 1). În laborator ținta este 100%, ca în practica industrială. Răspunsul apare în raport.",
     hr: "++ puternic recomandat", r: "+ recomandat", nr: "o fără recomandare", choose: "alege",
@@ -379,7 +379,7 @@ const I18N = {
     stale: "You changed the tests. Press “Run tests” again to see the new results.",
     shown: "shown by the pair", notShown: "not shown",
     line: "line", decision: "decision", outcome: "outcome",
-    notes: "Notes (included in the report)", conclusion: "Conclusion (included in the report)", cCov: "What the coverage you reached (statement, branch, MC/DC) shows about the tested code", cLim: "What it does not show: which defects can stay undetected even at 100% coverage",
+    notes: "Notes (included in the report)", conclusion: "Conclusion (included in the report)", cFree: "Conclusion (optional): what you take away from the analysis",
     asilTitle: "Before testing: what does ISO 26262-6 require for ASIL B?",
     asilHint: "Choose the recommendation level of each metric at software unit level (ISO 26262-6, Table 9). Entries 1a, 1b, 1c are alternatives: a suitable combination is chosen for the ASIL, with a rationale. ISO 26262 does not fix a percentage: it asks for a defined, justified target value (9.4.4, NOTE 1). In the lab the target is 100%, as in industrial practice. Your answer goes into the report.",
     hr: "++ highly recommended", r: "+ recommended", nr: "o no recommendation", choose: "choose",
@@ -1162,8 +1162,8 @@ function inputHint(exKey, k, raw, v) {
 const STORE_KEY = "swtca-lab-v1";
 let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", tests: { f1: [], f2: [], f3: [], int: [] },
           ran: { f1: false, f2: false, f3: false, int: false }, notes: { f1: "", f2: "", f3: "", int: "" },
-          asil: { stmt: "", branch: "", mcdc: "" }, bug: { test: "", line: "", fix: "", desc: "" }, just: "", hist: {}, concl: { cov: "", lim: "" } };
-const CONCL = [["cov", "cCov"], ["lim", "cLim"]];
+          asil: { stmt: "", branch: "", mcdc: "" }, bug: { test: "", line: "", fix: "", desc: "" }, just: "", hist: {}, concl: { free: "" } };
+const CONCL = [["free", "cFree"]];
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() {
   try {
@@ -1650,10 +1650,7 @@ function stepList() {
     return { n: ex.num, name: t(ex.tab) + " · " + c.map((x) => x[1]).join(", "), status: !S.ran[k] ? "todo" : window.LabReport ? window.LabReport.stepStatus(ok, c.length) : "todo",
       detail: (ro ? "lipsește: " : "missing: ") + (c.filter((x) => !x[0]).map((x) => x[1]).join(", ") || "–") };
   });
-  const cDone = CONCL.filter((c) => (window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())).length;
-  out.push({ n: "5", name: ro ? "Raportul: concluzia (ce arată acoperirea și ce nu arată)" : "Report: the conclusion (what coverage shows and what it does not)",
-    status: window.LabReport ? window.LabReport.stepStatus(cDone, CONCL.length) : "todo", detail: cDone + " / " + CONCL.length });
-  return out;
+return out;
 }
 /* structured copy of the work, sent with the report for scoring against the answer key */
 function reportData() {
@@ -1706,7 +1703,8 @@ function renderReport(view) {
 /* ---------------------------------------------------------------- boot */
 load();
 LANG = S.lang || "ro";
-if (!S.concl) S.concl = { cov: "", lim: "" };
+if (!S.concl) S.concl = { free: "" };
+if (S.concl.free === undefined) { S.concl = { free: Object.keys(S.concl).map((k) => (S.concl[k] || "").trim()).filter(Boolean).join("\n\n") }; save(); }  /* one optional field since 16 Nov 2026 */
 if (window.LabReport) window.LabReport.track("SW-TCA");
 document.getElementById("stName").value = S.name;
 document.getElementById("stVariant").value = S.variant;

@@ -897,7 +897,7 @@ const I18N = {
     reportTitle: "Raport DFMEA", download: "Descarcă raportul (.html)", copy: "Copiază textul raportului", copied: "Textul raportului a fost copiat.", copyFail: "Copierea nu a mers. Selectează textul de mai jos și copiază-l manual.",
     reportHint: "Descarcă raportul și predă-l conform indicațiilor de la laborator.", student: "Student", generated: "Generat", structure: "Structură și funcții", netR: "Rețeaua de defectare", form: "Formularul DFMEA",
     matrix: "Matricea de risc (număr de legături mod–cauză: inițial / final)", sumR: "Rezumat AP", initial: "inițial", final: "final", fe: "Efect (FE)", fm: "Mod (FM)", fc: "Cauză (FC)",
-    revActs: "Acțiuni (revizie)", apFinal: "AP final", none: "–", conclusion: "Concluzii (apar în raport)", cDec: "Deciziile principale și de ce (S, O, D, AP)", cAct: "Acțiunile propuse și efectul lor asupra AP", cLim: "Limitele analizei: ce nu acoperă analiza sau testele",
+    revActs: "Acțiuni (revizie)", apFinal: "AP final", none: "–", conclusion: "Concluzia (apare în raport)", cFree: "Concluzie (opțional): ce ai reținut din analiză",
     boardT: "Placa și schema", top: "TOP", bottom: "BOTTOM", schematic: "Schemă",
     boardHint: "Net-urile semnalului analizat sunt evidențiate, componentele lui sunt în prim-plan. Dă clic pe o componentă ca s-o evidențiezi; la pasul 4 o alegi ca vinovată direct pe cauză.",
     notInSig: "{r} nu face parte din semnalul analizat.", selected: "Selectat: {r}.",
@@ -1000,7 +1000,7 @@ const I18N = {
     reportTitle: "DFMEA report", download: "Download report (.html)", copy: "Copy report text", copied: "Report text copied.", copyFail: "Copy did not work. Select the text below and copy it manually.",
     reportHint: "Download the report and hand it in as instructed in the lab.", student: "Student", generated: "Generated", structure: "Structure and functions", netR: "Failure net", form: "DFMEA form",
     matrix: "Risk matrix (number of mode–cause links: initial / final)", sumR: "AP summary", initial: "initial", final: "final", fe: "Effect (FE)", fm: "Mode (FM)", fc: "Cause (FC)",
-    revActs: "Actions (revision)", apFinal: "Final AP", none: "–", conclusion: "Conclusions (included in the report)", cDec: "The main decisions and why (S, O, D, AP)", cAct: "The proposed actions and their effect on AP", cLim: "Limits of the analysis: what the analysis or the tests do not cover",
+    revActs: "Actions (revision)", apFinal: "Final AP", none: "–", conclusion: "Conclusion (included in the report)", cFree: "Conclusion (optional): what you take away from the analysis",
     boardT: "Board and schematic", top: "TOP", bottom: "BOTTOM", schematic: "Schematic",
     boardHint: "The nets of the analysed signal are highlighted and its components are in focus. Click a component to highlight it; in step 4 you pick it as the culprit directly on the cause.",
     notInSig: "{r} is not part of the analysed signal.", selected: "Selected: {r}.",
@@ -1060,8 +1060,8 @@ const fmt = (s, o) => s.replace(/\{(\w+)\}/g, (m, k) => (o[k] !== undefined ? o[
 /* ================================================================ state */
 const STORE_KEY = "fmea-lab-v3";
 const blankA = () => ({ fns: [], fails: [], links: [], risk: {}, step: "s23", selEl: "L1", selMode: "", side: "top", selComp: "" });
-let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", hw: blankA(), sw: blankA(), conclusion: "", concl: { dec: "", act: "", lim: "" }, seq: 1 };
-const CONCL = [["dec", "cDec"], ["act", "cAct"], ["lim", "cLim"]];
+let S = { lang: "ro", name: "", group: "", variant: "", tab: "start", hw: blankA(), sw: blankA(), conclusion: "", concl: { free: "" }, seq: 1 };
+const CONCL = [["free", "cFree"]];
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
 function load() { try { const r = localStorage.getItem(STORE_KEY); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) { /* storage unavailable */ } }
 const nid = (p) => p + (S.seq++);
@@ -1638,9 +1638,7 @@ function stepList() {
   const num = { s23: "2–3", s4: "4", s5: "5", s6: "6" };
   const out = [{ n: "1", name: ro ? "Planificare: domeniul analizei (semnalul HW și funcția SW ale variantei)" : "Planning: scope of the analysis (the HW signal and the SW function of the variant)", status: "done", detail: hwLabel() + " · " + swLabel() }];
   ["s23", "s4", "s5", "s6"].forEach((k) => { out.push({ n: num[k] + " HW", name: nm[k], status: H.st[k], detail: H.det[k] }); out.push({ n: num[k] + " SW", name: nm[k], status: W.st[k], detail: W.det[k] }); });
-  const cDone = CONCL.filter((c) => (window.LabReport ? window.LabReport.meaningful(S.concl[c[0]]) : (S.concl[c[0]] || "").trim())).length;
-  out.push({ n: "7", name: ro ? "Documentare: concluziile (decizii, acțiuni, limite) și raportul" : "Documentation: the conclusions (decisions, actions, limits) and the report",
-    status: window.LabReport ? window.LabReport.stepStatus(cDone, CONCL.length) : "todo", detail: cDone + " / " + CONCL.length });
+  out.push({ n: "7", name: ro ? "Documentare: raportul (concluzia e opțională)" : "Documentation: the report (the conclusion is optional)", status: "done", detail: "" });
   return out;
 }
 /* structured copy of both analyses, sent with the report for scoring against the answer key */
@@ -1687,12 +1685,13 @@ function renderReport(view) {
 /* ================================================================ boot */
 load(); LANG = S.lang || "ro";
 if (!S.hw) S.hw = blankA(); if (!S.sw) S.sw = blankA();
-if (!S.concl) S.concl = { dec: "", act: "", lim: "" };
+if (!S.concl) S.concl = { free: "" };
+if (S.concl.free === undefined) { S.concl = { free: Object.keys(S.concl).map((k) => (S.concl[k] || "").trim()).filter(Boolean).join("\n\n") }; save(); }  /* one optional field since 16 Nov 2026 */
 /* cause level reduced to one element, HW and SW (14.11): functions written on the old categories C1–C5 move to it */
 /* free-text owners (names) from before 15.11 are dropped: the owner is now a role */
 ["hw", "sw"].forEach((k) => { const A = S[k]; if (!A || !A.risk) return; Object.values(A.risk).forEach((r) => (r.acts || []).forEach((x) => { if (x.resp && !ROLES.some((q) => q[0] === x.resp)) x.resp = ""; })); });
 ["hw", "sw"].forEach((k) => { const A = S[k]; if (!A || !A.fns) return; A.fns.forEach((f) => { if (/^C[1-5]$/.test(f.el)) f.el = "C0"; }); if (/^C[1-5]$/.test(A.selEl || "")) A.selEl = "C0"; });
-if ((S.conclusion || "").trim() && !S.concl.dec) { S.concl.dec = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
+if ((S.conclusion || "").trim() && !S.concl.free) { S.concl.free = S.conclusion; S.conclusion = ""; save(); }  /* single conclusion field before 14 Nov 2026 */
 if (window.LabReport) window.LabReport.track("FMEA");
 document.getElementById("stName").value = S.name; document.getElementById("stVariant").value = S.variant;
 document.getElementById("stName").addEventListener("input", (e) => { S.name = e.target.value; save(); });
