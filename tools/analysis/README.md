@@ -1,5 +1,7 @@
 # Analiza rapoartelor (pseudonimizată)
 
+**Varianta fără Python:** deschide `Analiza_rapoarte.html` în browser (dublu clic), alege folderul cu rapoarte și, opțional, CSV-ul tab-ului „Feedback SUS”. Pagina face aceleași calcule ca `analyze.py`, plus uptake U, proveniența la DFMEA și foaia „Pentru lucrare”, și descarcă două fișiere .xlsx fără nume. Nu trimite nimic pe internet; numele din numele fișierelor sunt folosite doar în memorie, iar codurile rămân aceleași în același browser.
+
 `analyze.py` citește rapoartele trimise din cele trei aplicații și produce două fișiere Excel fără nume:
 
 - `analiza_laboratoare.xlsx`, cu foile:

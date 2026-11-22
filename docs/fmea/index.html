@@ -1659,7 +1659,7 @@ function stepList() {
 function reportData() {
   const one = (k) => { const A = S[k];
     const pairs = []; failsAt(A, 2).forEach((m) => causesOf(A, m.id).forEach((c) => { const ev = evalRisk(A, m.id, c.id);
-      pairs.push({ mode: m.text, cause: c.text, effects: effectsOf(A, m.id).map((e) => e.text), s: ev.s || null, o: +ev.r.o || null, d: +ev.r.d || null,
+      pairs.push({ dom: domOfFail(A, m), causeDom: domOfFail(A, c), mode: m.text, cause: c.text, effects: effectsOf(A, m.id).map((e) => e.text), s: ev.s || null, o: +ev.r.o || null, d: +ev.r.d || null,
         ap0: ev.ap0 || "", ap1: ev.ap1 || "", apX: ev.apX || "", fin: ev.fin || "", failOpen: ev.failOpen }); }));
     const ck = checks(k);
     return { fns: A.fns, fails: A.fails, links: A.links, risk: A.risk, pairs: pairs, checksErr: ck.filter((x) => x.sev === "err").length, checksWarn: ck.filter((x) => x.sev !== "err").length }; };

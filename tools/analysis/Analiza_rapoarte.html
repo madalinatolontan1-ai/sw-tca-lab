@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Analiza rapoartelor · laboratoare HW TCA, SW TCA, FMEA</title>
+<style>
+:root{--ink:#17202D;--muted:#5B6578;--line:#D9DEE7;--acc:#2F5DA8;--bg:#F6F7F9;--ok:#1D7F54;--bad:#B83434}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 22px}h1{font-size:19px;margin:0}
+main{max-width:1180px;margin:0 auto;padding:18px 22px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+h2{font-size:16px;margin:0 0 10px}h3{font-size:14px;margin:16px 0 6px}
+.step{display:grid;grid-template-columns:28px 1fr;gap:6px 10px;margin:10px 0;align-items:start}.step>b{background:var(--acc);color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:12px}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;color:var(--ink);display:inline-block}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);color:#fff;border-color:var(--acc)}.btn:disabled{opacity:.5;cursor:default}
+.btn input{display:none}.muted{color:var(--muted)}.small{font-size:12.5px}.st{margin-left:8px}
+table{border-collapse:collapse;font-size:12.5px;margin:4px 0 10px;width:100%}th,td{border:1px solid var(--line);padding:3px 7px;text-align:left;vertical-align:top}th{background:#EEF2F8}
+td.n{text-align:right;font-variant-numeric:tabular-nums}.warn{color:var(--bad)}.okc{color:var(--ok)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{background:#FFF8E1;border:1px solid #F0DFA8;border-radius:8px;padding:8px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<header><h1>Analiza rapoartelor · HW TCA, SW TCA, FMEA</h1>
+<div class="muted small">Pagina citește fișierele doar aici, în browser. Nu trimite nimic pe internet și nu salvează numele studenților: numele din numele fișierului e folosit doar în memorie, ca să recunoască același student, și apoi e înlocuit cu un cod (S001, S002…).</div></header>
+<main>
+<section class="card">
+  <h2>Ce încarci</h2>
+  <div class="step"><b>1</b><div><div class="row"><label class="btn pri">Alege folderul cu rapoarte<input type="file" id="dir" webkitdirectory directory multiple></label>
+    <span class="muted">sau</span><label class="btn">Alege fișierele .json<input type="file" id="files" multiple accept=".json,application/json"></label><span id="stFiles" class="st muted small"></span></div>
+    <div class="muted small">Folderul „Rapoarte laboratoare” descărcat din Drive și dezarhivat. Se citesc doar fișierele .json; numele fișierului dă laboratorul, grupa, varianta și studentul.</div></div></div>
+  <div class="step"><b>2</b><div><div class="row"><label class="btn">Cheia (opțional)<input type="file" id="keys" multiple accept=".json,application/json"></label><span id="stKeys" class="st muted small"></span></div>
+    <div class="muted small">Rapoartele trimise cu numele PROF sau Profu sunt recunoscute singure drept cheie pentru laboratorul și varianta lor. Aici poți adăuga alte fișiere JSON care să fie folosite drept cheie.</div></div></div>
+  <div class="step"><b>3</b><div><div class="row"><label class="btn">Chestionarul SUS (.csv, opțional)<input type="file" id="sus" accept=".csv,.tsv,.txt,text/csv"></label><span id="stSus" class="st muted small"></span></div>
+    <div class="muted small">În Sheet, deschide tab-ul „Feedback SUS” și alege Fișier → Descărcați → Valori separate prin virgulă (.csv). Tab-ul e anonim.</div></div></div>
+  <div class="step"><b>4</b><div><div class="row"><label class="btn">Studenți retrași (.txt, opțional)<input type="file" id="wd" accept=".txt,text/plain"></label><span id="stWd" class="st muted small"></span></div>
+    <div class="muted small">Un nume pe linie. Rapoartele lor nu intră în analiză.</div></div></div>
+  <div class="row" style="margin-top:12px"><button class="btn pri" id="run" disabled>Analizează</button>
+    <button class="btn" id="dlA" disabled>Descarcă analiza (.xlsx)</button><button class="btn" id="dlR" disabled>Descarcă fișa evaluatorilor (.xlsx)</button></div>
+</section>
+<section id="out"></section>
+<section class="card small muted">
+  <b>Reguli</b> (aceleași ca în <code>analyze.py</code>): studentul e recunoscut după numele din numele fișierului (ordinea cuvintelor, majusculele și diacriticele nu contează) și grupă; se analizează ultimul raport al fiecărui student pe fiecare laborator; variantele demo H0, V0 și F0 nu intră în analiză; rapoartele PROF / Profu sunt cheia. Codurile rămân aceleași la o nouă analiză în același browser (se păstrează doar o amprentă a numelui, nu numele). Efectul r = |Z| / √N, cu N numărul de perechi (ca în lucrare); este dat și cu N = perechile cu diferență nenulă.
+</section>
+</main>
+<script>
+"use strict";
+const $ = (q) => document.querySelector(q);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const LABS = ["HW-TCA", "SW-TCA", "FMEA"], DEMO = new Set(["H0", "V0", "F0"]), KEY_NAMES = new Set(["prof", "profu"]), QUIZ_OF = 5;
+const FNAME = /^(HW-TCA|SW-TCA|FMEA)_(.*?)_([HVF]\d+)_(.+)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})$/;
+const SUS_LABS = { "HW TCA": "HW-TCA", "SW TCA": "SW-TCA", "FMEA": "FMEA" };
+let INPUT = { files: [], keys: [], sus: null, wd: "" }, RESULT = null;
+
+/* ---------------------------------------------------------------- identity: name only in memory, a salted fingerprint for stable codes */
+const normName = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).sort().join(" ");
+const normText = (s) => String(s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().match(/[a-z0-9]+/g)?.join(" ") || "";
+function fp(str) { /* two FNV-1a 32-bit hashes with different seeds */
+  let h1 = 0x811c9dc5, h2 = 0x01000193 ^ 0x5bd1e995;
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 ^= c; h1 = Math.imul(h1, 0x01000193) >>> 0; h2 ^= c; h2 = Math.imul(h2, 0x01000197) >>> 0; }
+  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+}
+const STORE = "lab-analysis-codes-v1";
+function codeStore() { let s = null; try { s = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
+  if (!s || !s.salt) { const a = new Uint32Array(4); crypto.getRandomValues(a); s = { salt: Array.from(a).join("-"), codes: {} }; } return s; }
+function saveCodes(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
+function assignCodes(ids) {
+  const s = codeStore(); const fresh = [...ids].filter((i) => !s.codes[i]);
+  for (let i = fresh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [fresh[i], fresh[j]] = [fresh[j], fresh[i]]; }
+  let n = Math.max(0, ...Object.values(s.codes).map((c) => +c.slice(1) || 0));
+  fresh.forEach((i) => { n++; s.codes[i] = "S" + String(n).padStart(3, "0"); });
+  saveCodes(s); return s.codes;
+}
+
+/* ---------------------------------------------------------------- statistics */
+const mean = (v) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null);
+const sd = (v) => { if (v.length < 2) return null; const m = mean(v); return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1)); };
+const median = (v) => { if (!v.length) return null; const s = [...v].sort((a, b) => a - b), k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; };
+function erfc(x) { const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+  const r = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? r : 2 - r; }
+const normSf2 = (z) => erfc(Math.abs(z) / Math.SQRT2); /* two-sided p */
+function rankAbs(v) { const idx = v.map((x, i) => [Math.abs(x), i]).sort((a, b) => a[0] - b[0]); const r = new Array(v.length); let i = 0;
+  while (i < idx.length) { let j = i; while (j + 1 < idx.length && idx[j + 1][0] === idx[i][0]) j++; const avg = (i + j) / 2 + 1; for (let k = i; k <= j; k++) r[idx[k][1]] = avg; i = j + 1; } return r; }
+function wilcoxon(pre, post) { /* scipy: zero_method="wilcox", method="approx", correction=False */
+  const d = post.map((b, i) => b - pre[i]).filter((x) => x !== 0); const n = d.length; if (n < 2) return null;
+  const r = rankAbs(d); const rp = d.reduce((a, x, i) => a + (x > 0 ? r[i] : 0), 0), rm = d.reduce((a, x, i) => a + (x < 0 ? r[i] : 0), 0);
+  const cnt = {}; d.forEach((x) => { const k = Math.abs(x); cnt[k] = (cnt[k] || 0) + 1; });
+  const tie = Object.values(cnt).reduce((a, c) => a + (c ** 3 - c), 0);
+  const se = Math.sqrt(n * (n + 1) * (2 * n + 1) / 24 - tie / 48); const z = (rp - n * (n + 1) / 4) / se;
+  return { W: Math.min(rp, rm), z: z, p: normSf2(z), nz: n };
+}
+function kappa(a, b, linear) {
+  const pairs = a.map((x, i) => [x, b[i]]).filter((p) => p[0] != null && p[0] !== "" && p[1] != null && p[1] !== ""); if (pairs.length < 2) return null;
+  const cats = [...new Set(pairs.flat())].sort((x, y) => (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y)))); const k = cats.length;
+  if (k < 2) return 1; const ix = new Map(cats.map((c, i) => [c, i])); const m = Array.from({ length: k }, () => new Array(k).fill(0));
+  pairs.forEach(([x, y]) => { m[ix.get(x)][ix.get(y)] += 1 / pairs.length; });
+  const span = linear ? Math.max(...cats) - Math.min(...cats) : 0; const w = (i, j) => (linear ? 1 - Math.abs(cats[i] - cats[j]) / span : i === j ? 1 : 0);
+  const rs = m.map((r) => r.reduce((a, x) => a + x, 0)), cs = cats.map((_, j) => m.reduce((a, r) => a + r[j], 0)); let po = 0, pe = 0;
+  for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) { po += w(i, j) * m[i][j]; pe += w(i, j) * rs[i] * cs[j]; }
+  return pe === 1 ? null : (po - pe) / (1 - pe);
+}
+function cronbach(rows) { if (rows.length < 2 || rows[0].length < 2) return null; const k = rows[0].length;
+  const iv = Array.from({ length: k }, (_, j) => sd(rows.map((r) => r[j])) ** 2).reduce((a, x) => a + x, 0); const tv = sd(rows.map((r) => r.reduce((a, x) => a + x, 0))) ** 2;
+  return tv ? (k / (k - 1)) * (1 - iv / tv) : null; }
+function mulberry(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* ---------------------------------------------------------------- reading */
+async function readJson(f) { try { return JSON.parse(await f.text()); } catch (e) { return null; } }
+function parseCsv(text) {
+  const first = text.split(/\r?\n/)[0] || ""; const dl = [",", ";", "\t"].map((c) => [c, first.split(c).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++) { const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true; else if (c === dl) { row.push(cur); cur = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cur); rows.push(row); row = []; cur = ""; } else cur += c; }
+  if (cur || row.length) { row.push(cur); rows.push(row); } return rows.filter((r) => r.some((x) => x.trim() !== ""));
+}
+const quizScore = (q) => (q && !q.skipped && typeof q.score === "number" ? q.score : null);
+const stepsDone = (st) => { const s = (st && st.steps) || []; return [s.filter((x) => ["done", "auto", "na"].includes(x.status)).length, s.length]; };
+const hwRows = (st) => { const m = new Map(); ((st && st.rows) || []).forEach((r) => m.set(r.idx, r)); return m; };
+function fmeaPairs(st) { /* [{side, mode, cause, p}] for the one-analysis format (state.an, 22.11.2026) and the older hw / sw format */
+  const out = []; if (!st) return out;
+  if (st.an) (st.an.pairs || []).forEach((p) => out.push({ side: p.dom || "", mode: normText(p.mode), cause: normText(p.cause), p: p }));
+  ["hw", "sw"].forEach((side) => ((st[side] || {}).pairs || []).forEach((p) => out.push({ side: side, mode: normText(p.mode), cause: normText(p.cause), p: p })));
+  return out;
+}
+function matchFmea(st, key) {
+  const K = fmeaPairs(key), S = fmeaPairs(st), out = [], used = new Set();
+  S.forEach((s) => {
+    let k = K.find((x, i) => !used.has(i) && x.side === s.side && x.mode === s.mode && x.cause === s.cause);
+    if (!k) { const same = K.filter((x, i) => !used.has(i) && x.side === s.side); if (same.length === 1) k = same[0]; }  /* one pair per domain in the one-analysis format */
+    if (k) { used.add(K.indexOf(k)); out.push([s.p, k.p]); }
+  });
+  return { pairs: out, nKey: K.length };
+}
+function fmeaItems(st) { if (!st) return []; const A = st.an ? [st.an] : ["hw", "sw"].map((k) => st[k]).filter(Boolean); return A.flatMap((a) => (a.fns || []).concat(a.fails || [])); }
+
+/* ---------------------------------------------------------------- inputs */
+function setInputs() {
+  const n = INPUT.files.length; $("#stFiles").textContent = n ? n + " fișiere .json" : "";
+  $("#stKeys").textContent = INPUT.keys.length ? INPUT.keys.length + " fișiere cheie" : "";
+  $("#run").disabled = !n;
+}
+const onPick = (sel, fn) => $(sel).addEventListener("change", (e) => { fn(Array.from(e.target.files || [])); e.target.value = ""; setInputs(); });
+onPick("#dir", (fs) => { INPUT.files = fs.filter((f) => /\.json$/i.test(f.name)); });
+onPick("#files", (fs) => { INPUT.files = INPUT.files.concat(fs.filter((f) => /\.json$/i.test(f.name))); });
+onPick("#keys", (fs) => { INPUT.keys = fs; });
+onPick("#sus", async (fs) => { INPUT.sus = fs[0] ? await fs[0].text() : null; $("#stSus").textContent = INPUT.sus ? "încărcat" : ""; });
+onPick("#wd", async (fs) => { INPUT.wd = fs[0] ? await fs[0].text() : ""; $("#stWd").textContent = INPUT.wd ? INPUT.wd.split(/\r?\n/).filter((x) => x.trim()).length + " nume" : ""; });
+
+/* ---------------------------------------------------------------- analysis */
+async function analyse() {
+  const s = codeStore(); const salt = s.salt;
+  const withdrawn = new Set(INPUT.wd.split(/\r?\n/).map((x) => x.trim()).filter(Boolean).map((x) => fp(salt + "|" + normName(x))));
+  const subs = [], keys = {}, skipped = {}; const skip = (k) => (skipped[k] = (skipped[k] || 0) + 1);
+  for (const f of INPUT.files) {
+    const m = FNAME.exec(f.name.replace(/\.json$/i, "")); if (!m) { skip("nume de fișier nerecunoscut"); continue; }
+    const [, lab, group, variant, rawName, day, time] = m; const data = await readJson(f); if (!data) { skip("JSON ilizibil"); continue; }
+    const nn = normName(rawName.replace(/_/g, " ")); const rec = { lab, group, variant, id: fp(salt + "|" + nn + "|" + group), wid: fp(salt + "|" + nn), stamp: day + "_" + time, data };
+    if (KEY_NAMES.has(nn.replace(/ /g, ""))) { const k = lab + " " + variant; if (!keys[k] || keys[k].stamp < rec.stamp) keys[k] = rec; }
+    else if (DEMO.has(variant)) skip("variantă demo (H0 / V0 / F0)");
+    else if (withdrawn.has(rec.wid)) skip("student retras");
+    else subs.push(rec);
+  }
+  for (const f of INPUT.keys) { const d = await readJson(f); if (!d || !d.lab || !d.variant) { skip("fișier cheie fără laborator sau variantă"); continue; }
+    keys[d.lab + " " + d.variant] = { lab: d.lab, variant: d.variant, stamp: "9999", data: d }; }
+  const by = new Map(); subs.forEach((r) => { const k = r.id + "|" + r.lab; if (!by.has(k)) by.set(k, []); by.get(k).push(r); });
+  const last = [...by.values()].map((v) => { v.sort((a, b) => (a.stamp < b.stamp ? -1 : 1)); return Object.assign({}, v[v.length - 1], { nReports: v.length, firstStamp: v[0].stamp }); });
+  const codes = assignCodes(new Set(last.map((r) => r.id))); last.forEach((r) => (r.code = codes[r.id]));
+  last.sort((a, b) => a.lab.localeCompare(b.lab) || a.code.localeCompare(b.code));
+
+  /* submissions */
+  const subRows = last.map((r) => { const d = r.data, w = d.work || null, st = d.state || {}, q = d.quiz || {};
+    const [dn, n] = stepsDone(st), [fd, fn] = stepsDone((d.firstReportView || {}).state); const pastes = (w && w.pastes) || [];
+    const U = fn && n && n > fd ? (dn - fd) / (n - fd) : null;
+    return [r.code, r.lab, r.variant, r.nReports, r.firstStamp, r.stamp, w ? Math.round((w.activeSec || 0) / 6) / 10 : null, w ? w.editCount : null, pastes.length,
+      pastes.reduce((a, p) => a + (+p.n || 0), 0), quizScore(q.pre), quizScore(q.post), fn ? fd + "/" + fn : null, n ? dn + "/" + n : null, U, st.checksOpen ?? null]; });
+  const subHead = ["Cod", "Lab", "Varianta", "Rapoarte trimise", "Primul raport", "Ultimul raport", "Timp activ (min)", "Modificări", "Lipiri", "Caractere lipite",
+    "Test inițial", "Test final", "Pași la prima vedere", "Pași final", "Uptake U", "Verificări deschise (HW)"];
+
+  /* knowledge test */
+  const quizRows = [], itemRows = [];
+  LABS.forEach((lab) => { const pre = [], post = [], per = {};
+    last.filter((r) => r.lab === lab).forEach((r) => { const q = r.data.quiz || {}; const a = quizScore(q.pre), b = quizScore(q.post);
+      [["pre", 0], ["post", 1]].forEach(([w, k]) => { const c = (q[w] || {}).correct; if (Array.isArray(c)) c.forEach((ok, i) => { per[i] = per[i] || [[], []]; per[i][k].push(ok ? 1 : 0); }); });
+      if (a != null && b != null) { pre.push(a); post.push(b); } });
+    const n = pre.length;
+    if (n) { const W = wilcoxon(pre, post); const mp = mean(pre), mq = mean(post);
+      const gi = pre.map((a, i) => (a < QUIZ_OF ? (post[i] - a) / (QUIZ_OF - a) : null)).filter((x) => x != null);
+      const c = pre.map((a, i) => { const b = post[i]; if (a === b && (a === QUIZ_OF || a === 0)) return null; return b > a ? (b - a) / (QUIZ_OF - a) : b < a ? (b - a) / a : 0; }).filter((x) => x != null);
+      quizRows.push([lab, n, mp, sd(pre), mq, sd(post), median(pre), median(post), W ? W.W : null, W ? W.z : null, W ? W.p : null, W ? Math.abs(W.z) / Math.sqrt(n) : null, W ? Math.abs(W.z) / Math.sqrt(W.nz) : null,
+        mp < QUIZ_OF ? (mq - mp) / (QUIZ_OF - mp) : null, gi.length ? mean(gi) : null, c.length ? mean(c) : null]); }
+    else quizRows.push([lab, 0]);
+    Object.keys(per).sort((a, b) => a - b).forEach((i) => itemRows.push([lab, "Q" + (+i + 1), per[i][0].length, mean(per[i][0]), per[i][1].length, mean(per[i][1])])); });
+  const quizHead = ["Lab", "N (pre și post)", "Media inițial", "AS inițial", "Media final", "AS final", "Mediana inițial", "Mediana final", "Wilcoxon W", "Z", "p",
+    "r = |Z|/√N (N perechi)", "r (perechi nenule)", "Câștig Hake <g> (clasă)", "g individual (medie)", "Normalised change c (medie)"];
+
+  /* SUS */
+  let susRows = null; const susHead = ["Lab", "N", "SUS media", "SUS AS", "SUS mediana", "Min", "Max", "Alfa Cronbach (10 itemi)", "Q11 proveniența valorilor", "Q12 aș face singur analiza", "Q13 util pentru industrie"];
+  if (INPUT.sus) { const rows = parseCsv(INPUT.sus); const h = (rows[0] || []).map((x) => x.trim()); const col = (name) => h.indexOf(name);
+    const iLab = col("Laborator"), iS = Array.from({ length: 10 }, (_, i) => col("SUS" + (i + 1))), iQ = ["Q11", "Q12", "Q13"].map((p) => h.findIndex((x) => x.startsWith(p)));
+    const byLab = {};
+    if (iLab >= 0 && iS.every((i) => i >= 0)) rows.slice(1).forEach((r) => { const a = iS.map((i) => parseInt(r[i], 10)); if (a.some((x) => !(x >= 1 && x <= 5))) return;
+      const lab = SUS_LABS[(r[iLab] || "").trim()] || (r[iLab] || "").trim(); (byLab[lab] = byLab[lab] || []).push({ a, q: iQ.map((i) => (i >= 0 ? parseInt(r[i], 10) : NaN)) }); });
+    susRows = LABS.concat(Object.keys(byLab).filter((l) => !LABS.includes(l))).map((lab) => { const v = byLab[lab] || []; if (!v.length) return [lab, 0];
+      const rec = v.map((x) => x.a.map((y, i) => (i % 2 === 0 ? y - 1 : 5 - y))); const sus = rec.map((r) => r.reduce((a, b) => a + b, 0) * 2.5);
+      const qm = [0, 1, 2].map((j) => { const z = v.map((x) => x.q[j]).filter((x) => x >= 1); return z.length ? mean(z) : null; });
+      return [lab, v.length, mean(sus), sd(sus), median(sus), Math.min(...sus), Math.max(...sus), cronbach(rec)].concat(qm); }); }
+
+  /* first view vs final */
+  const ffRows = []; last.forEach((r) => { const d = r.data, first = (d.firstReportView || {}).state, fin = d.state; if (!first || !fin) return;
+    const [fd, n] = stepsDone(first), [ld] = stepsDone(fin); let ch = null, tot = null;
+    if (r.lab === "HW-TCA") { const a = hwRows(first), b = hwRows(fin); tot = b.size; ch = [...b.keys()].filter((i) => ["s", "o", "ft", "ap"].some((f) => (a.get(i) || {})[f] !== b.get(i)[f])).length; }
+    else if (r.lab === "FMEA") { const a = fmeaPairs(first), b = fmeaPairs(fin); tot = b.length; ch = b.filter((x) => { const y = a.find((z) => z.side === x.side && z.mode === x.mode && z.cause === x.cause); return !y || ["s", "o", "d", "fin"].some((f) => y.p[f] !== x.p[f]); }).length; }
+    ffRows.push([r.code, r.lab, r.variant, fd, ld, n, ld - fd, n > fd ? (ld - fd) / (n - fd) : null, ch, tot, first.checksOpen ?? null, fin.checksOpen ?? null]); });
+  const ffHead = ["Cod", "Lab", "Varianta", "Pași la prima vedere", "Pași final", "Pași total", "Pași câștigați după verificări", "Uptake U", "Rânduri schimbate (S/O/D/AP)", "Rânduri", "Verificări deschise la prima vedere (HW)", "Verificări deschise final (HW)"];
+
+  /* agreement with the key */
+  const pool = {}, detail = [], missingKeys = new Set(); const put = (k, s, kv) => { (pool[k] = pool[k] || [[], []])[0].push(s); pool[k][1].push(kv); };
+  const nz = (x) => (x === "" || x === undefined || x === 0 ? null : x);
+  last.forEach((r) => { const key = keys[r.lab + " " + r.variant]; if (!key) { missingKeys.add(r.lab + " " + r.variant); return; }
+    const st = r.data.state || {}, ks = key.data.state || {}; let pairs, fields, nKey = null;
+    if (r.lab === "HW-TCA") { const a = hwRows(st), b = hwRows(ks); pairs = [...b.keys()].filter((i) => a.has(i)).map((i) => [a.get(i), b.get(i)]);
+      fields = [["s", "S"], ["o", "O"], ["ft", "D FT"], ["d", "D"], ["ap", "AP"], ["ap0", "AP fără îmbunătățiri"]]; }
+    else if (r.lab === "FMEA") { const m = matchFmea(st, ks); pairs = m.pairs; nKey = m.nKey; fields = [["s", "S"], ["o", "O"], ["d", "D"], ["ap0", "AP inițial"], ["fin", "AP final"]]; }
+    else { const ex = st.ex || {}, kx = ks.ex || {}; const pc = (v) => (Array.isArray(v) && v.length === 2 && v[1] ? Math.round((100 * v[0]) / v[1]) : null);
+      Object.keys(ex).forEach((k) => ["stmt", "dec", "mcdc", "req"].forEach((f) => put("SW-TCA|" + k + " " + f + " (%)", pc(ex[k][f]), pc((kx[k] || {})[f]))));
+      ["stmt", "branch", "mcdc"].forEach((f) => put("SW-TCA|ASIL: cerința " + f, (st.asil || {})[f] || null, (ks.asil || {})[f] || null));
+      const fc = (st.bug || {}).fixCheck || {}; detail.push([r.code, "SW-TCA", r.variant, "corectura trece retestul", fc.parsed ? (fc.pass === fc.total ? 1 : 0) : null, fc.spec ?? null, null, null]); return; }
+    fields.forEach(([f, label]) => { const sv = pairs.map((p) => nz(p[0][f])), kv = pairs.map((p) => nz(p[1][f])); sv.forEach((x, i) => put(r.lab + "|" + label, x, kv[i]));
+      const both = sv.map((x, i) => [x, kv[i]]).filter((p) => p[0] != null && p[1] != null); const ex = both.filter((p) => p[0] === p[1]).length;
+      const pm = /^AP/.test(label) ? null : both.filter((p) => typeof p[0] === "number" && typeof p[1] === "number" && Math.abs(p[0] - p[1]) <= 1).length;
+      detail.push([r.code, r.lab, r.variant, label, both.length, both.length ? ex / both.length : null, pm != null && both.length ? pm / both.length : null, r.lab === "FMEA" && nKey ? pairs.length / nKey : null]); }); });
+  const AP_ORD = { L: 1, M: 2, H: 3 };
+  const agrRows = Object.keys(pool).sort().map((k) => { const [lab, label] = k.split("|"); const both = pool[k][0].map((x, i) => [x, pool[k][1][i]]).filter((p) => p[0] != null && p[1] != null);
+    if (!both.length) return [lab, label, 0]; const num = both.every((p) => typeof p[0] === "number" && typeof p[1] === "number"); const pct = label.includes("%");
+    const xs = both.map((p) => p[0]), ys = both.map((p) => p[1]); let wk = num && !pct ? kappa(xs, ys, true) : null;
+    if (/^AP/.test(label)) wk = kappa(xs.map((x) => AP_ORD[x]), ys.map((y) => AP_ORD[y]), true);
+    return [lab, label, both.length, both.filter((p) => p[0] === p[1]).length / both.length, num && !pct ? both.filter((p) => Math.abs(p[0] - p[1]) <= 1).length / both.length : null, pct ? null : kappa(xs, ys, false), wk]; });
+  const agrHead = ["Lab", "Câmp", "N perechi", "Acord exact", "Acord ±1", "Kappa Cohen", "Kappa ponderat liniar"];
+  const detHead = ["Cod", "Lab", "Varianta", "Câmp", "N", "Acord exact", "Acord ±1", "Perechi mod-cauză găsite din cheie (FMEA)"];
+
+  /* DFMEA provenance */
+  const SRC = [["sug", "din listă, neschimbat"], ["sugEdit", "din listă, modificat"], ["own", "scris de student"], ["dis", "distractor acceptat"], ["disEdit", "distractor modificat"]];
+  const provRows = []; const provTot = {}; SRC.forEach(([k]) => (provTot[k] = 0));
+  last.filter((r) => r.lab === "FMEA").forEach((r) => { const it = fmeaItems(r.data.state); const c = {}; SRC.forEach(([k]) => (c[k] = 0)); it.forEach((x) => { if (c[x.src] !== undefined) { c[x.src]++; provTot[x.src]++; } });
+    provRows.push([r.code, r.variant, it.length].concat(SRC.map(([k]) => (it.length ? c[k] / it.length : null)))); });
+  const provHead = ["Cod", "Varianta", "Elemente (funcții + defectări)"].concat(SRC.map((x) => x[1]));
+  const provAll = Object.values(provTot).reduce((a, b) => a + b, 0);
+
+  /* for the paper */
+  const paper = [["Tabelul testului de cunoștințe", "", "", "", "", "", ""], ["Lab", "N", "Pre M (SD)", "Post M (SD)", "p", "r", "<g>"]];
+  const f2 = (x) => (x == null ? "–" : x.toFixed(2));
+  quizRows.forEach((q) => paper.push(q[1] ? [q[0], q[1], f2(q[2]) + " (" + f2(q[3]) + ")", f2(q[4]) + " (" + f2(q[5]) + ")", f2(q[10]), f2(q[11]), f2(q[13])] : [q[0], 0, "–", "–", "–", "–", "–"]));
+  paper.push([], ["Tabelul SUS și proces", "", "", "", "", "", ""], ["Lab", "N SUS", "SUS M (SD)", "Alfa", "Timp activ median (min)", "Uptake U median", "Rapoarte"]);
+  LABS.forEach((lab) => { const s = (susRows || []).find((x) => x[0] === lab) || [lab, 0]; const L = subRows.filter((x) => x[1] === lab);
+    paper.push([lab, s[1] || 0, s[1] ? f2(s[2]) + " (" + f2(s[3]) + ")" : "–", s[1] ? f2(s[7]) : "–", f2(median(L.map((x) => x[6]).filter((x) => x != null))), f2(median(L.map((x) => x[14]).filter((x) => x != null))), L.length]); });
+  paper.push([], ["Tabelul acordului cu cheia", "", "", "", "", "", ""], ["Lab, câmp", "Perechi", "Exact", "±1", "Kappa", "Kappa ponderat", ""]);
+  agrRows.filter((a) => a[0] !== "SW-TCA").forEach((a) => paper.push([a[0] + ": " + a[1], a[2], f2(a[3]), a[4] == null ? "–" : f2(a[4]), f2(a[5]), f2(a[6]), ""]));
+  if (provAll) { paper.push([], ["DFMEA: proveniența elementelor (toți studenții)", "", "", "", "", "", ""]); SRC.forEach(([k, l]) => paper.push([l, provTot[k], f2(provTot[k] / provAll), "", "", "", ""])); }
+
+  const summary = [["Rapoarte de studenți citite", subs.length], ["Studenți × laborator (ultimul raport)", last.length],
+    ["Chei găsite", Object.keys(keys).sort().join(", ") || "niciuna"], ["Fără cheie", [...missingKeys].sort().join(", ") || "–"]]
+    .concat(Object.keys(skipped).sort().map((k) => ["Lăsate deoparte: " + k, skipped[k]]), LABS.map((l) => ["Studenți pe laborator: " + l, last.filter((r) => r.lab === l).length]));
+
+  /* written answers for the raters, in a fixed random order */
+  const items = []; const add = (r, what, txt) => { const t = String(txt || "").trim(); if (t) items.push([r.code, r.lab, r.variant, what, t]); };
+  last.forEach((r) => { const st = r.data.state || {};
+    if (r.lab === "HW-TCA") (st.rows || []).forEach((row) => { const ref = [row.ref, row.pin === "–" ? "" : row.pin, row.mode].filter(Boolean).join(" ");
+      add(r, "Justificare FT · " + ref + " · test " + row.fttest + ", D " + row.ft, row.ftj);
+      if (row.rad) { add(r, "Risc rezidual · " + ref + " · AP " + row.ap + " · " + row.rad + " · de ce rămâne", row.raw); add(r, "Risc rezidual · " + ref + " · AP " + row.ap + " · " + row.rad + " · ce se face", row.ra); } });
+    else if (r.lab === "SW-TCA") { add(r, "Justificarea codului neacoperit", st.just); const b = st.bug || {};
+      add(r, "Raport de incident · test " + b.test + ", linia " + b.line + " · descriere", b.desc); add(r, "Raport de incident · corectura", b.fix);
+      Object.keys(st.ex || {}).forEach((k) => add(r, "Note " + k, st.ex[k].notes)); }
+    else { const A = st.an ? { an: st.an } : { hw: st.hw, sw: st.sw }; Object.keys(A).forEach((side) => Object.keys((A[side] || {}).risk || {}).forEach((k) => { const rk = A[side].risk[k];
+      add(r, side.toUpperCase() + " · risc " + k + " · acțiune suplimentară", rk.xt); add(r, side.toUpperCase() + " · risc " + k + " · risc rezidual", rk.resid); })); }
+    Object.keys(st.concl || {}).forEach((k) => add(r, "Concluzie · " + k, st.concl[k])); });
+  const rnd = mulberry(2027); for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+
+  RESULT = { summary, subHead, subRows, quizHead, quizRows, itemRows, susHead, susRows, ffHead, ffRows, agrHead, agrRows, detHead, detail, provHead, provRows, paper,
+    raters: items.map((it, i) => ["Item " + String(i + 1).padStart(4, "0")].concat(it, ["", "", ""])) };
+  INPUT.files = []; INPUT.keys = []; setInputs(); /* drop the file handles: the names are no longer needed */
+  render();
+}
+
+/* ---------------------------------------------------------------- view */
+const fmtv = (x) => (x == null ? "–" : typeof x === "number" ? (Number.isInteger(x) ? String(x) : x.toFixed(3)) : esc(x));
+const table = (head, rows) => "<table><tr>" + head.map((h) => "<th>" + esc(h) + "</th>").join("") + "</tr>" + rows.map((r) => "<tr>" + head.map((_, i) => '<td class="' + (typeof r[i] === "number" ? "n" : "") + '">' + (r.length ? fmtv(r[i]) : "") + "</td>").join("") + "</tr>").join("") + "</table>";
+function render() {
+  const R = RESULT; $("#dlA").disabled = $("#dlR").disabled = !R; if (!R) return;
+  $("#out").innerHTML = '<div class="card"><h2>Rezumat</h2>' + table(["Ce", "Valoare"], R.summary) + '</div>' +
+    '<div class="card"><h2>Pentru lucrare</h2><div class="muted small">Aceleași valori sunt în foaia „Pentru lucrare” din analiză.</div>' + table(["", "", "", "", "", "", ""], R.paper) + "</div>" +
+    '<div class="card"><h2>Test inițial-final</h2>' + table(R.quizHead, R.quizRows) + "</div>" +
+    '<div class="card"><h2>Acord cu cheia</h2>' + (R.agrRows.length ? table(R.agrHead, R.agrRows) : '<p class="note">Nu există cheie pentru variantele încărcate. Trimite din aplicații raportul tău pe fiecare variantă cu numele PROF (sau adaugă fișierele cheie la pasul 2), apoi analizează din nou.</p>') + "</div>" +
+    (R.susRows ? '<div class="card"><h2>SUS</h2>' + table(R.susHead, R.susRows) + "</div>" : "") +
+    '<div class="card muted small">Restul foilor (trimiteri pe student, prima vedere față de final, acord pe student, proveniența la DFMEA, întrebările testului) sunt în fișierul de analiză. Fișa evaluatorilor are răspunsurile scrise, cu cod, în ordine aleatoare și coloanele R1–R3.</div>';
+}
+
+/* ---------------------------------------------------------------- minimal .xlsx writer (stored zip) */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files) { const enc = new TextEncoder(); const parts = [], central = []; let off = 0;
+  files.forEach(([name, text]) => { const nb = enc.encode(name), db = enc.encode(text), crc = crc32(db);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint32(14, crc, true); h.setUint32(18, db.length, true); h.setUint32(22, db.length, true); h.setUint16(26, nb.length, true);
+    parts.push(new Uint8Array(h.buffer), nb, db);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true);
+    c.setUint32(16, crc, true); c.setUint32(20, db.length, true); c.setUint32(24, db.length, true); c.setUint16(28, nb.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), nb); off += 30 + nb.length + db.length; });
+  const cs = central.reduce((a, x) => a + x.length, 0); const e = new DataView(new ArrayBuffer(22)); e.setUint32(0, 0x06054b50, true);
+  e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
+  return new Blob(parts.concat(central, [new Uint8Array(e.buffer)]), { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }); }
+const xesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+const colName = (i) => { let s = ""; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+function xlsx(sheets) {
+  const sx = sheets.map((sh, n) => { const rows = (sh.note ? [[sh.note], []] : []).concat([sh.head], sh.rows); const hr = sh.note ? 3 : 1;
+    const widths = sh.head.map((h, j) => Math.max(9, Math.min(sh.wide && sh.wide[j] ? sh.wide[j] : 22, String(h).length + 2)));
+    const body = rows.map((r, i) => '<row r="' + (i + 1) + '">' + (r || []).map((v, j) => { const ref = colName(j) + (i + 1); const st = i + 1 === hr ? ' s="1"' : sh.note && i === 0 ? ' s="2"' : "";
+      if (v == null || v === "") return ""; if (typeof v === "number" && isFinite(v)) return '<c r="' + ref + '"' + st + "><v>" + (Number.isInteger(v) ? v : +v.toFixed(4)) + "</v></c>";
+      return '<c r="' + ref + '" t="inlineStr"' + st + '><is><t xml:space="preserve">' + xesc(v) + "</t></is></c>"; }).join("") + "</row>").join("");
+    return ['xl/worksheets/sheet' + (n + 1) + '.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="' + hr + '" topLeftCell="A' + (hr + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' +
+      widths.map((w, j) => '<col min="' + (j + 1) + '" max="' + (j + 1) + '" width="' + w + '" customWidth="1"/>').join("") + "</cols><sheetData>" + body + "</sheetData></worksheet>"]; });
+  const files = [["[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      sheets.map((_, n) => '<Override PartName="/xl/worksheets/sheet' + (n + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("") + "</Types>"],
+    ["_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ["xl/workbook.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+      sheets.map((s, n) => '<sheet name="' + xesc(s.name.replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31)) + '" sheetId="' + (n + 1) + '" r:id="rId' + (n + 1) + '"/>').join("") + "</sheets></workbook>"],
+    ["xl/_rels/workbook.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      sheets.map((_, n) => '<Relationship Id="rId' + (n + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (n + 1) + '.xml"/>').join("") +
+      '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ["xl/styles.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><i/><sz val="10"/><color rgb="FF555555"/><name val="Arial"/></font></fonts>' +
+      '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF6"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']].concat(sx);
+  return zip(files);
+}
+function download(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }
+const today = () => new Date().toISOString().slice(0, 10);
+$("#run").addEventListener("click", async () => { $("#run").disabled = true; $("#run").textContent = "Se analizează…"; try { await analyse(); } finally { $("#run").textContent = "Analizează"; setInputs(); } });
+$("#dlA").addEventListener("click", () => { const R = RESULT; if (!R) return;
+  const sheets = [{ name: "Rezumat", head: ["Ce", "Valoare"], rows: R.summary, note: "Date pseudonimizate: fiecare student are un cod (S001…). Numele nu apar nicăieri.", wide: [46, 60] },
+    { name: "Pentru lucrare", head: ["", "", "", "", "", "", ""], rows: R.paper, wide: [40, 12, 18, 18, 14, 14, 10] },
+    { name: "Trimiteri", head: R.subHead, rows: R.subRows },
+    { name: "Test inițial-final", head: R.quizHead, rows: R.quizRows, note: "Doar studenții cu ambele teste (fără „sărit”). Scor din 5." },
+    { name: "Test pe întrebări", head: ["Lab", "Întrebare", "N inițial", "Proporție corectă inițial", "N final", "Proporție corectă final"], rows: R.itemRows },
+    { name: "Prima vedere vs final", head: R.ffHead, rows: R.ffRows, note: "Prima vedere = copia luată când studentul deschide prima dată tab-ul Raport, înainte să vadă verificările. U = (pași final − pași la prima vedere) / (pași total − pași la prima vedere)." },
+    { name: "Acord cu cheia", head: R.agrHead, rows: R.agrRows, note: "Cheia = raportul PROF (sau fișierul cheie) pe aceeași variantă.", wide: [10, 30] },
+    { name: "Acord pe student", head: R.detHead, rows: R.detail, wide: [8, 10, 9, 30] }];
+  if (R.susRows) sheets.push({ name: "SUS", head: R.susHead, rows: R.susRows, note: "Itemii impari: scor − 1; pari: 5 − scor; suma × 2,5. Alfa pe itemii recodificați." });
+  if (R.provRows.length) sheets.push({ name: "DFMEA proveniență", head: R.provHead, rows: R.provRows });
+  download(xlsx(sheets), "analiza_laboratoare_" + today() + ".xlsx"); });
+$("#dlR").addEventListener("click", () => { const R = RESULT; if (!R) return;
+  download(xlsx([{ name: "Instrucțiuni", head: ["Scor", "Criteriu"], rows: [["2", "corect și justificat cu referire la tabele, reguli sau schemă"], ["1", "parțial corect sau justificare generică"], ["0", "greșit, lipsă sau fără legătură"]],
+      note: "Fiecare evaluator completează doar coloana lui (R1, R2 sau R3), fără să vadă scorurile celorlalți.", wide: [8, 70] },
+    { name: "Răspunsuri", head: ["Item", "Cod", "Lab", "Varianta", "Ce", "Text", "R1", "R2", "R3"], rows: R.raters, wide: [10, 8, 9, 9, 40, 70, 6, 6, 6] }]), "evaluatori_raspunsuri_" + today() + ".xlsx"); });
+</script>
+</body>
+</html>
