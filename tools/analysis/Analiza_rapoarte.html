@@ -37,8 +37,10 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}.warn{color:var(--bad)}.
     <div class="muted small">Sheet-ul „Rapoarte laboratoare” descărcat ca Excel: Fișier → Descărcați → Microsoft Excel (.xlsx). Pagina citește doar tab-ul „Feedback SUS”, care e anonim; celelalte tab-uri sunt ignorate. Merge și un .csv cu doar acel tab.</div></div></div>
   <div class="step"><b>4</b><div><div class="row"><label class="btn">Studenți retrași (.txt, opțional)<input type="file" id="wd" accept=".txt,text/plain"></label><span id="stWd" class="st muted small"></span></div>
     <div class="muted small">Un nume pe linie. Rapoartele lor nu intră în analiză.</div></div></div>
+  <div class="step"><b>5</b><div><div class="row"><label class="btn">Încarcă fișierul de coduri<input type="file" id="codesIn" accept=".json,application/json"></label><span id="stCodes" class="st muted small"></span></div>
+    <div class="muted small">Ca același student să aibă același cod la fiecare rulare și la toate laboratoarele, încarcă aici fișierul de coduri salvat după analiza anterioară. El nu conține nume, doar amprente.</div></div></div>
   <div class="row" style="margin-top:12px"><button class="btn pri" id="run" disabled>Analizează</button>
-    <button class="btn" id="dlA" disabled>Descarcă analiza (.xlsx)</button><button class="btn" id="dlR" disabled>Descarcă fișa evaluatorilor (.xlsx)</button></div>
+    <button class="btn" id="dlA" disabled>Descarcă analiza (.xlsx)</button><button class="btn" id="dlR" disabled>Descarcă fișa evaluatorilor (.xlsx)</button><button class="btn" id="dlC" disabled>Salvează fișierul de coduri</button></div>
 </section>
 <section id="out"></section>
 <section class="card small muted">
@@ -64,7 +66,7 @@ function fp(str) { /* two FNV-1a 32-bit hashes with different seeds */
 }
 const STORE = "lab-analysis-codes-v1";
 function codeStore() { let s = null; try { s = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
-  if (!s || !s.salt) { const a = new Uint32Array(4); crypto.getRandomValues(a); s = { salt: Array.from(a).join("-"), codes: {} }; } return s; }
+  if (!s || !s.salt) { const a = new Uint32Array(4); crypto.getRandomValues(a); s = { salt: Array.from(a).join("-"), codes: {} }; saveCodes(s); } return s; }
 function saveCodes(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
 function assignCodes(ids) {
   const s = codeStore(); const fresh = [...ids].filter((i) => !s.codes[i]);
@@ -322,7 +324,7 @@ async function analyse() {
 const fmtv = (x) => (x == null ? "–" : typeof x === "number" ? (Number.isInteger(x) ? String(x) : x.toFixed(3)) : esc(x));
 const table = (head, rows) => "<table><tr>" + head.map((h) => "<th>" + esc(h) + "</th>").join("") + "</tr>" + rows.map((r) => "<tr>" + head.map((_, i) => '<td class="' + (typeof r[i] === "number" ? "n" : "") + '">' + (r.length ? fmtv(r[i]) : "") + "</td>").join("") + "</tr>").join("") + "</table>";
 function render() {
-  const R = RESULT; $("#dlA").disabled = $("#dlR").disabled = !R; if (!R) return;
+  const R = RESULT; $("#dlA").disabled = $("#dlR").disabled = $("#dlC").disabled = !R; if (!R) return;
   $("#out").innerHTML = '<div class="card"><h2>Rezumat</h2>' + table(["Ce", "Valoare"], R.summary) + '</div>' +
     '<div class="card"><h2>Pentru lucrare</h2><div class="muted small">Aceleași valori sunt în foaia „Pentru lucrare” din analiză.</div>' + table(["", "", "", "", "", "", ""], R.paper) + "</div>" +
     '<div class="card"><h2>Test inițial-final</h2>' + table(R.quizHead, R.quizRows) + "</div>" +
@@ -371,6 +373,13 @@ function xlsx(sheets) {
 }
 function download(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }
 const today = () => new Date().toISOString().slice(0, 10);
+$("#codesIn").addEventListener("change", async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const d = JSON.parse(await f.text()); if (!d || !d.salt || typeof d.codes !== "object") throw 0; const cur = codeStore();
+    if (Object.keys(cur.codes).length && cur.salt !== d.salt && !confirm("Browserul are deja alte coduri. Le înlocuiesc cu cele din fișier?")) return;
+    saveCodes({ salt: d.salt, codes: d.codes }); $("#stCodes").textContent = Object.keys(d.codes).length + " coduri încărcate";
+  } catch (err) { $("#stCodes").textContent = "fișierul de coduri nu a putut fi citit"; } });
+$("#dlC").addEventListener("click", () => { const s = codeStore(); download(new Blob([JSON.stringify({ about: "Coduri pentru analiza laboratoarelor: amprente cu sare, fără nume.", salt: s.salt, codes: s.codes }, null, 1)], { type: "application/json" }), "coduri_analiza.json"); });
+(function () { const n = Object.keys(codeStore().codes).length; if (n) $("#stCodes").textContent = n + " coduri deja în acest browser"; })();
 $("#run").addEventListener("click", async () => { $("#run").disabled = true; $("#run").textContent = "Se analizează…"; try { await analyse(); } finally { $("#run").textContent = "Analizează"; setInputs(); } });
 $("#dlA").addEventListener("click", () => { const R = RESULT; if (!R) return;
   const sheets = [{ name: "Rezumat", head: ["Ce", "Valoare"], rows: R.summary, note: "Date pseudonimizate: fiecare student are un cod (S001…). Numele nu apar nicăieri.", wide: [46, 60] },
