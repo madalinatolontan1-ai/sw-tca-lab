@@ -33,8 +33,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}.warn{color:var(--bad)}.
     <div class="muted small">Folderul „Rapoarte laboratoare” descărcat din Drive și dezarhivat. Se citesc doar fișierele .json; numele fișierului dă laboratorul, grupa, varianta și studentul.</div></div></div>
   <div class="step"><b>2</b><div><div class="row"><label class="btn">Cheia (opțional)<input type="file" id="keys" multiple accept=".json,application/json"></label><span id="stKeys" class="st muted small"></span></div>
     <div class="muted small">Rapoartele trimise cu numele PROF sau Profu sunt recunoscute singure drept cheie pentru laboratorul și varianta lor. Aici poți adăuga alte fișiere JSON care să fie folosite drept cheie.</div></div></div>
-  <div class="step"><b>3</b><div><div class="row"><label class="btn">Chestionarul SUS (.csv, opțional)<input type="file" id="sus" accept=".csv,.tsv,.txt,text/csv"></label><span id="stSus" class="st muted small"></span></div>
-    <div class="muted small">În Sheet, deschide tab-ul „Feedback SUS” și alege Fișier → Descărcați → Valori separate prin virgulă (.csv). Tab-ul e anonim.</div></div></div>
+  <div class="step"><b>3</b><div><div class="row"><label class="btn">Chestionarul SUS (.xlsx, opțional)<input type="file" id="sus" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"></label><span id="stSus" class="st muted small"></span></div>
+    <div class="muted small">Sheet-ul „Rapoarte laboratoare” descărcat ca Excel: Fișier → Descărcați → Microsoft Excel (.xlsx). Pagina citește doar tab-ul „Feedback SUS”, care e anonim; celelalte tab-uri sunt ignorate. Merge și un .csv cu doar acel tab.</div></div></div>
   <div class="step"><b>4</b><div><div class="row"><label class="btn">Studenți retrași (.txt, opțional)<input type="file" id="wd" accept=".txt,text/plain"></label><span id="stWd" class="st muted small"></span></div>
     <div class="muted small">Un nume pe linie. Rapoartele lor nu intră în analiză.</div></div></div>
   <div class="row" style="margin-top:12px"><button class="btn pri" id="run" disabled>Analizează</button>
@@ -117,6 +117,32 @@ function parseCsv(text) {
     else if (c === '"') q = true; else if (c === dl) { row.push(cur); cur = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cur); rows.push(row); row = []; cur = ""; } else cur += c; }
   if (cur || row.length) { row.push(cur); rows.push(row); } return rows.filter((r) => r.some((x) => x.trim() !== ""));
 }
+/* minimal .xlsx reader: zip central directory + DecompressionStream("deflate-raw"); returns { sheetName: rows } with cell text */
+async function unzipFiles(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf); let e = buf.byteLength - 22; while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--; if (e < 0) throw new Error("zip");
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true); const out = {}; const dec = new TextDecoder();
+  for (let i = 0; i < n; i++) { const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nl)); p += 46 + nl + xl + cl;
+    const start = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true); const data = u8.subarray(start, start + csize);
+    out[name] = method === 0 ? data : method === 8 ? new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer()) : null; }
+  return out;
+}
+async function readXlsx(file) {
+  const z = await unzipFiles(await file.arrayBuffer()); const dec = new TextDecoder(); const xml = (n) => (z[n] ? new DOMParser().parseFromString(dec.decode(z[n]), "application/xml") : null);
+  const tags = (d, t) => Array.from(d.getElementsByTagNameNS("*", t));
+  const ss = xml("xl/sharedStrings.xml"); const shared = ss ? tags(ss, "si").map((si) => tags(si, "t").map((t) => t.textContent).join("")) : [];
+  const wb = xml("xl/workbook.xml"), rels = xml("xl/_rels/workbook.xml.rels"); const target = {};
+  tags(rels, "Relationship").forEach((r) => (target[r.getAttribute("Id")] = r.getAttribute("Target")));
+  const book = {};
+  tags(wb, "sheet").forEach((sh) => { const rid = sh.getAttribute("r:id") || sh.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+    let t = target[rid] || ""; t = t.replace(/^\//, ""); if (!t.startsWith("xl/")) t = "xl/" + t; const d = xml(t); if (!d) return; const rows = [];
+    tags(d, "row").forEach((row) => { const r = []; tags(row, "c").forEach((c) => { const ref = c.getAttribute("r") || ""; const col = ref.replace(/\d+/g, "").split("").reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+      const ty = c.getAttribute("t"); const v = tags(c, "v")[0]; let val = "";
+      if (ty === "s") val = shared[+(v ? v.textContent : 0)] || ""; else if (ty === "inlineStr") val = tags(c, "t").map((x) => x.textContent).join(""); else val = v ? v.textContent : "";
+      r[col >= 0 ? col : r.length] = val; }); rows[(+row.getAttribute("r") || rows.length + 1) - 1] = Array.from(r, (x) => (x == null ? "" : x)); });
+    book[sh.getAttribute("name")] = rows.filter(Boolean).filter((r) => r.some((x) => String(x).trim() !== "")); });
+  return book;
+}
 const quizScore = (q) => (q && !q.skipped && typeof q.score === "number" ? q.score : null);
 const stepsDone = (st) => { const s = (st && st.steps) || []; return [s.filter((x) => ["done", "auto", "na"].includes(x.status)).length, s.length]; };
 const hwRows = (st) => { const m = new Map(); ((st && st.rows) || []).forEach((r) => m.set(r.idx, r)); return m; };
@@ -147,7 +173,14 @@ const onPick = (sel, fn) => $(sel).addEventListener("change", (e) => { fn(Array.
 onPick("#dir", (fs) => { INPUT.files = fs.filter((f) => /\.json$/i.test(f.name)); });
 onPick("#files", (fs) => { INPUT.files = INPUT.files.concat(fs.filter((f) => /\.json$/i.test(f.name))); });
 onPick("#keys", (fs) => { INPUT.keys = fs; });
-onPick("#sus", async (fs) => { INPUT.sus = fs[0] ? await fs[0].text() : null; $("#stSus").textContent = INPUT.sus ? "încărcat" : ""; });
+onPick("#sus", async (fs) => { const f = fs[0]; INPUT.sus = null; $("#stSus").textContent = "";
+  if (!f) return;
+  try {
+    if (/\.csv$/i.test(f.name)) INPUT.sus = parseCsv(await f.text());
+    else { const book = await readXlsx(f); const name = Object.keys(book).find((n) => n.trim() === "Feedback SUS") || Object.keys(book).find((n) => (book[n][0] || []).includes("SUS1"));
+      INPUT.sus = name ? book[name] : null; }
+    $("#stSus").textContent = INPUT.sus ? "tab-ul „Feedback SUS”: " + Math.max(0, INPUT.sus.length - 1) + " răspunsuri" : "nu am găsit tab-ul „Feedback SUS”";
+  } catch (e) { $("#stSus").textContent = "fișierul nu a putut fi citit"; } });
 onPick("#wd", async (fs) => { INPUT.wd = fs[0] ? await fs[0].text() : ""; $("#stWd").textContent = INPUT.wd ? INPUT.wd.split(/\r?\n/).filter((x) => x.trim()).length + " nume" : ""; });
 
 /* ---------------------------------------------------------------- analysis */
@@ -199,7 +232,7 @@ async function analyse() {
 
   /* SUS */
   let susRows = null; const susHead = ["Lab", "N", "SUS media", "SUS AS", "SUS mediana", "Min", "Max", "Alfa Cronbach (10 itemi)", "Q11 proveniența valorilor", "Q12 aș face singur analiza", "Q13 util pentru industrie"];
-  if (INPUT.sus) { const rows = parseCsv(INPUT.sus); const h = (rows[0] || []).map((x) => x.trim()); const col = (name) => h.indexOf(name);
+  if (INPUT.sus) { const rows = INPUT.sus; const h = (rows[0] || []).map((x) => x.trim()); const col = (name) => h.indexOf(name);
     const iLab = col("Laborator"), iS = Array.from({ length: 10 }, (_, i) => col("SUS" + (i + 1))), iQ = ["Q11", "Q12", "Q13"].map((p) => h.findIndex((x) => x.startsWith(p)));
     const byLab = {};
     if (iLab >= 0 && iS.every((i) => i >= 0)) rows.slice(1).forEach((r) => { const a = iS.map((i) => parseInt(r[i], 10)); if (a.some((x) => !(x >= 1 && x <= 5))) return;
