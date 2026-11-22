@@ -90,6 +90,7 @@ main .wrap { padding-block: 22px 48px; display: flex; flex-direction: column; ga
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
 .stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.stepnav { justify-content: space-between; margin-top: 18px; }
 .between { justify-content: space-between; }
 .intro { max-width: 78ch; display: flex; flex-direction: column; gap: 12px; }
 .notice { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; }
@@ -941,6 +942,9 @@ const I18N = {
     c_manyEff: "„{m}”: are {n} efecte legate. În laborator, cel mult {max}.",
     c_manyCause: "„{m}”: are {n} cauze legate. În laborator, cel mult {max}.",
     c_noComp: "„{c}”: alege componenta vinovată.",
+    lockO: "O nou rămâne cel puțin cât O până când o acțiune de prevenție (P) e finalizată.",
+    lockD: "D nou rămâne cel puțin cât D până când o acțiune de detecție (D) e finalizată cu PASS.",
+    lockOD: "O nou și D nou rămân cel puțin cât O și D până când acțiunile sunt finalizate: O scade doar după o acțiune P finalizată, D doar după o acțiune D finalizată cu PASS. O acțiune planificată sau în lucru nu schimbă încă riscul.",
     anTab: "Pașii 2–6 · Analiza HW + SW",
     anTitle: "Analiza DFMEA",
     ctxAn: "Ești în echipa de design a nodului CAN. Faci o singură analiză pentru varianta ta. Nivelul efect (N1) e radarul. La nivelul mod (N2) sunt două elemente: semnalul HW și funcția SW. La nivelul cauză (N3) sunt designul hardware al semnalului (alegerea și dimensionarea componentelor, schema, layout-ul) și designul software al funcției (cerințe, constante, logică, tipuri de date, interfață). Cauza modului HW e în designul HW, cauza modului SW e în designul SW. La cauza HW alegi componenta vinovată (de pe semnal, evidențiată pe placă și în schemă); la cauza SW poți alege cerința de care se leagă. Defectele de fabricație ale componentelor (lipituri, componentă lipsă sau inversată) țin de PFMEA și de laboratorul TCA HW.",
@@ -1040,6 +1044,9 @@ const I18N = {
     c_manyEff: "“{m}” has {n} linked effects. In the lab, at most {max}.",
     c_manyCause: "“{m}” has {n} linked causes. In the lab, at most {max}.",
     c_noComp: "“{c}”: pick the culprit component.",
+    lockO: "The new O stays at least at O until a prevention (P) action is completed.",
+    lockD: "The new D stays at least at D until a detection (D) action is completed with PASS.",
+    lockOD: "The new O and D stay at least at O and D until the actions are completed: O drops only after a completed P action, D only after a D action completed with PASS. A planned or in-progress action does not change the risk yet.",
     anTab: "Steps 2–6 · HW + SW analysis",
     anTitle: "DFMEA analysis",
     ctxAn: "You are in the design team of the CAN node. You perform a single analysis for your variant. The effect level (N1) is the radar. The mode level (N2) has two elements: the HW signal and the SW function. The cause level (N3) has the hardware design of the signal (component selection and dimensioning, schematic, layout) and the software design of the function (requirements, constants, logic, data types, interface). The cause of the HW mode lies in the HW design, the cause of the SW mode in the SW design. On the HW cause you pick the culprit component (on the signal, highlighted on the board and in the schematic); on the SW cause you can pick the requirement it relates to. Manufacturing defects of the components (solder joints, missing or reversed parts) belong to PFMEA and to the HW TCA lab.",
@@ -1086,7 +1093,9 @@ function evalRisk(A, m, c) {
   const r = A.risk[rkey(m, c)] || {}; const s = sMax(A, m);
   const ap0 = apOf(s, +r.o, +r.d);
   const hasRev = (r.acts || []).length > 0 && r.o2 && r.d2;
-  const o1 = hasRev ? +r.o2 : +r.o, d1 = hasRev ? +r.d2 : +r.d;
+  const lk = revLocks(r);
+  /* the new O / D can drop below the initial value only after a completed P action / a D action completed with PASS */
+  const o1 = hasRev ? (lk.o ? Math.max(+r.o2, +r.o) : +r.o2) : +r.o, d1 = hasRev ? (lk.d ? Math.max(+r.d2, +r.d) : +r.d2) : +r.d;
   const ap1 = hasRev ? apOf(s, o1, d1) : null;
   const afterRev = ap1 || ap0;
   const extraNeeded = !!(hasRev && (ap1 === "H" || ap1 === "M"));
@@ -1094,7 +1103,11 @@ function evalRisk(A, m, c) {
   const xP = r.xtype === "P";
   const apX = extraNeeded && r.xt && (xP ? r.xo : r.xd) ? apOf(s, xP ? Math.min(o1, +r.xo) : o1, xP ? d1 : Math.min(d1, +r.xd)) : null;
   const fin = apX || afterRev;
-  return { s: s, ap0: ap0, ap1: ap1, apX: apX, fin: fin, hasRev: hasRev, extraNeeded: extraNeeded, failOpen: failOpen(r), r: r };
+  return { s: s, ap0: ap0, ap1: ap1, apX: apX, fin: fin, hasRev: hasRev, extraNeeded: extraNeeded, failOpen: failOpen(r), r: r, o1: o1, d1: d1, lk: lk };
+}
+function revLocks(r) {
+  const acts = r.acts || [];
+  return { o: !acts.some((a) => a.type === "P" && a.status === "done"), d: !acts.some((a) => a.type === "D" && a.status === "done" && a.result === "pass") };
 }
 /* a FAIL result confirms the defect: it needs a corrective design action (P) added after it */
 function failOpen(r) {
@@ -1177,8 +1190,8 @@ function checks(kind) {
       const acts = r.acts || [];
       const doneP = acts.some((a) => a.type === "P" && a.status === "done");
       const doneD = acts.some((a) => a.type === "D" && a.status === "done" && a.result === "pass");
-      if (r.o && r.o2 && +r.o2 < +r.o && !doneP) add("warn", "c_oNoP", o);
-      if (r.d && r.d2 && +r.d2 < +r.d && !doneD) add("warn", "c_dNoD", o);
+      if (r.o && r.o2 && +r.o2 < +r.o && !doneP) add("err", "c_oNoP", o);
+      if (r.d && r.d2 && +r.d2 < +r.d && !doneD) add("err", "c_dNoD", o);
       const today = new Date().toISOString().slice(0, 10);
       acts.forEach((a) => { if (a.status === "done" && a.due && a.due > today) add("warn", "c_doneFuture", Object.assign({ a: short(a.text || "–") }, o)); });
       if ((r.dc || []).length && (r.dc || []).every((x) => /^(none|niciun(ul|a)?|nu exist[ăa])\.?$/i.test(String(x).trim())) && r.d && +r.d < 10) add("warn", "c_dcNone", o);
@@ -1305,7 +1318,12 @@ function renderAnalysis(view, kind) {
   h += helpPanel(kind, A.step);
   h += checksPanel(kind);
   h += '<div id="stepBody"></div>';
+  const order = ["s23", "s4", "s56"]; const pos = order.indexOf(A.step);
+  const lab = (st) => { const x = steps.find((q) => q[0] === st); const many = x[1].indexOf("–") > 0; return (LANG === "ro" ? (many ? "Pașii " : "Pasul ") : many ? "Steps " : "Step ") + x[1] + " · " + x[2]; };
+  h += '<div class="row stepnav">' + (pos > 0 ? '<button type="button" class="btn" data-go="' + order[pos - 1] + '">← ' + esc(lab(order[pos - 1])) + "</button>" : '<button type="button" class="btn" data-go="tab:start">← ' + esc(t("tabStart")) + "</button>") +
+    (pos < order.length - 1 ? '<button type="button" class="btn primary" data-go="' + order[pos + 1] + '">' + esc(lab(order[pos + 1])) + " →</button>" : '<button type="button" class="btn primary" data-go="tab:report">' + esc(t("tabReport")) + " →</button>") + "</div>";
   view.innerHTML = h;
+  view.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => { const g = b.dataset.go; if (g.indexOf("tab:") === 0) S.tab = g.slice(4); else A.step = g; save(); render(); window.scrollTo({ top: 0 }); }));
   view.querySelectorAll("[data-step]").forEach((b) => b.addEventListener("click", () => { A.step = b.dataset.step; save(); render(); }));
   view.querySelector("[data-checks]").addEventListener("toggle", (e) => { A.openChecks = e.target.open; save(); });
   const body = view.querySelector("#stepBody");
@@ -1478,10 +1496,10 @@ window.addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTi
 
 /* ---------------------------------------------------------------- risk + optimization */
 function apChip(ap) { return '<span class="ap ' + (ap || "na") + '">' + (ap || "–") + "</span>"; }
-function sel10(key, val, label, scale) {
+function sel10(key, val, label, scale, min) {
   const opts = scale ? AIAG.options[scale](LANG) : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => [n, String(n)]);
   return '<label class="row" style="gap:6px" title="' + esc(TIP(scale || "")) + '">' + esc(label) + ' <select class="in" data-r="' + key + '" aria-label="' + esc(label) + '"><option value="">–</option>' +
-    opts.map((x) => '<option value="' + x[0] + '"' + (x[2] ? ' title="' + esc(x[2]) + '"' : "") + (String(val) === String(x[0]) ? " selected" : "") + ">" + esc(x[1]) + "</option>").join("") + "</select></label>";
+    opts.map((x) => '<option value="' + x[0] + '"' + (x[2] ? ' title="' + esc(x[2]) + '"' : "") + (min && +x[0] < min && String(val) !== String(x[0]) ? " disabled" : "") + (String(val) === String(x[0]) ? " selected" : "") + ">" + esc(x[1]) + "</option>").join("") + "</select></label>";
 }
 function ctlBlock(dom, k, list, field) {
   const dl = "dl-" + dom + "-" + field;
@@ -1499,7 +1517,10 @@ function renderRisk(body, kind) {
     h += '<section class="panel mode-block"><div class="mode-head"><span class="label">' + esc(t("fm")) + '</span><span class="chip">' + esc(elOfFail(kind, m)) + '</span><span class="ft">' + esc(m.text) + '</span><span class="chip">' + esc(t("smax")) + " = " + (s || "–") + "</span></div>" +
       '<p class="small"><span class="muted">' + esc(t("effects")) + ":</span> " + (effs.length ? effs.map((e) => '<span style="color:var(--fail)">' + esc(e.text) + "</span> (S " + (e.s || "–") + ")").join("; ") : "–") + "</p>";
     causesOf(A, m.id).forEach((c) => {
-      const k = rkey(m.id, c.id); riskRec(A, m.id, c.id); const ev = evalRisk(A, m.id, c.id); const r = ev.r; const dom = domOfFail(A, c) || domOfFail(A, m) || "hw";
+      const k = rkey(m.id, c.id); const r0 = riskRec(A, m.id, c.id);
+      /* a value below the initial one is not allowed while the action is not completed (e.g. set back to "in progress"): clear it */
+      const lk0 = revLocks(r0); if (lk0.o && r0.o2 && r0.o && +r0.o2 < +r0.o) r0.o2 = ""; if (lk0.d && r0.d2 && r0.d && +r0.d2 < +r0.d) r0.d2 = "";
+      const ev = evalRisk(A, m.id, c.id); const r = ev.r; const dom = domOfFail(A, c) || domOfFail(A, m) || "hw";
       const need = ev.ap0 === "H" || ev.ap0 === "M";
       const acts = (r.acts || []).map((a, i) => '<div class="act"><select class="in" data-act="' + k + "|" + i + '|type" aria-label="' + esc(t("type")) + '"><option' + (a.type === "P" ? " selected" : "") + '>P</option><option' + (a.type === "D" ? " selected" : "") + ">D</option></select>" +
         '<input class="in" list="dl-' + dom + '-all" data-act="' + k + "|" + i + '|text" value="' + esc(a.text) + '" placeholder="' + esc(t("actions")) + '" aria-label="' + esc(t("actions")) + '">' +
@@ -1515,7 +1536,8 @@ function renderRisk(body, kind) {
           '<div class="rate"><span class="muted small">S ' + (s || "–") + "</span>" + sel10(k + "|o", r.o, "O", "O") + sel10(k + "|d", r.d, "D", "D") + "</div></div>" +
         '<div class="state' + (need || (r.acts || []).length ? "" : " off") + '"><h4>' + esc(t("rev")) + " " + apChip(ev.ap1) + '</h4><p class="muted small">' + esc(need ? t("revNeed") : t("revOpt")) + "</p>" + acts + (ev.failOpen ? '<p class="warnnote">' + esc(t("failNote")) + "</p>" : "") +
           '<button class="btn sm" type="button" data-addact="' + k + '">' + esc(t(ev.failOpen ? "addCorr" : "addAct")) + "</button>" +
-          ((r.acts || []).length ? '<div class="rate">' + sel10(k + "|o2", r.o2, t("oNew"), "O") + sel10(k + "|d2", r.d2, t("dNew"), "D") + "</div>" : "") + "</div>" +
+          ((r.acts || []).length ? '<div class="rate">' + sel10(k + "|o2", r.o2, t("oNew"), "O", ev.lk.o ? +r.o : 0) + sel10(k + "|d2", r.d2, t("dNew"), "D", ev.lk.d ? +r.d : 0) + "</div>" +
+            (ev.lk.o || ev.lk.d ? '<p class="muted small">' + esc(t(ev.lk.o && ev.lk.d ? "lockOD" : ev.lk.o ? "lockO" : "lockD")) + "</p>" : "") : "") + "</div>" +
         '<div class="state' + (ev.extraNeeded ? "" : " off") + '"><h4>' + esc(t("extra")) + " " + apChip(ev.apX) + '</h4><p class="muted small">' + esc(ev.extraNeeded ? t("extraNeed") : t("extraNo")) + "</p>" +
           (ev.extraNeeded ? '<label class="row" style="gap:6px">' + esc(t("type")) + ' <select class="in" data-r="' + k + '|xtype" aria-label="' + esc(t("type")) + '">' +
               [["D", "xTypeD"], ["P", "xTypeP"]].map((o) => '<option value="' + o[0] + '"' + ((r.xtype || "D") === o[0] ? " selected" : "") + ">" + esc(t(o[1])) + "</option>").join("") + "</select></label>" +
@@ -1582,7 +1604,7 @@ function analysisReport(kind, text) {
         " | extra: [" + (r.xtype === "P" ? "P" : "D") + "] " + (r.xt || "-") + (r.xtype === "P" ? " O=" + (r.xo || "-") : " D=" + (r.xd || "-")) + " | AP final=" + (ev.fin || "-") + (r.resid ? " | residual: " + r.resid : ""));
       if (ev.s && r.o && r.d) {
         const ki = sBand(ev.s) + "|" + oBand(+r.o) + "|" + dIdx(+r.d); cnt.i[ki] = (cnt.i[ki] || 0) + 1; sum.i[ev.ap0]++;
-        const o1 = ev.hasRev ? +r.o2 : +r.o; const d1 = ev.apX ? Math.min(ev.hasRev ? +r.d2 : +r.d, +r.xd) : ev.hasRev ? +r.d2 : +r.d;
+        const o1 = ev.apX && r.xtype === "P" ? Math.min(ev.o1, +r.xo) : ev.o1; const d1 = ev.apX && r.xtype !== "P" ? Math.min(ev.d1, +r.xd) : ev.d1;
         const kf = sBand(ev.s) + "|" + oBand(o1) + "|" + dIdx(d1); cnt.f[kf] = (cnt.f[kf] || 0) + 1; sum.f[ev.fin]++;
       }
     });
