@@ -39,6 +39,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}.warn{color:var(--bad)}.
     <div class="muted small">Un nume pe linie. Rapoartele lor nu intră în analiză.</div></div></div>
   <div class="step"><b>5</b><div><div class="row"><label class="btn">Încarcă fișierul de coduri<input type="file" id="codesIn" accept=".json,application/json"></label><span id="stCodes" class="st muted small"></span></div>
     <div class="muted small">Ca același student să aibă același cod la fiecare rulare și la toate laboratoarele, încarcă aici fișierul de coduri salvat după analiza anterioară. El nu conține nume, doar amprente.</div></div></div>
+  <label class="small" style="display:block;margin:10px 0 0"><input type="checkbox" id="merge"> Rapoartele trimise sub același nume și grupă pe același laborator sunt retrimiteri ale aceluiași student (se analizează doar ultimul)</label>
+  <div class="muted small">Nebifat (implicit): fiecare raport e o analiză separată. Bifează doar dacă știi că studenții au retrimis; rapoartele sub același nume apar în rezumat, fără nume.</div>
   <div class="row" style="margin-top:12px"><button class="btn pri" id="run" disabled>Analizează</button>
     <button class="btn" id="dlA" disabled>Descarcă analiza (.xlsx)</button><button class="btn" id="dlR" disabled>Descarcă fișa evaluatorilor (.xlsx)</button><button class="btn" id="dlC" disabled>Salvează fișierul de coduri</button></div>
 </section>
@@ -202,7 +204,12 @@ async function analyse() {
   for (const f of INPUT.keys) { const d = await readJson(f); if (!d || !d.lab || !d.variant) { skip("fișier cheie fără laborator sau variantă"); continue; }
     keys[d.lab + " " + d.variant] = { lab: d.lab, variant: d.variant, stamp: "9999", data: d }; }
   const by = new Map(); subs.forEach((r) => { const k = r.id + "|" + r.lab; if (!by.has(k)) by.set(k, []); by.get(k).push(r); });
-  const last = [...by.values()].map((v) => { v.sort((a, b) => (a.stamp < b.stamp ? -1 : 1)); return Object.assign({}, v[v.length - 1], { nReports: v.length, firstStamp: v[0].stamp }); });
+  const merge = $("#merge").checked; const sameName = [];
+  let last = [];
+  [...by.values()].forEach((v) => { v.sort((a, b) => (a.stamp < b.stamp ? -1 : 1));
+    if (v.length > 1) sameName.push(v[0].lab + " " + v.map((r) => r.variant + " " + r.stamp.replace("_", " ").replace(/-(\d\d)-(\d\d)$/, ":$1:$2")).join(" / "));
+    if (merge) last.push(Object.assign({}, v[v.length - 1], { nReports: v.length, firstStamp: v[0].stamp }));
+    else v.forEach((r, i) => last.push(Object.assign({}, r, { id: i ? r.id + "#" + (i + 1) : r.id, nReports: 1, firstStamp: r.stamp }))); });
   const codes = assignCodes(new Set(last.map((r) => r.id))); last.forEach((r) => (r.code = codes[r.id]));
   last.sort((a, b) => a.lab.localeCompare(b.lab) || a.code.localeCompare(b.code));
 
@@ -296,9 +303,11 @@ async function analyse() {
   agrRows.filter((a) => a[0] !== "SW-TCA").forEach((a) => paper.push([a[0] + ": " + a[1], a[2], f2(a[3]), a[4] == null ? "–" : f2(a[4]), f2(a[5]), f2(a[6]), ""]));
   if (provAll) { paper.push([], ["DFMEA: proveniența elementelor (toți studenții)", "", "", "", "", "", ""]); SRC.forEach(([k, l]) => paper.push([l, provTot[k], f2(provTot[k] / provAll), "", "", "", ""])); }
 
-  const summary = [["Rapoarte de studenți citite", subs.length], ["Studenți × laborator (ultimul raport)", last.length],
+  const summary = [["Rapoarte de studenți citite", subs.length], [merge ? "Studenți × laborator (ultimul raport)" : "Analize (rapoarte analizate)", last.length],
     ["Chei găsite", Object.keys(keys).sort().join(", ") || "niciuna"], ["Fără cheie", [...missingKeys].sort().join(", ") || "–"]]
-    .concat(Object.keys(skipped).sort().map((k) => ["Lăsate deoparte: " + k, skipped[k]]), LABS.map((l) => ["Studenți pe laborator: " + l, last.filter((r) => r.lab === l).length]));
+    .concat([["Rapoarte sub același nume și grupă (laborator, variantă, ora)", sameName.length ? sameName.join(" | ") : "–"],
+      ["Rapoartele sub același nume", merge ? "comasate: se analizează ultimul" : "analizate separat"]],
+      Object.keys(skipped).sort().map((k) => ["Lăsate deoparte: " + k, skipped[k]]), LABS.map((l) => ["Studenți pe laborator: " + l, last.filter((r) => r.lab === l).length]));
 
   /* written answers for the raters, in a fixed random order */
   const items = []; const add = (r, what, txt) => { const t = String(txt || "").trim(); if (t) items.push([r.code, r.lab, r.variant, what, t]); };
